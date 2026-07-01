@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Spiis Admin – Dashboard</title>
+  <meta name="robots" content="noindex" />
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@700;800&family=Fraunces:ital,wght@0,600;0,700;1,500&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/admin.css" />
+</head>
+<body>
+
+  <!-- ====== LOGIN ====== -->
+  <div class="login" id="loginScreen">
+    <div class="login__card">
+      <svg class="login__hat" viewBox="0 0 48 48" aria-hidden="true">
+        <path d="M15 30v7c0 1.7 1.3 3 3 3h12c1.7 0 3-1.3 3-3v-7" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>
+        <path d="M14.5 31c-4.7-.6-8.5-4.6-8.5-9.4 0-4.6 3.4-8.4 7.9-9.3C15.2 8.5 19.2 6 24 6s8.8 2.5 10.1 6.3c4.5.9 7.9 4.7 7.9 9.3 0 4.8-3.8 8.8-8.5 9.4" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>
+        <path d="M20 30v4M24 30v4M28 30v4" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/>
+      </svg>
+      <h1>Spiis <span>Admin</span></h1>
+      <p>Indtast din PIN-kode for at åbne dashboardet.</p>
+      <form id="loginForm">
+        <input type="password" id="loginPin" inputmode="numeric" maxlength="8" placeholder="••••" autocomplete="off" autofocus />
+        <p class="login__error" id="loginError" hidden>Forkert PIN – prøv igen.</p>
+        <button type="submit" class="abtn abtn--accent abtn--big">Log ind</button>
+      </form>
+      <a href="index.html" class="login__back">← Tilbage til hjemmesiden</a>
+    </div>
+  </div>
+
+  <!-- ====== DASHBOARD ====== -->
+  <div class="app" id="app" hidden>
+    <aside class="sidebar">
+      <div class="sidebar__logo">
+        <svg viewBox="0 0 48 48" aria-hidden="true">
+          <path d="M15 30v7c0 1.7 1.3 3 3 3h12c1.7 0 3-1.3 3-3v-7" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>
+          <path d="M14.5 31c-4.7-.6-8.5-4.6-8.5-9.4 0-4.6 3.4-8.4 7.9-9.3C15.2 8.5 19.2 6 24 6s8.8 2.5 10.1 6.3c4.5.9 7.9 4.7 7.9 9.3 0 4.8-3.8 8.8-8.5 9.4" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>
+          <path d="M20 30v4M24 30v4M28 30v4" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/>
+        </svg>
+        <span>Spiis<em>Admin</em></span>
+      </div>
+      <nav class="sidebar__nav" id="sideNav">
+        <button class="navitem is-active" data-view="overblik"><span>📊</span>Overblik<b class="navitem__badge" id="badgeOverblik" hidden></b></button>
+        <button class="navitem" data-view="bestillinger"><span>🥡</span>Bestillinger<b class="navitem__badge" id="badgeOrders" hidden></b></button>
+        <button class="navitem" data-view="bookinger"><span>📅</span>Bookinger<b class="navitem__badge" id="badgeBookings" hidden></b></button>
+        <button class="navitem" data-view="dagensret"><span>🍲</span>Dagens ret</button>
+        <button class="navitem" data-view="menukort"><span>📖</span>Menukort</button>
+        <button class="navitem" data-view="tider"><span>🕐</span>Åbningstider</button>
+        <button class="navitem" data-view="indstillinger"><span>⚙️</span>Indstillinger</button>
+      </nav>
+      <div class="sidebar__foot">
+        <a href="index.html" target="_blank" rel="noopener">↗ Se hjemmesiden</a>
+        <button id="logoutBtn" type="button">Log ud</button>
+      </div>
+    </aside>
+
+    <div class="main">
+      <header class="topbar">
+        <div>
+          <h1 class="topbar__title" id="viewTitle">Overblik</h1>
+          <p class="topbar__date" id="topbarDate"></p>
+        </div>
+        <div class="topbar__actions">
+          <div class="bell-wrap">
+            <button class="bell" id="bellBtn" aria-label="Notifikationer">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>
+              <b class="bell__badge" id="bellBadge" hidden></b>
+            </button>
+            <div class="belldrop" id="bellDrop" hidden>
+              <div class="belldrop__head">
+                <strong>Notifikationer</strong>
+                <button id="markReadBtn" type="button">Markér alle som læst</button>
+              </div>
+              <div class="belldrop__list" id="bellList"></div>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <main class="content" id="content">
+        <!-- views renderes af admin.js -->
+        <section class="view" id="view-overblik"></section>
+        <section class="view" id="view-bestillinger" hidden></section>
+        <section class="view" id="view-bookinger" hidden></section>
+        <section class="view" id="view-dagensret" hidden></section>
+        <section class="view" id="view-menukort" hidden></section>
+        <section class="view" id="view-tider" hidden></section>
+        <section class="view" id="view-indstillinger" hidden></section>
+      </main>
+    </div>
+  </div>
+
+  <div class="toast" id="toast" hidden></div>
+
+  <script src="js/store.js"></script>
+  <script src="js/admin.js"></script>
+</body>
+</html>

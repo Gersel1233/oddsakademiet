@@ -1,63 +1,54 @@
-# Oddsakademiet
+# Spiis – hjemmeside & admin-dashboard
 
-Landing page for **Oddsakademiet** — access to a private sports-betting server where
-crowd-driven data is combined with AI for more precise and profitable results.
+Hjemmeside for **Spiis** – hjemmelavet mad, når hverdagen er travl 🧑‍🍳
+Karlslunde Idrætsforening, Kongens Enge 42, 2690 Karlslunde.
 
-Theme: **blue · black · white**. Built as a fast, dependency-free static site
-(HTML + CSS + vanilla JS), hosted on **GitHub Pages**.
+Bygget som en hurtig, dependency-fri statisk side (HTML + CSS + vanilla JS),
+der kan hostes på **GitHub Pages** – ingen build-step, ingen npm.
 
-## Files
+## Hvad kan siden?
 
-| File | Purpose |
-|------|---------|
-| `index.html` | The full landing page (hero, features, how-it-works, results, pricing, FAQ, footer) |
-| `styles.css` | All styling and responsive layout |
-| `script.js` | Mobile nav, scroll reveals, and the Stripe checkout wiring |
-| `.github/workflows/deploy.yml` | Auto-deploys the site to GitHub Pages on push |
+### Hjemmesiden (`index.html`)
+- 🎬 **Cinematic video-hero** med Spiis' egen video, scroll-animationer og motion graphics
+- 🍲 **Dagens ret** – dagens middag + ugeplan for de kommende 7 dage
+- 🥡 **Bestil dagens ret** – antal, to-go/spis her, navn, telefon, dato og tidspunkt
+- 📖 **Menukort** – pr. ugedag + fast sortiment i kategorier
+- 🎉 **Booking** – book arrangement eller fysisk møde (kun ledige dage kan vælges)
+- 🕐 **Åbningstider & kontakt** – med "åbent nu"-status
 
-## 🔑 Connect your Stripe Payment Link
+### Admin (`admin.html` – "Personale-login" i footeren)
+- 🔑 PIN-login (standard-PIN: **9399** – skift den under Indstillinger!)
+- 📊 **Dagligt overblik**: kuverter, bestillinger, to-go vs. spiser her, nye bookinger
+- 🔔 **Notifikationer** for nye bestillinger og bookinger
+- 🥡 **Bestillinger** pr. dag – markér som håndteret
+- 📅 **Bookinger** – bekræft/afvis + blokér datoer, så de ikke kan bookes
+- 🍲 **Dagens ret-planlægger** – planlæg op til 14 dage frem
+- 📖 **Menukort-editor** og 🕐 **åbningstids-editor**
+- 💾 Backup som JSON + nulstil demo-data
 
-The "Sikre din plass" button is wired to a Stripe **Payment Link** for your product
-(`prod_R1Hzl2ffai5vaI`).
+## Filer
 
-1. In the [Stripe Dashboard](https://dashboard.stripe.com/payment-links), create a
-   Payment Link for the product `prod_R1Hzl2ffai5vaI`. You'll get a URL like
-   `https://buy.stripe.com/xxxxxxxxxxxx`.
-2. In `index.html`, find the checkout button and replace the placeholder:
-   ```html
-   data-payment-link="REPLACE_WITH_STRIPE_PAYMENT_LINK"
-   ```
-   with your real link:
-   ```html
-   data-payment-link="https://buy.stripe.com/xxxxxxxxxxxx"
-   ```
-3. Commit & push. The button is now live. Until you do this, clicking it shows a
-   reminder instead of charging anyone.
+| Fil | Formål |
+|-----|--------|
+| `index.html` | Hjemmesiden (hero, dagens ret, bestilling, menukort, om, booking, kontakt) |
+| `admin.html` | Chefens dashboard |
+| `css/style.css` / `css/admin.css` | Styling |
+| `js/store.js` | Fælles datalag (localStorage + synk på tværs af faner) |
+| `js/main.js` / `js/admin.js` | Logik for hhv. hjemmeside og dashboard |
+| `assets/hero.mp4` | Hero-videoen |
 
-> Optionally update the displayed price in `index.html` (`id="price-amount"`) to match
-> the price set on your Payment Link.
+## Vigtigt om data
 
-## 🚀 Go live on GitHub Pages
+Data (bestillinger, bookinger, menu) gemmes lige nu i **browserens localStorage**.
+Det betyder, at alt virker perfekt som demo og til test – bestiller man på siden,
+lander det i admin-dashboardet med det samme (også i en anden fane).
 
-The workflow in `.github/workflows/deploy.yml` deploys automatically. One-time setup:
+**Men:** data deles ikke mellem forskellige enheder. Skal kundernes bestillinger
+lande på chefens computer/telefon i drift, skal `js/store.js` kobles på en lille
+backend (fx Supabase eller Firebase – gratis tier rækker fint). Datalaget er
+bygget, så det er en isoleret udskiftning – resten af koden skal ikke røres.
 
-1. Go to your repo on GitHub → **Settings → Pages**.
-2. Under **Build and deployment → Source**, choose **GitHub Actions**.
-3. Push to the `claude/zen-davinci-m2j0ah` (or `main`) branch — the site deploys
-   automatically.
-4. Your live URL appears under **Settings → Pages** and in the workflow run
-   (typically `https://<username>.github.io/oddsakademiet/`).
+## Deploy
 
-## Local preview
-
-Just open `index.html` in a browser, or run a tiny server:
-
-```bash
-python3 -m http.server 8000
-# visit http://localhost:8000
-```
-
-## Responsible gaming
-
-This product involves sports betting. The site includes 18+ and responsible-gaming
-messaging. No outcome is guaranteed — content is analysis and signals only.
+Siden deployes via GitHub Pages-workflowet i `.github/workflows/deploy.yml`
+(trigger på `main`). Merge denne branch til `main`, så er den live.

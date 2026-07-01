@@ -3,220 +3,371 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Oddsakademiet — Datadrevet & AI-styret sportsbetting</title>
-  <meta name="description" content="Få adgang til Oddsakademiets sportsbetting-server. Data fra fællesskabet kombineret med kunstig intelligens for mere præcise og profitable resultater." />
-  <meta name="theme-color" content="#0a1f44" />
-
-  <meta property="og:title" content="Oddsakademiet — Datadrevet & AI-styret sportsbetting" />
-  <meta property="og:description" content="Data fra fællesskabet + AI for mere præcise og profitable resultater." />
+  <title>Spiis – Hjemmelavet mad, når hverdagen er travl</title>
+  <meta name="description" content="Spiis laver smagfulde, hjemmelavede måltider til dig, der ikke altid har tid til at lave mad fra bunden. Se dagens ret, bestil nemt og book arrangementer." />
+  <meta name="theme-color" content="#FAF6F0" />
+  <meta property="og:title" content="Spiis – Hjemmelavet mad, når hverdagen er travl" />
+  <meta property="og:description" content="Velsmag og kvalitet i hver en bid – nemt, hurtigt og altid en fornøjelse!" />
   <meta property="og:type" content="website" />
-
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="styles.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Fraunces:ital,wght@0,500;0,600;0,700;1,500&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css" />
 </head>
 <body>
-  <div class="bg-glow" aria-hidden="true"></div>
 
-  <!-- Header -->
-  <header class="site-header" id="top">
-    <div class="container header-inner">
-      <a href="#top" class="brand" aria-label="Oddsakademiet">
-        <span class="logo" aria-hidden="true">OA</span>
-        <span class="brand-name">Oddsakademiet</span>
+  <!-- ====== NAVIGATION ====== -->
+  <header class="nav" id="nav">
+    <div class="nav__inner">
+      <a href="#top" class="logo" aria-label="Spiis – forside">
+        <svg class="logo__hat" viewBox="0 0 48 48" aria-hidden="true">
+          <path d="M15 30v7c0 1.7 1.3 3 3 3h12c1.7 0 3-1.3 3-3v-7" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>
+          <path d="M14.5 31c-4.7-.6-8.5-4.6-8.5-9.4 0-4.6 3.4-8.4 7.9-9.3C15.2 8.5 19.2 6 24 6s8.8 2.5 10.1 6.3c4.5.9 7.9 4.7 7.9 9.3 0 4.8-3.8 8.8-8.5 9.4" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>
+          <path d="M20 30v4M24 30v4M28 30v4" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/>
+        </svg>
+        <span class="logo__word">Spiis<span class="logo__dots" aria-hidden="true"></span></span>
       </a>
-
-      <nav class="nav" aria-label="Menu">
-        <a href="#features">Fordele</a>
-        <a href="#how">Sådan virker det</a>
-        <a href="#pricing">Pris</a>
-        <a href="#faq">FAQ</a>
+      <nav class="nav__links" id="navLinks" aria-label="Hovedmenu">
+        <a href="#dagensret">Dagens ret</a>
+        <a href="#menukort">Menukort</a>
+        <a href="#om">Om Spiis</a>
+        <a href="#booking">Booking</a>
+        <a href="#kontakt">Kontakt</a>
+        <a href="#bestil" class="btn btn--small btn--accent nav__cta">Bestil dagens ret</a>
       </nav>
-
-      <a href="#pricing" class="btn btn-primary btn-sm header-cta">Få adgang</a>
-      <button class="nav-toggle" aria-label="Åbn menu" aria-expanded="false">
+      <button class="nav__burger" id="navBurger" aria-label="Åbn menu" aria-expanded="false">
         <span></span><span></span><span></span>
       </button>
     </div>
   </header>
 
+  <!-- ====== HERO ====== -->
+  <section class="hero" id="top">
+    <div class="hero__media">
+      <video id="heroVideo" autoplay muted loop playsinline preload="auto">
+        <source src="assets/hero.mp4" type="video/mp4" />
+      </video>
+      <div class="hero__overlay"></div>
+    </div>
+    <div class="hero__content">
+      <p class="hero__kicker" data-hero="1">Hjemmelavet · Friskt · Med kærlighed</p>
+      <h1 class="hero__title">
+        <span class="hero__line" data-hero="2"><span>Hjemmelavet mad,</span></span>
+        <span class="hero__line" data-hero="3"><span>når hverdagen er <em>travl</em></span></span>
+      </h1>
+      <p class="hero__sub" data-hero="4">Velsmag og kvalitet i hver en bid – nemt, hurtigt og altid en fornøjelse!</p>
+      <div class="hero__cta" data-hero="5">
+        <a href="#dagensret" class="btn btn--accent">Se dagens ret</a>
+        <a href="#booking" class="btn btn--ghost">Book arrangement</a>
+      </div>
+    </div>
+    <a href="#dagensret" class="hero__scroll" aria-label="Scroll ned">
+      <span class="hero__scroll-dot"></span>
+    </a>
+  </section>
+
+  <!-- ====== MARQUEE ====== -->
+  <div class="marquee" aria-hidden="true">
+    <div class="marquee__track">
+      <span>Hjemmelavet mad</span><i>✦</i><span>Frisk hver dag</span><i>✦</i><span>Ingen stress</span><i>✦</i><span>Ingen opvask</span><i>✦</i><span>Bare god mad</span><i>✦</i><span>Perfekt til børnefamilien</span><i>✦</i>
+      <span>Hjemmelavet mad</span><i>✦</i><span>Frisk hver dag</span><i>✦</i><span>Ingen stress</span><i>✦</i><span>Ingen opvask</span><i>✦</i><span>Bare god mad</span><i>✦</i><span>Perfekt til børnefamilien</span><i>✦</i>
+    </div>
+  </div>
+
   <main>
-    <!-- Hero -->
-    <section class="hero">
-      <div class="container hero-inner">
-        <span class="pill reveal">
-          <span class="dot"></span> Data fra fællesskabet · forstærket af AI
-        </span>
-        <h1 class="reveal">Smartere odds.<br><span class="grad-text">Mere præcise resultater.</span></h1>
-        <p class="lead reveal">
-          Få adgang til Oddsakademiets private sportsbetting-server, hvor data fra
-          tusindvis af spillere kombineres med kunstig intelligens — så du finder
-          værdispil hurtigere og mere præcist, end du kan alene.
-        </p>
-        <div class="hero-cta reveal">
-          <a href="#pricing" class="btn btn-primary btn-lg">Bliv medlem — 89 kr/md</a>
-          <a href="#how" class="btn btn-ghost btn-lg">Sådan virker det</a>
-        </div>
-        <div class="trust-row reveal">
-          <div><strong>24/7</strong><span>live signaler</span></div>
-          <div class="sep" aria-hidden="true"></div>
-          <div><strong>AI</strong><span>opdateret dagligt</span></div>
-          <div class="sep" aria-hidden="true"></div>
-          <div><strong>Ingen</strong><span>binding</span></div>
-        </div>
-      </div>
-    </section>
-
-    <!-- Features -->
-    <section class="section" id="features">
+    <!-- ====== DAGENS RET ====== -->
+    <section class="section" id="dagensret">
       <div class="container">
-        <div class="section-head reveal">
-          <span class="eyebrow">Hvorfor Oddsakademiet</span>
-          <h2>En fordel data alene ikke giver dig</h2>
-          <p>Vi forener menneskelig indsigt med maskinpræcision — så du får signaler, du kan handle på.</p>
+        <div class="section__head" data-reveal>
+          <p class="eyebrow">Frisklavet hver dag</p>
+          <h2>Dagens ret</h2>
+          <span class="dotline" aria-hidden="true"></span>
         </div>
 
-        <div class="grid grid-3">
-          <article class="card reveal">
-            <div class="card-icon">📊</div>
-            <h3>Data fra fællesskabet</h3>
-            <p>Indsigt og spilmønstre fra et stort fællesskab af erfarne spillere — samlet og kvalitetssikret hver dag.</p>
-          </article>
-          <article class="card reveal">
-            <div class="card-icon">🤖</div>
-            <h3>AI-præcision</h3>
-            <p>Vores model vægter tusindvis af variabler — form, skader og oddsbevægelser — og finder værdi, mennesker overser.</p>
-          </article>
-          <article class="card reveal">
-            <div class="card-icon">⚡</div>
-            <h3>Live signaler</h3>
-            <p>Få besked i realtid, når modellen finder et værdispil — før markedet når at justere sig.</p>
-          </article>
+        <div class="today" data-reveal>
+          <div class="today__badge">
+            <svg viewBox="0 0 64 40" class="steam" aria-hidden="true">
+              <path class="steam__line steam__line--1" d="M20 34c-3-4 3-7 0-11" />
+              <path class="steam__line steam__line--2" d="M32 36c-3-5 3-8 0-13" />
+              <path class="steam__line steam__line--3" d="M44 34c-3-4 3-7 0-11" />
+            </svg>
+            <span id="todayLabel">I dag</span>
+          </div>
+          <div class="today__body">
+            <h3 class="today__dish" id="todayDish">Indlæser…</h3>
+            <p class="today__desc" id="todayDesc"></p>
+            <div class="today__meta">
+              <span class="today__price" id="todayPrice"></span>
+              <a href="#bestil" class="btn btn--accent" id="todayOrderBtn">Bestil dagens ret</a>
+            </div>
+          </div>
+        </div>
+
+        <div class="weekplan" data-reveal>
+          <h3 class="weekplan__title">Ugen der kommer</h3>
+          <div class="weekplan__grid" id="weekPlan"><!-- js --></div>
         </div>
       </div>
     </section>
 
-    <!-- How it works -->
-    <section class="section section-alt" id="how">
+    <!-- ====== BESTIL DAGENS RET ====== -->
+    <section class="section section--tint" id="bestil">
+      <div class="container container--narrow">
+        <div class="section__head" data-reveal>
+          <p class="eyebrow">Nemt og hurtigt</p>
+          <h2>Bestil dagens ret</h2>
+          <span class="dotline" aria-hidden="true"></span>
+          <p class="section__lead">Udfyld formularen, så står maden klar til dig – som takeaway eller ved bordet.</p>
+        </div>
+
+        <form class="card form" id="orderForm" data-reveal novalidate>
+          <div class="form__grid">
+            <label class="field field--full">
+              <span>Dato</span>
+              <select id="orderDate" required></select>
+              <small class="field__hint" id="orderDishHint"></small>
+            </label>
+            <label class="field">
+              <span>Tidspunkt</span>
+              <select id="orderTime" required></select>
+            </label>
+            <label class="field">
+              <span>Antal kuverter</span>
+              <input type="number" id="orderQty" min="1" max="50" value="1" required />
+            </label>
+            <div class="field field--full">
+              <span>Hvordan vil du spise?</span>
+              <div class="segmented" role="radiogroup" aria-label="Takeaway eller spis her">
+                <label><input type="radio" name="orderType" value="togo" checked /><span>🥡 To-go</span></label>
+                <label><input type="radio" name="orderType" value="spise" /><span>🍽️ Spis her</span></label>
+              </div>
+            </div>
+            <label class="field">
+              <span>Navn</span>
+              <input type="text" id="orderName" placeholder="Dit fulde navn" autocomplete="name" required />
+            </label>
+            <label class="field">
+              <span>Telefonnummer</span>
+              <input type="tel" id="orderPhone" placeholder="12 34 56 78" autocomplete="tel" required />
+            </label>
+            <label class="field field--full">
+              <span>Besked <em>(valgfrit)</em></span>
+              <input type="text" id="orderNote" placeholder="Fx allergier eller særlige ønsker" />
+            </label>
+          </div>
+          <p class="form__error" id="orderError" hidden></p>
+          <button type="submit" class="btn btn--accent btn--big form__submit">Send bestilling</button>
+          <p class="form__note">Din bestilling ryger direkte ind i vores køkken-overblik – ingen mails, ingen ventetid.</p>
+        </form>
+
+        <div class="card success" id="orderSuccess" hidden>
+          <div class="success__check" aria-hidden="true">
+            <svg viewBox="0 0 52 52"><circle cx="26" cy="26" r="24" fill="none"/><path fill="none" d="M14 27l8 8 16-17"/></svg>
+          </div>
+          <h3>Tak for din bestilling!</h3>
+          <p id="orderSuccessText"></p>
+          <button class="btn btn--ghost-dark" id="orderAgainBtn" type="button">Lav en ny bestilling</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ====== MENUKORT ====== -->
+    <section class="section" id="menukort">
       <div class="container">
-        <div class="section-head reveal">
-          <span class="eyebrow">Sådan virker det</span>
-          <h2>Fra rådata til vindende spil</h2>
+        <div class="section__head" data-reveal>
+          <p class="eyebrow">Altid noget godt</p>
+          <h2>Menukort</h2>
+          <span class="dotline" aria-hidden="true"></span>
+          <p class="section__lead">Menuen skifter løbende, så du altid får varieret og frisk mad – lavet med kærlighed.</p>
         </div>
 
-        <div class="steps">
-          <div class="step reveal">
-            <span class="step-num">1</span>
-            <h3>Vi samler data</h3>
-            <p>Indsigt fra fællesskabet, statistik og live oddsbevægelser strømmer ind døgnet rundt.</p>
-          </div>
-          <div class="step reveal">
-            <span class="step-num">2</span>
-            <h3>AI analyserer</h3>
-            <p>Modellen vægter det hele og rangerer spil efter forventet værdi.</p>
-          </div>
-          <div class="step reveal">
-            <span class="step-num">3</span>
-            <h3>Du får signalet</h3>
-            <p>Klare anbefalinger med odds, indsats og begrundelse — direkte på serveren.</p>
-          </div>
-        </div>
+        <div class="daytabs" id="dayTabs" role="tablist" aria-label="Ugedage" data-reveal><!-- js --></div>
+        <div class="daymenu card" id="dayMenu" data-reveal><!-- js --></div>
+
+        <h3 class="menucats__title" data-reveal>Fast sortiment</h3>
+        <div class="menucats" id="menuCategories"><!-- js --></div>
       </div>
     </section>
 
-    <!-- Pricing -->
-    <section class="section" id="pricing">
+    <!-- ====== OM SPIIS ====== -->
+    <section class="section section--dark" id="om">
       <div class="container">
-        <div class="section-head reveal">
-          <span class="eyebrow">Medlemskab</span>
-          <h2>Få adgang til serveren</h2>
-          <p>Én plan. Fuld adgang. Opsig når du vil.</p>
-        </div>
-
-        <div class="price-card reveal">
-          <div class="price-badge">Mest populær</div>
-          <h3 class="price-title">Pro-adgang</h3>
-          <div class="price">
-            <span class="amount" id="price-amount">89 kr</span>
-            <span class="period">/ måned</span>
+        <div class="about">
+          <div class="about__text" data-reveal>
+            <p class="eyebrow eyebrow--light">Hvem er vi?</p>
+            <h2>Mad med nærvær,<br/>lavet fra bunden</h2>
+            <span class="dotline dotline--light" aria-hidden="true"></span>
+            <p>Hos Spiis laver vi smagfulde, hjemmelavede måltider til dig, der ikke altid har tid til at lave mad fra bunden. Vi tror på kvalitet, nærvær og god smag – og vores menu skifter løbende, så du altid får varieret og frisk mad lavet med kærlighed.</p>
+            <p>Perfekt til børnefamilien, den travle hverdag – eller bare når du vil forkæles lidt ekstra.</p>
+            <p class="about__sign">Velbekomme – fra hele holdet hos Spiis! 👋</p>
           </div>
-          <ul class="price-list">
-            <li>Fuld adgang til den private server</li>
-            <li>AI-signaler i realtid</li>
-            <li>Daglige gennemgange og strategi</li>
-            <li>Indsigt fra fællesskabet</li>
-            <li>Opsig når som helst — ingen binding</li>
-          </ul>
-
-          <!-- =========================================================
-               STRIPE PAYMENT LINK
-               Skift href / data-payment-link ud med din Stripe Payment Link.
-               (Produkt: prod_R1Hzl2ffai5vaI)
-               ========================================================= -->
-          <a id="checkout-btn"
-             href="https://buy.stripe.com/fZe7tw7lb66meiIfYY"
-             data-payment-link="https://buy.stripe.com/fZe7tw7lb66meiIfYY"
-             class="btn btn-primary btn-lg btn-block">
-            Sikr din plads
-          </a>
-          <p class="price-fine">Sikker betaling via Stripe · SSL-krypteret</p>
-        </div>
-
-        <p class="responsible">Spil ansvarligt · 18+ · Oddsakademiet leverer analyser og signaler — ingen garanti for gevinst.</p>
-      </div>
-    </section>
-
-    <!-- FAQ -->
-    <section class="section section-alt" id="faq">
-      <div class="container narrow">
-        <div class="section-head reveal">
-          <span class="eyebrow">FAQ</span>
-          <h2>Ofte stillede spørgsmål</h2>
-        </div>
-
-        <div class="faq">
-          <details class="reveal">
-            <summary>Hvad får jeg adgang til?</summary>
-            <p>Du får adgang til vores private sportsbetting-server med AI-signaler, daglige analyser og et fællesskab af erfarne spillere.</p>
-          </details>
-          <details class="reveal">
-            <summary>Garanterer I gevinst?</summary>
-            <p>Nej. Vi leverer datadrevne analyser og signaler, der øger sandsynligheden for værdispil over tid. Betting indebærer altid risiko.</p>
-          </details>
-          <details class="reveal">
-            <summary>Kan jeg opsige når som helst?</summary>
-            <p>Ja. Medlemskabet er fleksibelt, og du kan opsige når du vil — uden binding.</p>
-          </details>
-          <details class="reveal">
-            <summary>Hvordan fungerer betalingen?</summary>
-            <p>Betalingen håndteres sikkert via Stripe. Du betaler 89 kr/md og får adgang til serveren med det samme.</p>
-          </details>
+          <div class="about__values">
+            <div class="value card--dark" data-reveal>
+              <span class="value__icon">🥘</span>
+              <h3>Kvalitet</h3>
+              <p>Alt laves fra bunden af gode råvarer – hver eneste dag.</p>
+            </div>
+            <div class="value card--dark" data-reveal>
+              <span class="value__icon">🤝</span>
+              <h3>Nærvær</h3>
+              <p>Vi kender vores gæster, og du er altid velkommen til en snak.</p>
+            </div>
+            <div class="value card--dark" data-reveal>
+              <span class="value__icon">😋</span>
+              <h3>God smag</h3>
+              <p>Ingen stress. Ingen opvask. Bare god mad.</p>
+            </div>
+          </div>
         </div>
       </div>
     </section>
 
-    <!-- Final CTA -->
-    <section class="cta-final">
-      <div class="container reveal">
-        <h2>Klar til at spille smartere?</h2>
-        <p>Lad data og AI gøre det tunge arbejde.</p>
-        <a href="#pricing" class="btn btn-primary btn-lg">Få adgang — 89 kr/md</a>
+    <!-- ====== BOOKING ====== -->
+    <section class="section section--tint" id="booking">
+      <div class="container">
+        <div class="section__head" data-reveal>
+          <p class="eyebrow">Arrangementer & møder</p>
+          <h2>Book os</h2>
+          <span class="dotline" aria-hidden="true"></span>
+          <p class="section__lead">Skal vi stå for maden til jeres arrangement, eller vil du mødes med os og vende mulighederne? Book direkte her – så har vi al informationen klar, inden vi ses.</p>
+        </div>
+
+        <div class="booking__choice" data-reveal>
+          <button class="choice is-active" type="button" data-kind="arrangement">
+            <span class="choice__icon">🎉</span>
+            <span class="choice__title">Book et arrangement</span>
+            <span class="choice__desc">Fødselsdag, fest, klubaften eller firmaevent – vi klarer maden.</span>
+          </button>
+          <button class="choice" type="button" data-kind="moede">
+            <span class="choice__icon">📅</span>
+            <span class="choice__title">Book et fysisk møde</span>
+            <span class="choice__desc">Kom forbi og lad os tale om jeres ønsker, inden I beslutter jer.</span>
+          </button>
+        </div>
+
+        <div class="booking__layout">
+          <form class="card form" id="bookingForm" data-reveal novalidate>
+            <input type="hidden" id="bookingKind" value="arrangement" />
+            <div class="form__grid">
+              <label class="field field--full">
+                <span id="bookingSubjectLabel">Hvad drejer arrangementet sig om?</span>
+                <input type="text" id="bookingSubject" placeholder="Fx konfirmation for 30 personer" required />
+              </label>
+              <label class="field field--full">
+                <span>Fortæl os lidt mere <em>(valgfrit)</em></span>
+                <textarea id="bookingDesc" rows="3" placeholder="Antal gæster, ønsker til menuen, særlige hensyn…"></textarea>
+              </label>
+              <label class="field">
+                <span>Ønsket dato</span>
+                <input type="date" id="bookingDate" required />
+                <small class="field__hint" id="bookingAvail"></small>
+              </label>
+              <label class="field">
+                <span>Tidspunkt</span>
+                <select id="bookingTime" required></select>
+              </label>
+              <label class="field">
+                <span>Navn</span>
+                <input type="text" id="bookingName" placeholder="Dit fulde navn" autocomplete="name" required />
+              </label>
+              <label class="field">
+                <span>Telefonnummer</span>
+                <input type="tel" id="bookingPhone" placeholder="12 34 56 78" autocomplete="tel" required />
+              </label>
+              <label class="field field--full">
+                <span>E-mail <em>(valgfrit)</em></span>
+                <input type="email" id="bookingEmail" placeholder="din@mail.dk" autocomplete="email" />
+              </label>
+            </div>
+            <p class="form__error" id="bookingError" hidden></p>
+            <button type="submit" class="btn btn--accent btn--big form__submit" id="bookingSubmit">Send booking</button>
+            <p class="form__note">Vi bekræfter din booking hurtigst muligt på telefon.</p>
+          </form>
+
+          <aside class="booking__aside" data-reveal>
+            <div class="card contactcard">
+              <h3>…eller skriv direkte</h3>
+              <p>Vil du hellere bare tage fat i os? Det er altid velkomment.</p>
+              <a class="contactcard__row" id="contactPhone" href="tel:+4593995858">
+                <span class="contactcard__icon">📞</span><span>93 99 58 58</span>
+              </a>
+              <a class="contactcard__row" id="contactEmail" href="mailto:spiis.bestilling@gmail.com">
+                <span class="contactcard__icon">✉️</span><span>spiis.bestilling@gmail.com</span>
+              </a>
+            </div>
+          </aside>
+        </div>
+
+        <div class="card success container--narrow" id="bookingSuccess" hidden>
+          <div class="success__check" aria-hidden="true">
+            <svg viewBox="0 0 52 52"><circle cx="26" cy="26" r="24" fill="none"/><path fill="none" d="M14 27l8 8 16-17"/></svg>
+          </div>
+          <h3>Tak for din booking!</h3>
+          <p id="bookingSuccessText"></p>
+          <button class="btn btn--ghost-dark" id="bookAgainBtn" type="button">Lav en ny booking</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ====== ÅBNINGSTIDER & KONTAKT ====== -->
+    <section class="section" id="kontakt">
+      <div class="container">
+        <div class="section__head" data-reveal>
+          <p class="eyebrow">Kom forbi</p>
+          <h2>Åbningstider & kontakt</h2>
+          <span class="dotline" aria-hidden="true"></span>
+        </div>
+        <div class="contact">
+          <div class="card hourscard" data-reveal>
+            <h3>Åbningstider</h3>
+            <table class="hours" id="hoursTable"><!-- js --></table>
+            <p class="hours__status" id="openStatus"></p>
+          </div>
+          <div class="card infocard" data-reveal>
+            <h3>Her finder du os</h3>
+            <p class="infocard__address" id="addressText">
+              Karlslunde Idrætsforening<br/>Kongens Enge 42<br/>2690 Karlslunde
+            </p>
+            <a class="btn btn--ghost-dark" href="https://maps.google.com/?q=Kongens+Enge+42,+2690+Karlslunde" target="_blank" rel="noopener">Åbn i Google Maps</a>
+            <div class="infocard__contact">
+              <a href="tel:+4593995858">📞 93 99 58 58</a>
+              <a href="mailto:spiis.bestilling@gmail.com">✉️ spiis.bestilling@gmail.com</a>
+            </div>
+          </div>
+        </div>
       </div>
     </section>
   </main>
 
-  <!-- Footer -->
-  <footer class="site-footer">
-    <div class="container footer-inner">
-      <a href="#top" class="brand">
-        <span class="logo" aria-hidden="true">OA</span>
-        <span class="brand-name">Oddsakademiet</span>
-      </a>
-      <span class="footer-meta">© <span id="year"></span> Oddsakademiet · Spil ansvarligt · 18+</span>
+  <!-- ====== FOOTER ====== -->
+  <footer class="footer">
+    <div class="container footer__inner">
+      <div class="footer__brand">
+        <span class="logo logo--footer">
+          <svg class="logo__hat" viewBox="0 0 48 48" aria-hidden="true">
+            <path d="M15 30v7c0 1.7 1.3 3 3 3h12c1.7 0 3-1.3 3-3v-7" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>
+            <path d="M14.5 31c-4.7-.6-8.5-4.6-8.5-9.4 0-4.6 3.4-8.4 7.9-9.3C15.2 8.5 19.2 6 24 6s8.8 2.5 10.1 6.3c4.5.9 7.9 4.7 7.9 9.3 0 4.8-3.8 8.8-8.5 9.4" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>
+            <path d="M20 30v4M24 30v4M28 30v4" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/>
+          </svg>
+          <span class="logo__word">Spiis<span class="logo__dots"></span></span>
+        </span>
+        <p>Velsmag og kvalitet i hver en bid.</p>
+      </div>
+      <nav class="footer__links" aria-label="Sidefod">
+        <a href="#dagensret">Dagens ret</a>
+        <a href="#menukort">Menukort</a>
+        <a href="#booking">Booking</a>
+        <a href="#kontakt">Kontakt</a>
+      </nav>
+      <div class="footer__meta">
+        <p>© <span id="year"></span> Spiis · Karlslunde</p>
+        <a href="admin.html" class="footer__admin">Personale-login</a>
+      </div>
     </div>
   </footer>
 
-  <script src="script.js"></script>
+  <script src="js/store.js"></script>
+  <script src="js/main.js"></script>
 </body>
 </html>
