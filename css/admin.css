@@ -399,6 +399,20 @@ button { font-family: var(--font-body); }
 .row--done { opacity: 0.55; }
 .row--done:hover { opacity: 1; }
 
+/* dato/tid-editor på bookinger: foldes ud i rækken */
+.bkedit {
+  flex-basis: 100%;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: flex-end;
+  padding-top: 12px;
+  margin-top: 4px;
+  border-top: 1.6px dashed rgba(28, 24, 20, 0.15);
+}
+.bkedit .afield { min-width: 180px; flex: 1; max-width: 260px; }
+.bkedit .abtn { margin-bottom: 2px; }
+
 /* tjekliste-flueben: tryk for færdig, tryk igen for at fortryde */
 .checkbtn {
   width: 44px;

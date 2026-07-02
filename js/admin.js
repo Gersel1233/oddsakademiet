@@ -289,9 +289,15 @@
           </div>
         </div>
         <div class="row__actions">
-          ${b.status !== 'bekraeftet' ? `<button class="abtn abtn--green" data-act="booking-ok" data-id="${b.id}">${isMoede ? '✓ Bekræft' : '✓ Aftalt'}</button>` : ''}
+          <button class="abtn ${b.status === 'bekraeftet' ? 'abtn--ghost' : 'abtn--green'}" data-act="booking-edit" data-id="${b.id}">${b.status === 'bekraeftet' ? '🖉 Ret dato/tid' : (isMoede ? '✓ Bekræft & sæt tid' : '✓ Aftal & sæt tid')}</button>
           ${b.status !== 'afvist' ? `<button class="abtn abtn--ghost" data-act="booking-no" data-id="${b.id}">Afvis</button>` : ''}
           <button class="abtn abtn--danger abtn--icon" data-act="booking-del" data-id="${b.id}" aria-label="Slet">🗑</button>
+        </div>
+        <div class="bkedit" hidden>
+          <label class="afield"><span>Dato</span><input type="date" class="bkedit__date" value="${esc(b.date || '')}" /></label>
+          <label class="afield"><span>Tidspunkt</span><select class="bkedit__time"></select></label>
+          <button class="abtn abtn--accent" data-act="booking-save" data-id="${b.id}">✓ Gem aftalen</button>
+          <button class="abtn abtn--ghost" data-act="booking-close">Luk</button>
         </div>
       </div>`;
   }
@@ -973,10 +979,37 @@
       if (!confirm('Slet denne bestilling?')) return;
       S.deleteOrder(id);
     }
-    else if (act === 'booking-ok') {
-      const bk = S.getBookings().find((x) => x.id === id);
-      S.updateBooking(id, { status: 'bekraeftet', read: true });
-      toast(bk && bk.kind === 'moede' ? 'Mødet er bekræftet – husk at ringe til kunden ✓' : 'Markeret som aftalt ✓');
+    else if (act === 'booking-edit') {
+      /* fold dato/tid-editoren ud i rækken – og læg kundens ønske i felterne */
+      const editor = btn.closest('.row').querySelector('.bkedit');
+      editor.hidden = !editor.hidden;
+      if (!editor.hidden) {
+        const bk = S.getBookings().find((x) => x.id === id) || {};
+        const timeSel = editor.querySelector('.bkedit__time');
+        if (!timeSel.options.length) {
+          const opts = [];
+          for (let m = 8 * 60; m <= 23 * 60 + 30; m += 30) {
+            const t = `${String(Math.floor(m / 60)).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}`;
+            opts.push(`<option value="${t}">kl. ${t}</option>`);
+          }
+          timeSel.innerHTML = opts.join('');
+        }
+        timeSel.value = bk.time || '18:00';
+        SpiisDatepicker.attach(editor.querySelector('.bkedit__date'), { min: S.todayISO() });
+      }
+      return;
+    }
+    else if (act === 'booking-save') {
+      const editor = btn.closest('.bkedit');
+      const date = editor.querySelector('.bkedit__date').value;
+      const time = editor.querySelector('.bkedit__time').value;
+      if (!date) { toast('Vælg en dato for aftalen'); return; }
+      S.updateBooking(id, { date, time, status: 'bekraeftet', read: true });
+      toast(`Aftalen er på plads: ${S.formatDate(date)} kl. ${time} ✓`);
+    }
+    else if (act === 'booking-close') {
+      btn.closest('.bkedit').hidden = true;
+      return;
     }
     else if (act === 'booking-no') { S.updateBooking(id, { status: 'afvist', read: true }); }
     else if (act === 'booking-del') {
