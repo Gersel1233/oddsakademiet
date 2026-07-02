@@ -50,6 +50,7 @@ create table if not exists public.bookings (
   name text not null,
   phone text not null,
   email text not null default '',
+  staff_note text not null default '', /* intern note – kun synlig i admin */
   status text not null default 'ny',
   read boolean not null default false,
   created_at timestamptz not null default now()

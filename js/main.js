@@ -448,7 +448,7 @@
 
     /* indeks over alt, der kan bestilles på den valgte dag */
     builderIndex = {};
-    if (dish) builderIndex.dagens = { name: dish.title, price: dish.price ?? null, kind: 'dagensret' };
+    if (dish) builderIndex.dagens = { name: dish.title, price: dish.price ?? null, kind: 'dagensret', cat: 'Dagens ret' };
     const groups = [];
     const extras = (menu.weekly[wIdx] || []).filter((i) => i.name);
     if (extras.length) groups.push({ name: 'Dagens ekstra retter', items: extras });
@@ -456,7 +456,7 @@
       .filter((cat) => cat.availability !== 'hverdage' || !weekend)
       .forEach((cat) => groups.push({ name: cat.name, items: cat.items.filter((i) => i.name) }));
     groups.forEach((g) => g.items.forEach((item) => {
-      builderIndex['m::' + item.name] = { name: item.name, price: item.price ?? null, kind: 'menu' };
+      builderIndex['m::' + item.name] = { name: item.name, price: item.price ?? null, kind: 'menu', cat: g.name };
     }));
 
     /* ryd kurven for varer, der ikke findes på den valgte dag */
@@ -528,7 +528,7 @@
     const max = key === 'dagens' ? S.getRemaining(orderDate.value) : 50;
     if (max !== null && next > max) next = max;
     if (next <= 0) delete basket[key];
-    else basket[key] = { name: info.name, qty: next, price: info.price, kind: info.kind };
+    else basket[key] = { name: info.name, qty: next, price: info.price, kind: info.kind, cat: info.cat };
     renderBuilder();
   });
 

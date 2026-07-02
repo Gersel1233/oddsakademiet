@@ -229,31 +229,50 @@
     return [...map.entries()].sort((a, b) => b[1].total - a[1].total);
   }
 
-  /* dagens forløb: bestillinger + dagens bookinger i tidsorden */
+  /* dagens forløb: bestillinger + dagens møder i tidsorden
+     (arrangementer har deres egen sektion i køreplanen) */
   function dayTimeline(iso) {
     const entries = [
       ...S.getOrders(iso).map((o) => ({ time: o.time || '', kind: 'order', o })),
       ...S.getBookings()
-        .filter((b) => b.date === iso && b.status !== 'afvist')
+        .filter((b) => b.date === iso && b.status !== 'afvist' && b.kind !== 'arrangement')
         .map((b) => ({ time: b.time || '', kind: 'booking', b })),
     ];
     /* poster uden tidspunkt (fx aftalte arrangementer uden fast tid) først */
     return entries.sort((a, b) => (a.time || '00:00').localeCompare(b.time || '00:00'));
   }
 
+  /* navne på drikkevarer, så bestillinger kan deles i mad / drikke */
+  function drinkNameSet() {
+    const set = new Set();
+    S.getMenu().categories.forEach((c) => {
+      if (/drik/i.test(c.name || '') || /drik/i.test(c.id || '')) {
+        c.items.forEach((i) => set.add(i.name));
+      }
+    });
+    return set;
+  }
+
   function orderRow(o, showDate = false) {
-    const lines = orderLines(o).map((l) => `${l.qty} × ${esc(l.name)}`).join(' · ') || 'Tom bestilling';
+    const all = orderLines(o);
+    const drinks = drinkNameSet();
+    const isDrink = (l) => (l.cat ? /drik/i.test(l.cat) : drinks.has(l.name));
+    const food = all.filter((l) => !isDrink(l));
+    const drink = all.filter(isDrink);
+    const li = (l) => `<li><b>${l.qty} ×</b> ${esc(l.name)}${l.kind === 'dagensret' ? '<span class="tag tag--accent">Dagens ret</span>' : ''}</li>`;
     const done = o.status !== 'ny';
     return `
       <div class="row ${done ? 'row--done' : 'row--new'}">
         <div class="row__main">
-          <div class="row__title">${lines}
+          <div class="row__title">${esc(o.name)}
             ${personsOf(o) ? `<span class="tag">👥 ${personsOf(o)} pers.</span>` : ''}
             <span class="tag ${o.type === 'togo' ? 'tag--accent' : 'tag--ink'}">${o.type === 'togo' ? '🥡 To-go' : '🍽️ Spiser her'}</span>
             ${done ? '' : '<span class="tag tag--red">Ny</span>'}
           </div>
+          ${food.length ? `<ul class="olist">${food.map(li).join('')}</ul>` : ''}
+          ${drink.length ? `<div class="olist__sep"></div><ul class="olist olist--drinks">${drink.map(li).join('')}</ul>` : ''}
           <div class="row__sub">
-            ${showDate ? `${esc(S.formatDate(o.date))} · ` : ''}kl. ${esc(o.time)} · ${esc(o.name)} · 📞 ${esc(o.phone)}
+            ${showDate ? `${esc(S.formatDate(o.date))} · ` : ''}kl. ${esc(o.time)} · 📞 ${esc(o.phone)}
             ${o.note ? ` · 💬 ${esc(o.note)}` : ''}
           </div>
         </div>
@@ -287,16 +306,18 @@
             ${when} · ${esc(b.name)} · 📞 ${esc(b.phone)}${b.email ? ` · ✉️ ${esc(b.email)}` : ''}
             ${b.desc ? `<br/>💬 ${esc(b.desc)}` : ''}
           </div>
+          ${b.staff_note ? `<div class="staffnote">📝 ${esc(b.staff_note)}</div>` : ''}
         </div>
         <div class="row__actions">
-          <button class="abtn ${b.status === 'bekraeftet' ? 'abtn--ghost' : 'abtn--green'}" data-act="booking-edit" data-id="${b.id}">${b.status === 'bekraeftet' ? '🖉 Ret dato/tid' : (isMoede ? '✓ Bekræft & sæt tid' : '✓ Aftal & sæt tid')}</button>
+          <button class="abtn ${b.status === 'bekraeftet' ? 'abtn--ghost' : 'abtn--green'}" data-act="booking-edit" data-id="${b.id}">${b.status === 'bekraeftet' ? '🖉 Ret / notér' : (isMoede ? '✓ Bekræft & sæt tid' : '✓ Aftal & sæt tid')}</button>
           ${b.status !== 'afvist' ? `<button class="abtn abtn--ghost" data-act="booking-no" data-id="${b.id}">Afvis</button>` : ''}
           <button class="abtn abtn--danger abtn--icon" data-act="booking-del" data-id="${b.id}" aria-label="Slet">🗑</button>
         </div>
         <div class="bkedit" hidden>
           <label class="afield"><span>Dato</span><input type="date" class="bkedit__date" value="${esc(b.date || '')}" /></label>
           <label class="afield"><span>Tidspunkt</span><select class="bkedit__time"></select></label>
-          <button class="abtn abtn--accent" data-act="booking-save" data-id="${b.id}">✓ Gem aftalen</button>
+          <label class="afield afield--wide"><span>Intern note <em>(kun til jer – aldrig synlig for kunder)</em></span><textarea class="bkedit__note" rows="2" placeholder="Fx: Dæk op til 20 på venstre fløj med servietter, bestik og flag">${esc(b.staff_note || '')}</textarea></label>
+          <button class="abtn abtn--accent" data-act="booking-save" data-id="${b.id}">✓ Gem</button>
           <button class="abtn abtn--ghost" data-act="booking-close">Luk</button>
         </div>
       </div>`;
@@ -350,8 +371,11 @@
           <span class="sub">${esc(S.formatDate(today))} · det ene sted, der skal tjekkes, når I møder ind</span>
         </div>
 
-        ${todaysArrangements.length ? todaysArrangements.map((b) => `
-          <div class="kp__alert">🎉 I dag: ${esc(b.subject)} ${b.time ? `· kl. ${esc(b.time)}` : '· tidspunkt aftalt direkte'} · ${esc(b.name)} 📞 ${esc(b.phone)}${b.desc ? ` · 💬 ${esc(b.desc)}` : ''}</div>`).join('') : ''}
+        ${todaysArrangements.length ? `
+        <h3 class="kp__sub">🎉 Dagens arrangementer</h3>
+        <div class="rowlist rowlist--arr">
+          ${todaysArrangements.map(bookingRow).join('')}
+        </div>` : ''}
 
         <h3 class="kp__sub">🧾 Produktion i alt</h3>
         ${totalsSplit.length
@@ -1003,9 +1027,10 @@
       const editor = btn.closest('.bkedit');
       const date = editor.querySelector('.bkedit__date').value;
       const time = editor.querySelector('.bkedit__time').value;
+      const staffNote = editor.querySelector('.bkedit__note').value.trim();
       if (!date) { toast('Vælg en dato for aftalen'); return; }
-      S.updateBooking(id, { date, time, status: 'bekraeftet', read: true });
-      toast(`Aftalen er på plads: ${S.formatDate(date)} kl. ${time} ✓`);
+      S.updateBooking(id, { date, time, staff_note: staffNote, status: 'bekraeftet', read: true });
+      toast(`Gemt: ${S.formatDate(date)} kl. ${time} ✓`);
     }
     else if (act === 'booking-close') {
       btn.closest('.bkedit').hidden = true;
