@@ -3,6 +3,7 @@ name: Deploy to GitHub Pages
 on:
   push:
     branches:
+      - claude/spiis-restaurant-site-hbq4ik
       - claude/zen-davinci-m2j0ah
       - main
   workflow_dispatch:
