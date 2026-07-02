@@ -217,6 +217,30 @@
     return [...map.entries()].sort((a, b) => b[1] - a[1]);
   }
 
+  /* samme, men delt op i to-go / spiser her pr. ret */
+  function dishTotalsSplit(orders) {
+    const map = new Map();
+    orders.forEach((o) => orderLines(o).forEach((l) => {
+      const e = map.get(l.name) || { total: 0, togo: 0, spise: 0 };
+      e.total += Number(l.qty);
+      e[o.type === 'togo' ? 'togo' : 'spise'] += Number(l.qty);
+      map.set(l.name, e);
+    }));
+    return [...map.entries()].sort((a, b) => b[1].total - a[1].total);
+  }
+
+  /* dagens forløb: bestillinger + dagens bookinger i tidsorden */
+  function dayTimeline(iso) {
+    const entries = [
+      ...S.getOrders(iso).map((o) => ({ time: o.time || '', kind: 'order', o })),
+      ...S.getBookings()
+        .filter((b) => b.date === iso && b.status !== 'afvist')
+        .map((b) => ({ time: b.time || '', kind: 'booking', b })),
+    ];
+    /* poster uden tidspunkt (fx aftalte arrangementer uden fast tid) først */
+    return entries.sort((a, b) => (a.time || '00:00').localeCompare(b.time || '00:00'));
+  }
+
   function orderRow(o, showDate = false) {
     const lines = orderLines(o).map((l) => `${l.qty} × ${esc(l.name)}`).join(' · ') || 'Tom bestilling';
     return `
@@ -280,9 +304,13 @@
     const dineIn = persons - togo;
     const dish = S.getDagensRet(today);
     const dagensSold = S.getSold(today);
-    const totals = dishTotals(orders);
+    const totalsSplit = dishTotalsSplit(orders);
+    const timeline = dayTimeline(today);
+    const todaysArrangements = S.getBookings().filter((b) =>
+      b.date === today && b.kind === 'arrangement' && b.status !== 'afvist');
+    /* dagens bookinger står i køreplanen – her vises kun det kommende/ubesvarede */
     const upcoming = S.getBookings().filter((b) =>
-      b.status === 'ny' || (b.status === 'bekraeftet' && b.date && b.date >= today));
+      (b.status === 'ny' && b.date !== today) || (b.status === 'bekraeftet' && b.date && b.date > today));
     const newBookings = S.getBookings().filter((b) => b.status === 'ny').length;
 
     $('#view-overblik').innerHTML = `
@@ -311,12 +339,27 @@
 
       <div class="acard">
         <div class="acard__head">
-          <h2>🧾 Produktionsliste i dag</h2>
-          <span class="sub">alle bestilte retter lagt sammen på tværs af bestillinger</span>
+          <h2>📋 Dagens køreplan</h2>
+          <span class="sub">${esc(S.formatDate(today))} · det ene sted, der skal tjekkes, når I møder ind</span>
         </div>
-        ${totals.length
-          ? `<div class="prodlist">${totals.map(([n, q]) => `<span class="prod"><b>${q}</b>${esc(n)}</span>`).join('')}</div>`
+
+        ${todaysArrangements.length ? todaysArrangements.map((b) => `
+          <div class="kp__alert">🎉 I dag: ${esc(b.subject)} ${b.time ? `· kl. ${esc(b.time)}` : '· tidspunkt aftalt direkte'} · ${esc(b.name)} 📞 ${esc(b.phone)}${b.desc ? ` · 💬 ${esc(b.desc)}` : ''}</div>`).join('') : ''}
+
+        <h3 class="kp__sub">🧾 Produktion i alt</h3>
+        ${totalsSplit.length
+          ? `<div class="prodlist">${totalsSplit.map(([n, t]) => `<span class="prod"><b>${t.total}</b>${esc(n)}<em>🥡 ${t.togo} · 🍽️ ${t.spise}</em></span>`).join('')}</div>`
           : '<div class="empty">Ingen bestillinger endnu – listen fyldes op, efterhånden som kunderne bestiller.</div>'}
+
+        <h3 class="kp__sub">⏰ Dagens forløb</h3>
+        ${timeline.length ? `
+        <div class="timeline">
+          ${timeline.map((e) => `
+            <div class="tl">
+              <div class="tl__time">${e.time ? `kl.<br/>${esc(e.time)}` : '<small>tid<br/>aftales</small>'}</div>
+              ${e.kind === 'order' ? orderRow(e.o) : bookingRow(e.b)}
+            </div>`).join('')}
+        </div>` : '<div class="empty">Ingen bestillinger eller aftaler endnu i dag.</div>'}
       </div>
 
       <div class="acard">
@@ -337,17 +380,7 @@
 
       <div class="acard">
         <div class="acard__head">
-          <h2>🥡 Dagens bestillinger</h2>
-          <span class="sub">${orders.length} bestilling${orders.length === 1 ? '' : 'er'} · ${itemsTotal} retter · ${persons} personer</span>
-        </div>
-        <div class="rowlist">
-          ${orders.length ? orders.map((o) => orderRow(o)).join('') : '<div class="empty">Ingen bestillinger endnu i dag – de dukker op her, i samme sekund kunderne trykker "Send bestilling".</div>'}
-        </div>
-      </div>
-
-      <div class="acard">
-        <div class="acard__head">
-          <h2>📅 Bookinger & forespørgsler</h2>
+          <h2>📅 Kommende & ubesvarede</h2>
           <button class="abtn abtn--ghost" data-goto="bookinger">Se alle →</button>
         </div>
         <div class="rowlist">
