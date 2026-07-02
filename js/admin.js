@@ -52,6 +52,9 @@
       $('#loginHint').textContent = 'Log ind med chefens e-mail og adgangskode.';
       $('#loginError').textContent = 'Forkert e-mail eller adgangskode.';
     }
+    if (S.isCloudConfigured() && S.isCloudDown()) {
+      $('#loginHint').textContent = '⚠️ Ingen forbindelse til databasen lige nu – tjek internettet og genindlæs siden.';
+    }
   }
   syncLoginMode();
 

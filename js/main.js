@@ -554,6 +554,22 @@
     emailLink.lastElementChild.textContent = s.email;
   }
 
+  /* ---------- besked hvis den fælles database er nede ----------
+     Uden den ville en bestilling kun lande i kundens egen browser
+     og aldrig nå køkkenet – så hellere bede folk ringe. */
+  function renderCloudNotice() {
+    const down = S.isCloudConfigured() && S.isCloudDown();
+    const phone = S.getSettings().phone;
+    $('#orderOffline').hidden = !down;
+    $('#bookingOffline').hidden = !down;
+    if (down) {
+      $('#orderOffline').textContent = `⚠️ Online-bestilling er nede i øjeblikket. Ring til os på ${phone}, så klarer vi det over telefonen.`;
+      $('#bookingOffline').textContent = `⚠️ Online-booking er nede i øjeblikket. Ring til os på ${phone}, så finder vi en dag sammen.`;
+    }
+    $('#orderForm button[type="submit"]').disabled = down;
+    $('#bookingSubmit').disabled = down;
+  }
+
   /* ---------- footer ---------- */
   $('#year').textContent = new Date().getFullYear();
 
@@ -567,6 +583,7 @@
     renderHours();
     renderOrderDates();
     renderContact();
+    renderCloudNotice();
   }
   renderAll();
 
@@ -578,6 +595,7 @@
     renderCategories();
     renderHours();
     renderContact();
+    renderCloudNotice();
     /* genopfrisk datolisten (lagerstatus), medmindre man er midt i formularen */
     const form = $('#orderForm');
     if (!form.hidden && !form.contains(document.activeElement)) {

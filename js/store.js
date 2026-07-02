@@ -286,20 +286,38 @@ const SpiisStore = (() => {
     } catch { /* prøver igen ved næste opdatering */ }
   }
 
+  /* Hent alle rækker sidevist – databasen leverer højst 1000 pr. kald,
+     så på travle dage (50+ bestillinger) skal der blades. */
+  async function sbRows(basePath, auth = true) {
+    const rows = [];
+    for (let pageIdx = 0; pageIdx < 10; pageIdx++) {
+      const from = pageIdx * 1000;
+      const res = await sbFetch(basePath, {
+        auth,
+        headers: { 'Range-Unit': 'items', Range: `${from}-${from + 999}` },
+      });
+      if (!res.ok) throw new Error('fetch ' + res.status);
+      const page = await res.json();
+      rows.push(...page);
+      if (page.length < 1000) break;
+    }
+    return rows;
+  }
+
   async function fetchAdminData() {
     if (!cloud || !session) return;
-    const [oRes, bRes, nRes] = await Promise.all([
-      sbFetch('/rest/v1/orders?select=*&order=created_at.asc', { auth: true }),
-      sbFetch('/rest/v1/bookings?select=*&order=created_at.asc', { auth: true }),
-      sbFetch('/rest/v1/notes?select=*', { auth: true }),
+    /* bestillinger fra de seneste 60 dage – rigeligt til ugeoverblik og
+       tilbageblik, og holder mængden nede når der er drift hver dag */
+    const ordersFrom = addDays(todayISO(), -60);
+    const [orders, bookings, notes] = await Promise.all([
+      sbRows(`/rest/v1/orders?select=*&date=gte.${ordersFrom}&order=created_at.asc`),
+      sbRows('/rest/v1/bookings?select=*&order=created_at.asc'),
+      sbRows('/rest/v1/notes?select=*'),
     ]);
-    if (oRes.ok) data.orders = (await oRes.json()).map(rowToOrder);
-    if (bRes.ok) data.bookings = (await bRes.json()).map(rowToBooking);
-    if (nRes.ok) {
-      const rows = await nRes.json();
-      data.notes = {};
-      rows.forEach((r) => { data.notes[r.date] = r.text; });
-    }
+    data.orders = orders.map(rowToOrder);
+    data.bookings = bookings.map(rowToBooking);
+    data.notes = {};
+    notes.forEach((r) => { data.notes[r.date] = r.text; });
     save(false);
     emit();
   }
@@ -352,6 +370,9 @@ const SpiisStore = (() => {
   }
 
   const isCloud = () => cloud;
+  let cloudDown = false; /* databasen er sat op, men svarer ikke */
+  const isCloudConfigured = () => !!CLOUD;
+  const isCloudDown = () => cloudDown;
   const hasSession = () => !!(session && session.access_token);
 
   let adminPollTimer = null;
@@ -385,7 +406,10 @@ const SpiisStore = (() => {
           }
         });
       } catch {
-        cloud = false; /* databasen er ikke sat op (endnu) – kør lokalt */
+        /* databasen svarer ikke – kør lokalt og lad siderne vise besked */
+        cloud = false;
+        cloudDown = true;
+        emit();
       }
     })();
   }
@@ -702,7 +726,8 @@ const SpiisStore = (() => {
     exportData, resetData,
     subscribe,
     /* sky */
-    isCloud, hasSession, adminLogin, logout, startAdminPolling,
+    isCloud, isCloudConfigured, isCloudDown,
+    hasSession, adminLogin, logout, startAdminPolling,
     refreshAdmin: fetchAdminData, refreshPublic,
   };
 })();
