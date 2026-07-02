@@ -45,9 +45,8 @@
   <!-- ====== HERO ====== -->
   <section class="hero" id="top">
     <div class="hero__media">
-      <video id="heroVideo" autoplay muted loop playsinline preload="auto">
-        <source src="assets/hero.mp4" type="video/mp4" />
-      </video>
+      <!-- src sættes af js: straks på desktop, dovent på mobil så teksten lander først -->
+      <video id="heroVideo" autoplay muted loop playsinline preload="auto" data-src="assets/hero.mp4"></video>
       <div class="hero__overlay"></div>
     </div>
     <div class="hero__content">
@@ -342,6 +341,9 @@
       </div>
     </section>
   </main>
+
+  <!-- fast bestil-knap i bunden på mobil -->
+  <a href="#bestil" class="mobilecta" id="mobileCta">🍲 Bestil dagens ret</a>
 
   <!-- ====== FOOTER ====== -->
   <footer class="footer">

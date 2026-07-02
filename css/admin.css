@@ -626,3 +626,42 @@ button { font-family: var(--font-body); }
   .menued__item { grid-template-columns: 1fr; }
   .formgrid { grid-template-columns: 1fr; }
 }
+
+/* ---------- telefon: én hånd i køkkenet ---------- */
+@media (max-width: 760px) {
+  .content { padding: 16px 14px 46px; }
+  .topbar { padding: 14px 16px; }
+  .topbar__title { font-size: 1.3rem; }
+
+  /* store tal-fliser to og to */
+  .stats { grid-template-columns: 1fr 1fr; gap: 10px; }
+  .stat { padding: 15px 16px; }
+  .stat__value { font-size: 1.7rem; }
+
+  /* store trykflader */
+  .abtn { min-height: 44px; padding: 10px 18px; }
+  .abtn--icon { min-width: 44px; }
+  .inline-input,
+  .afield input, .afield select, .afield textarea { font-size: 16px; padding: 12px 14px; }
+  .row { padding: 14px 16px; }
+  .row__actions { width: 100%; }
+  .row__actions .abtn { flex: 1; }
+
+  /* ugeoverblik: ét dagskort ad gangen med swipe */
+  .ugegrid {
+    display: flex;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    gap: 12px;
+    margin: 14px -14px 0;
+    padding: 4px 14px 14px;
+    scrollbar-width: none;
+  }
+  .ugegrid::-webkit-scrollbar { display: none; }
+  .ugeday {
+    flex: 0 0 87%;
+    scroll-snap-align: center;
+  }
+
+  .belldrop { position: fixed; left: 12px; right: 12px; top: 74px; width: auto; }
+}

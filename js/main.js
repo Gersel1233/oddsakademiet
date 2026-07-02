@@ -42,8 +42,30 @@
   /* ---------- hero ---------- */
   const hero = $('.hero');
   requestAnimationFrame(() => hero.classList.add('is-ready'));
+
+  /* video: indlæses straks på desktop, men dovent på mobil, så tekst og
+     dagens ret lander øjeblikkeligt på mobildata – videoen toner ind bagefter */
   const heroVideo = $('#heroVideo');
-  heroVideo.play?.().catch(() => { /* autoplay kan blokeres – overlay dækker */ });
+  function loadHeroVideo() {
+    if (heroVideo.src) return;
+    heroVideo.addEventListener('playing', () => heroVideo.classList.add('is-playing'), { once: true });
+    heroVideo.src = heroVideo.dataset.src;
+    heroVideo.play?.().catch(() => { /* autoplay kan blokeres – baggrunden dækker */ });
+  }
+  if (window.matchMedia('(min-width: 761px)').matches) {
+    loadHeroVideo();
+  } else if (document.readyState === 'complete') {
+    setTimeout(loadHeroVideo, 250);
+  } else {
+    window.addEventListener('load', () => setTimeout(loadHeroVideo, 250), { once: true });
+  }
+
+  /* fast bestil-knap på mobil – gemmer sig, mens man står ved formularen */
+  const mobileCta = $('#mobileCta');
+  const ctaIo = new IntersectionObserver((entries) => {
+    entries.forEach((en) => mobileCta.classList.toggle('is-hidden', en.isIntersecting));
+  }, { threshold: 0.1 });
+  ctaIo.observe($('#bestil'));
 
   /* ---------- scroll-reveal ---------- */
   const revealEls = $$('[data-reveal]');
@@ -144,6 +166,11 @@
     tabs.innerHTML = S.WEEKDAYS.map((day, i) =>
       `<button class="daytab ${i === activeDay ? 'is-active' : ''}" role="tab" aria-selected="${i === activeDay}" data-day="${i}">${day}</button>`
     ).join('');
+    /* på mobil ruller fanerne vandret – centrér den aktive */
+    const active = tabs.querySelector('.is-active');
+    if (active && tabs.scrollWidth > tabs.clientWidth) {
+      tabs.scrollLeft = active.offsetLeft - (tabs.clientWidth - active.offsetWidth) / 2;
+    }
   }
 
   /* find næste dato der matcher ugedagen (0=mandag) */
