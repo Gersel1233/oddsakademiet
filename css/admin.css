@@ -396,6 +396,25 @@ button { font-family: var(--font-body); }
 }
 .row:hover { border-color: rgba(217, 108, 44, 0.4); }
 .row--new { border-color: var(--accent); background: var(--accent-soft); }
+.row--done { opacity: 0.55; }
+.row--done:hover { opacity: 1; }
+
+/* tjekliste-flueben: tryk for færdig, tryk igen for at fortryde */
+.checkbtn {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: 2px solid var(--green);
+  background: #fff;
+  color: var(--green);
+  font-size: 1.25rem;
+  font-weight: 700;
+  line-height: 1;
+  cursor: pointer;
+  transition: transform 0.15s ease, background 0.15s ease;
+}
+.checkbtn:hover { transform: scale(1.08); }
+.checkbtn.is-done { background: var(--green); color: #fff; }
 .row__main { flex: 1; min-width: 200px; }
 .row__title { font-weight: 600; }
 .row__title .tag { margin-left: 8px; }

@@ -243,13 +243,14 @@
 
   function orderRow(o, showDate = false) {
     const lines = orderLines(o).map((l) => `${l.qty} × ${esc(l.name)}`).join(' · ') || 'Tom bestilling';
+    const done = o.status !== 'ny';
     return `
-      <div class="row ${o.status === 'ny' ? 'row--new' : ''}">
+      <div class="row ${done ? 'row--done' : 'row--new'}">
         <div class="row__main">
           <div class="row__title">${lines}
             ${personsOf(o) ? `<span class="tag">👥 ${personsOf(o)} pers.</span>` : ''}
             <span class="tag ${o.type === 'togo' ? 'tag--accent' : 'tag--ink'}">${o.type === 'togo' ? '🥡 To-go' : '🍽️ Spiser her'}</span>
-            ${o.status === 'ny' ? '<span class="tag tag--red">Ny</span>' : '<span class="tag tag--green">Håndteret</span>'}
+            ${done ? '' : '<span class="tag tag--red">Ny</span>'}
           </div>
           <div class="row__sub">
             ${showDate ? `${esc(S.formatDate(o.date))} · ` : ''}kl. ${esc(o.time)} · ${esc(o.name)} · 📞 ${esc(o.phone)}
@@ -257,9 +258,9 @@
           </div>
         </div>
         <div class="row__actions">
-          ${o.status === 'ny'
-            ? `<button class="abtn abtn--green" data-act="order-done" data-id="${o.id}">✓ Håndteret</button>`
-            : `<button class="abtn abtn--ghost" data-act="order-undo" data-id="${o.id}">Fortryd</button>`}
+          ${done
+            ? `<button class="checkbtn is-done" data-act="order-toggle" data-id="${o.id}" title="Færdig – tryk igen for at fjerne fluebenet" aria-label="Færdig">✓</button>`
+            : `<button class="abtn abtn--green" data-act="order-toggle" data-id="${o.id}">✓ Færdig</button>`}
           <button class="abtn abtn--danger abtn--icon" data-act="order-del" data-id="${o.id}" aria-label="Slet">🗑</button>
         </div>
       </div>`;
@@ -964,8 +965,10 @@
       return;
     }
 
-    if (act === 'order-done') { S.updateOrder(id, { status: 'haandteret', read: true }); }
-    else if (act === 'order-undo') { S.updateOrder(id, { status: 'ny' }); }
+    if (act === 'order-toggle') {
+      const o = S.getOrders().find((x) => x.id === id);
+      if (o) S.updateOrder(id, { status: o.status === 'ny' ? 'haandteret' : 'ny', read: true });
+    }
     else if (act === 'order-del') {
       if (!confirm('Slet denne bestilling?')) return;
       S.deleteOrder(id);
