@@ -117,6 +117,7 @@
   /* ---------- view-skift ---------- */
   const VIEW_TITLES = {
     overblik: 'Overblik',
+    uge: 'Ugeoverblik',
     bestillinger: 'Bestillinger',
     bookinger: 'Bookinger',
     dagensret: 'Dagens ret',
@@ -139,6 +140,7 @@
   function renderView(view) {
     const renderers = {
       overblik: renderOverblik,
+      uge: renderUge,
       bestillinger: renderBestillinger,
       bookinger: renderBookinger,
       dagensret: renderDagensRetEditor,
@@ -237,7 +239,10 @@
         </div>
         ${dish
           ? `<div class="row"><div class="row__main">
-               <div class="row__title">${esc(dish.title)} <span class="tag tag--accent">${dish.price ? kr(dish.price) : ''}</span></div>
+               <div class="row__title">${esc(dish.title)}
+                 ${dish.price ? `<span class="tag tag--accent">${kr(dish.price)}</span>` : ''}
+                 ${dish.stock != null && dish.stock !== '' ? `<span class="tag ${S.getSold(today) >= dish.stock ? 'tag--red' : 'tag--green'}">${S.getSold(today)}/${dish.stock} solgt</span>` : ''}
+               </div>
                <div class="row__sub">${esc(dish.desc || '')}</div>
              </div></div>`
           : '<div class="empty">Der er ikke sat en dagens ret i dag. Gå til "Dagens ret" og planlæg den.</div>'}
@@ -262,6 +267,82 @@
           ${upcoming.length ? upcoming.slice(0, 5).map(bookingRow).join('') : '<div class="empty">Ingen kommende bookinger.</div>'}
         </div>
       </div>`;
+  }
+
+  /* ============================================================
+     UGEOVERBLIK – dashboard pr. dag med noter
+     ============================================================ */
+  let ugeStart = S.weekStart(S.todayISO());
+
+  function renderUge() {
+    const today = S.todayISO();
+    const allBookings = S.getBookings();
+    const days = [];
+    for (let i = 0; i < 7; i++) days.push(S.addDays(ugeStart, i));
+    const weekEnd = days[6];
+
+    /* uge-total */
+    const weekOrders = days.flatMap((iso) => S.getOrders(iso));
+    const weekPortions = weekOrders.reduce((s, o) => s + Number(o.qty || 0), 0);
+    const weekBookings = allBookings.filter((b) => b.date >= ugeStart && b.date <= weekEnd && b.status !== 'afvist');
+
+    $('#view-uge').innerHTML = `
+      <div class="acard">
+        <div class="acard__head">
+          <h2>📆 Uge ${S.weekNumber(ugeStart)} <span class="sub" style="font-family:var(--font-body);font-weight:500;">· ${esc(S.formatDate(ugeStart, false))} – ${esc(S.formatDate(weekEnd, false))}</span></h2>
+          <div style="display:flex;gap:10px;flex-wrap:wrap;">
+            <button class="abtn abtn--ghost" id="ugePrev">← Forrige uge</button>
+            <button class="abtn" id="ugeToday">Denne uge</button>
+            <button class="abtn abtn--ghost" id="ugeNext">Næste uge →</button>
+          </div>
+        </div>
+        <p class="sub" style="color:var(--ink-soft);">
+          Hele ugen: <strong>${weekOrders.length}</strong> bestillinger · <strong>${weekPortions}</strong> kuverter · <strong>${weekBookings.length}</strong> booking${weekBookings.length === 1 ? '' : 'er'}
+        </p>
+      </div>
+
+      <div class="ugegrid">
+        ${days.map((iso) => {
+          const orders = S.getOrders(iso);
+          const portions = orders.reduce((s, o) => s + Number(o.qty || 0), 0);
+          const togo = orders.filter((o) => o.type === 'togo').reduce((s, o) => s + Number(o.qty || 0), 0);
+          const dish = S.getDagensRet(iso);
+          const sold = S.getSold(iso);
+          const bookings = allBookings.filter((b) => b.date === iso && b.status !== 'afvist');
+          const isToday = iso === today;
+          const closed = !S.isOpenDay(iso);
+          return `
+          <div class="acard ugeday ${isToday ? 'ugeday--today' : ''} ${closed ? 'ugeday--closed' : ''}">
+            <div class="ugeday__head">
+              <strong>${S.WEEKDAYS[S.weekdayIndex(iso)]}${isToday ? ' · i dag' : ''}</strong>
+              <span>${esc(S.formatDate(iso, false))}${closed ? ' · lukket' : ''}</span>
+            </div>
+            <div class="ugeday__dish">
+              ${dish
+                ? `🍲 ${esc(dish.title)}${dish.stock != null && dish.stock !== '' ? ` <span class="tag ${sold >= dish.stock ? 'tag--red' : 'tag--accent'}">${sold}/${dish.stock} solgt</span>` : ''}`
+                : '<span style="color:var(--ink-soft);">Ingen dagens ret sat</span>'}
+            </div>
+            <div class="ugeday__stats">
+              <span><strong>${orders.length}</strong> bestillinger</span>
+              <span><strong>${portions}</strong> kuverter</span>
+              <span>🥡 <strong>${togo}</strong> · 🍽️ <strong>${portions - togo}</strong></span>
+            </div>
+            ${bookings.length ? `
+              <div class="ugeday__bookings">
+                ${bookings.map((b) => `<div>${b.kind === 'moede' ? '📅' : '🎉'} kl. ${esc(b.time)} · ${esc(b.subject)} <em>(${esc(b.name)})</em></div>`).join('')}
+              </div>` : ''}
+            <textarea class="inline-input ugeday__note" data-note="${iso}" rows="2" placeholder="Noter til dagen – fx 'Husk ekstra pommes'…">${esc(S.getNote(iso))}</textarea>
+            <div class="ugeday__actions">
+              <button class="abtn abtn--accent" data-act="save-note" data-iso="${iso}">Gem note</button>
+              <button class="abtn abtn--ghost" data-act="goto-orders" data-iso="${iso}">Se bestillinger →</button>
+            </div>
+          </div>`;
+        }).join('')}
+      </div>`;
+
+    $('#ugePrev').addEventListener('click', () => { ugeStart = S.addDays(ugeStart, -7); renderUge(); });
+    $('#ugeNext').addEventListener('click', () => { ugeStart = S.addDays(ugeStart, 7); renderUge(); });
+    $('#ugeToday').addEventListener('click', () => { ugeStart = S.weekStart(S.todayISO()); renderUge(); });
   }
 
   /* ============================================================
@@ -367,17 +448,19 @@
         </div>
         <div class="planner">
           ${plan.map((day) => {
-            const d = day.dish || { title: '', desc: '', price: '' };
+            const d = day.dish || { title: '', desc: '', price: '', stock: '' };
             const isToday = day.iso === S.todayISO();
+            const sold = S.getSold(day.iso);
             return `
             <div class="planday ${day.open ? '' : 'planday--closed'} ${isToday ? 'planday--today' : ''}" data-iso="${day.iso}">
               <div class="planday__date">
                 <strong>${day.weekday}${isToday ? ' · i dag' : ''}</strong>
-                <small>${esc(S.formatDate(day.iso, false))}${day.open ? '' : ' · lukket'}</small>
+                <small>${esc(S.formatDate(day.iso, false))}${day.open ? '' : ' · lukket'}${sold ? ` · solgt: ${sold}` : ''}</small>
               </div>
               <input class="inline-input" data-f="title" placeholder="${day.open ? 'Ret, fx Boller i karry' : 'Lukket'}" value="${esc(d.title)}" ${day.open ? '' : 'disabled'} />
               <input class="inline-input" data-f="desc" placeholder="Kort beskrivelse (valgfrit)" value="${esc(d.desc || '')}" ${day.open ? '' : 'disabled'} />
               <input class="inline-input" data-f="price" type="number" min="0" placeholder="Pris" value="${esc(d.price ?? '')}" ${day.open ? '' : 'disabled'} />
+              <input class="inline-input" data-f="stock" type="number" min="0" placeholder="Antal" title="Antal portioner – lad stå tomt for ubegrænset" value="${esc(d.stock ?? '')}" ${day.open ? '' : 'disabled'} />
               <button class="abtn abtn--accent" data-act="save-day" ${day.open ? '' : 'disabled'}>Gem</button>
             </div>`;
           }).join('')}
@@ -391,11 +474,13 @@
     const desc = $('[data-f="desc"]', rowEl).value.trim();
     const priceRaw = $('[data-f="price"]', rowEl).value;
     const price = priceRaw ? Number(priceRaw) : null;
+    const stockRaw = $('[data-f="stock"]', rowEl).value;
+    const stock = stockRaw === '' ? null : Number(stockRaw);
     if (!title) {
       S.setDagensRet(iso, null);
       toast(`${S.formatDate(iso)}: dagens ret fjernet`);
     } else {
-      S.setDagensRet(iso, { title, desc, price });
+      S.setDagensRet(iso, { title, desc, price, stock });
       toast(`${S.formatDate(iso)}: "${title}" gemt ✓`);
     }
     renderBell();
@@ -702,6 +787,19 @@
     const { act, id } = btn.dataset;
 
     if (act === 'save-day') { saveDay(btn.closest('.planday')); return; }
+
+    if (act === 'save-note') {
+      const iso = btn.dataset.iso;
+      const ta = $(`textarea[data-note="${iso}"]`);
+      S.setNote(iso, ta ? ta.value : '');
+      toast(`Note gemt for ${S.formatDate(iso)} ✓`);
+      return;
+    }
+    if (act === 'goto-orders') {
+      ordersDate = btn.dataset.iso;
+      $('.navitem[data-view="bestillinger"]')?.click();
+      return;
+    }
 
     if (act === 'order-done') { S.updateOrder(id, { status: 'haandteret', read: true }); }
     else if (act === 'order-undo') { S.updateOrder(id, { status: 'ny' }); }

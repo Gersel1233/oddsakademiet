@@ -444,7 +444,7 @@ button { font-family: var(--font-body); }
 .planner { display: grid; gap: 12px; }
 .planday {
   display: grid;
-  grid-template-columns: 150px 1fr 1.4fr 90px auto;
+  grid-template-columns: 150px 1fr 1.4fr 84px 84px auto;
   gap: 10px;
   align-items: center;
   border: 1.6px solid rgba(28, 24, 20, 0.08);
@@ -456,6 +456,47 @@ button { font-family: var(--font-body); }
 .planday--today { border-color: var(--accent); }
 .planday__date strong { display: block; font-size: 0.95rem; }
 .planday__date small { color: var(--ink-soft); font-size: 0.8rem; }
+
+/* ugeoverblik */
+.ugegrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(330px, 1fr));
+  gap: 14px;
+  margin-top: 18px;
+}
+.ugeday { display: flex; flex-direction: column; gap: 12px; padding: 20px 22px; }
+.ugeday--today { border: 2px solid var(--accent); }
+.ugeday--closed { opacity: 0.65; }
+.ugeday__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  border-bottom: 1.6px dashed var(--line);
+  padding-bottom: 10px;
+}
+.ugeday__head strong { font-family: var(--font-display); font-size: 1.08rem; }
+.ugeday__head span { color: var(--ink-soft); font-size: 0.85rem; }
+.ugeday__dish { font-weight: 600; font-size: 0.95rem; }
+.ugeday__stats {
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+  font-size: 0.88rem;
+  color: var(--ink-soft);
+}
+.ugeday__stats strong { color: var(--ink); }
+.ugeday__bookings {
+  display: grid;
+  gap: 5px;
+  font-size: 0.86rem;
+  background: var(--cream-2);
+  border-radius: 11px;
+  padding: 10px 13px;
+}
+.ugeday__bookings em { color: var(--ink-soft); font-style: normal; }
+.ugeday__note { min-height: 56px; resize: vertical; }
+.ugeday__actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: auto; }
 
 /* åbningstider */
 .hoursgrid { display: grid; gap: 10px; }

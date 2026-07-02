@@ -80,18 +80,34 @@
     const title = $('#todayDish');
     const desc = $('#todayDesc');
     const price = $('#todayPrice');
+    const stockEl = $('#todayStock');
 
     if (!dish) {
       label.textContent = 'Dagens ret';
       title.textContent = 'Vi opdaterer menuen lige nu';
       desc.textContent = 'Kig forbi snart – eller ring til os og hør, hvad der er på menuen.';
       price.textContent = '';
+      stockEl.textContent = '';
       return;
     }
     label.textContent = iso === today ? 'I dag' : S.formatDate(iso);
     title.textContent = dish.title;
     desc.textContent = dish.desc || '';
     price.textContent = dish.price ? kr(dish.price) : '';
+
+    const remaining = S.getRemaining(iso);
+    stockEl.className = 'today__stock';
+    if (remaining === null) {
+      stockEl.textContent = '';
+    } else if (remaining <= 0) {
+      stockEl.textContent = 'Udsolgt i dag – vi ses i morgen!';
+      stockEl.classList.add('is-soldout');
+    } else if (remaining <= 5) {
+      stockEl.textContent = `🔥 Kun ${remaining} portioner tilbage!`;
+      stockEl.classList.add('is-low');
+    } else {
+      stockEl.textContent = `${remaining} portioner tilbage`;
+    }
   }
 
   function renderWeekPlan() {
@@ -106,11 +122,16 @@
           <div class="dayplan__dish">Lukket</div>
         </div>`;
       }
+      const remaining = S.getRemaining(day.iso);
+      let stockTag = '';
+      if (remaining !== null && remaining <= 0) stockTag = '<span class="dayplan__tag dayplan__tag--soldout">Udsolgt</span>';
+      else if (remaining !== null && remaining <= 5) stockTag = `<span class="dayplan__tag">Kun ${remaining} tilbage</span>`;
       return `<div class="dayplan">
         <div class="dayplan__day">${day.weekday}${isToday ? ' · i dag' : ''}</div>
         <div class="dayplan__date">${esc(S.formatDate(day.iso, false))}</div>
         <div class="dayplan__dish">${day.dish ? esc(day.dish.title) : 'Følger snart…'}</div>
         ${day.dish && day.dish.price ? `<div class="dayplan__price">${kr(day.dish.price)}</div>` : ''}
+        ${stockTag}
       </div>`;
     }).join('');
   }
@@ -255,10 +276,18 @@
     const plan = S.getPlan(14);
     const options = plan
       .filter((d) => d.open && d.dish)
-      .map((d) => `<option value="${d.iso}">${d.iso === S.todayISO() ? 'I dag – ' : ''}${esc(S.formatDate(d.iso))} · ${esc(d.dish.title)}</option>`);
+      .map((d) => {
+        const remaining = S.getRemaining(d.iso);
+        const soldOut = remaining !== null && remaining <= 0;
+        const label = `${d.iso === S.todayISO() ? 'I dag – ' : ''}${S.formatDate(d.iso)} · ${d.dish.title}${soldOut ? ' · UDSOLGT' : ''}`;
+        return `<option value="${d.iso}" ${soldOut ? 'disabled' : ''}>${esc(label)}</option>`;
+      });
     orderDate.innerHTML = options.length
       ? options.join('')
       : '<option value="">Ingen dage åbne for bestilling lige nu</option>';
+    /* spring frem til første dag, der ikke er udsolgt */
+    const firstOpen = [...orderDate.options].find((o) => !o.disabled && o.value);
+    if (firstOpen) orderDate.value = firstOpen.value;
     onOrderDateChange();
   }
 
@@ -270,8 +299,18 @@
       return;
     }
     const dish = S.getDagensRet(iso);
-    orderDishHint.textContent = dish ? `Dagens ret: ${dish.title}${dish.price ? ` · ${kr(dish.price)}` : ''}` : '';
-    orderDishHint.className = 'field__hint';
+    const remaining = S.getRemaining(iso);
+    let hint = dish ? `Dagens ret: ${dish.title}${dish.price ? ` · ${kr(dish.price)}` : ''}` : '';
+    if (remaining !== null) hint += remaining > 0 ? ` · ${remaining} tilbage` : ' · udsolgt';
+    orderDishHint.textContent = hint;
+    orderDishHint.className = `field__hint ${remaining !== null && remaining <= 5 ? (remaining <= 0 ? 'is-bad' : 'is-ok') : ''}`;
+
+    /* begræns antal til det, der er tilbage */
+    const qtyInput = $('#orderQty');
+    qtyInput.max = remaining !== null ? Math.max(1, remaining) : 50;
+    if (remaining !== null && Number(qtyInput.value) > remaining) {
+      qtyInput.value = Math.max(1, remaining);
+    }
 
     /* madbestillinger kan kun afhentes frem til køkkenets lukketid */
     const slots = S.timeslotsFor(iso, 30, true);
@@ -308,7 +347,7 @@
     }
 
     const dish = S.getDagensRet(iso);
-    S.addOrder({
+    const result = S.addOrder({
       date: iso,
       time,
       qty,
@@ -319,6 +358,15 @@
       dish: dish ? dish.title : 'Dagens ret',
       price: dish ? dish.price : null,
     });
+
+    if (!result.ok) {
+      error.textContent = result.remaining > 0
+        ? `Åh nej – der er kun ${result.remaining} portion${result.remaining === 1 ? '' : 'er'} tilbage denne dag. Vælg færre kuverter eller en anden dag.`
+        : 'Dagens ret er desværre udsolgt denne dag – vælg en anden dag i kalenderen.';
+      error.hidden = false;
+      onOrderDateChange();
+      return;
+    }
 
     $('#orderForm').hidden = true;
     const success = $('#orderSuccess');
@@ -472,5 +520,15 @@
     renderCategories();
     renderHours();
     renderContact();
+    /* genopfrisk datolisten (lagerstatus), medmindre man er midt i formularen */
+    const form = $('#orderForm');
+    if (!form.hidden && !form.contains(document.activeElement)) {
+      const prev = orderDate.value;
+      renderOrderDates();
+      if ([...orderDate.options].some((o) => o.value === prev && !o.disabled)) {
+        orderDate.value = prev;
+        onOrderDateChange();
+      }
+    }
   });
 })();

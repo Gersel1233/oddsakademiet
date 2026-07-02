@@ -136,16 +136,17 @@ const SpiisStore = (() => {
       orders: [],       /* bestillinger af dagens ret */
       bookings: [],     /* arrangementer & møder */
       blockedDates: [], /* datoer chefen har lukket for booking */
+      notes: {},        /* chefens egne noter pr. dag { 'YYYY-MM-DD': tekst } */
       log: [],
     };
 
-    /* Planlæg dagens ret 14 dage frem på åbne dage */
+    /* Planlæg dagens ret 14 dage frem på åbne dage – 30 portioner pr. dag */
     let iso = todayISO();
     let dishIdx = 0;
     for (let i = 0; i < 14; i++) {
       const w = weekdayIndex(iso);
       if (!data.hours[w].closed) {
-        data.dagensRet[iso] = { ...DISH_ROTATION[dishIdx % DISH_ROTATION.length] };
+        data.dagensRet[iso] = { ...DISH_ROTATION[dishIdx % DISH_ROTATION.length], stock: 30 };
         dishIdx++;
       }
       iso = addDays(iso, 1);
@@ -161,6 +162,8 @@ const SpiisStore = (() => {
       if (!raw) return null;
       const parsed = JSON.parse(raw);
       if (!parsed || !parsed.settings) return null;
+      /* blid migrering af felter, der er kommet til senere */
+      if (!parsed.notes) parsed.notes = {};
       return parsed;
     } catch {
       return null;
@@ -235,8 +238,25 @@ const SpiisStore = (() => {
     save();
   }
 
+  /* ---------- lager for dagens ret ---------- */
+  function getSold(iso) {
+    return data.orders
+      .filter((o) => o.date === iso)
+      .reduce((sum, o) => sum + Number(o.qty || 0), 0);
+  }
+  /* null = intet loft sat; ellers antal portioner tilbage (kan ikke gå under 0) */
+  function getRemaining(iso) {
+    const dish = data.dagensRet[iso];
+    if (!dish || dish.stock == null || dish.stock === '') return null;
+    return Math.max(0, Number(dish.stock) - getSold(iso));
+  }
+
   /* ---------- bestillinger (dagens ret) ---------- */
   function addOrder(order) {
+    const remaining = getRemaining(order.date);
+    if (remaining !== null && Number(order.qty) > remaining) {
+      return { ok: false, remaining };
+    }
     const entry = {
       id: uid(),
       createdAt: new Date().toISOString(),
@@ -246,7 +266,7 @@ const SpiisStore = (() => {
     };
     data.orders.push(entry);
     save();
-    return entry;
+    return { ok: true, order: entry };
   }
   function getOrders(dateIso = null) {
     let list = data.orders.slice();
@@ -329,6 +349,27 @@ const SpiisStore = (() => {
     return slots;
   }
 
+  /* ---------- chefens dagsnoter ---------- */
+  const getNote = (iso) => data.notes[iso] || '';
+  function setNote(iso, text) {
+    if (text && text.trim()) data.notes[iso] = text;
+    else delete data.notes[iso];
+    save();
+  }
+
+  /* ---------- uge-hjælpere ---------- */
+  /* mandagen i den uge, som iso ligger i */
+  function weekStart(iso) {
+    return addDays(iso, -weekdayIndex(iso));
+  }
+  function weekNumber(iso) {
+    const d = fromISO(iso);
+    const t = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+    t.setDate(t.getDate() + 3 - ((t.getDay() + 6) % 7));
+    const week1 = new Date(t.getFullYear(), 0, 4);
+    return 1 + Math.round(((t - week1) / 86400000 - 3 + ((week1.getDay() + 6) % 7)) / 7);
+  }
+
   /* ---------- notifikationer ---------- */
   function getUnread() {
     const orders = data.orders.filter((o) => !o.read);
@@ -359,6 +400,8 @@ const SpiisStore = (() => {
     getSettings, updateSettings,
     getHours, setHours, hoursFor, isOpenDay,
     getDagensRet, setDagensRet, getPlan,
+    getSold, getRemaining,
+    getNote, setNote, weekStart, weekNumber,
     getMenu, setMenu,
     addOrder, getOrders, updateOrder, deleteOrder,
     addBooking, getBookings, updateBooking, deleteBooking,
