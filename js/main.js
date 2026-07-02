@@ -194,7 +194,7 @@
     const cats = S.getMenu().categories;
     wrap.innerHTML = cats.map((cat, i) => `
       <div class="card menucat" data-reveal style="--reveal-delay:${(i % 4) * 0.08}s">
-        <h4>${esc(cat.name)}</h4>
+        <h4>${esc(cat.name)}${cat.availability === 'hverdage' ? '<span class="menucat__badge">Kun hverdage</span>' : ''}</h4>
         ${cat.items.map((item) => `
           <div class="menuline">
             <div>
@@ -205,6 +205,15 @@
           </div>`).join('')}
       </div>`).join('');
     $$('[data-reveal]', wrap).forEach((el) => io.observe(el));
+
+    /* note om weekend-udvalget, hvis nogle kategorier kun er hverdage */
+    const note = $('#menucatsNote');
+    if (note) {
+      const weekendCats = cats.filter((c) => c.availability !== 'hverdage').map((c) => c.name);
+      note.textContent = cats.some((c) => c.availability === 'hverdage') && weekendCats.length
+        ? `I weekenden serverer vi: ${weekendCats.join(', ')}.`
+        : '';
+    }
   }
 
   /* ---------- åbningstider ---------- */
@@ -217,6 +226,12 @@
         <td>${S.WEEKDAYS[i]}</td>
         <td>${h.closed ? 'Lukket' : `${h.open} – ${h.close}`}</td>
       </tr>`).join('');
+
+    const kitchenNote = $('#kitchenNote');
+    if (kitchenNote) {
+      const kitchen = S.getSettings().kitchenClose;
+      kitchenNote.textContent = kitchen ? `🍳 Køkkenet lukker alle dage kl. ${kitchen}` : '';
+    }
 
     const status = $('#openStatus');
     const now = new Date();
@@ -258,7 +273,8 @@
     orderDishHint.textContent = dish ? `Dagens ret: ${dish.title}${dish.price ? ` · ${kr(dish.price)}` : ''}` : '';
     orderDishHint.className = 'field__hint';
 
-    const slots = S.timeslotsFor(iso, 30);
+    /* madbestillinger kan kun afhentes frem til køkkenets lukketid */
+    const slots = S.timeslotsFor(iso, 30, true);
     orderTime.innerHTML = slots.map((t) => `<option value="${t}">kl. ${t}</option>`).join('');
     /* fornuftigt standardvalg: 17:30 hvis muligt */
     if (slots.includes('17:30')) orderTime.value = '17:30';

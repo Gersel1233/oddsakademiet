@@ -7,7 +7,7 @@
    ============================================================ */
 
 const SpiisStore = (() => {
-  const KEY = 'spiis-data-v1';
+  const KEY = 'spiis-data-v2';
   const listeners = new Set();
 
   /* ---------- dato-hjælpere (lokal tid, ikke UTC) ---------- */
@@ -70,49 +70,65 @@ const SpiisStore = (() => {
         phone: '93 99 58 58',
         email: 'spiis.bestilling@gmail.com',
         pin: '9399',
+        kitchenClose: '20:30',
       },
       /* index 0 = mandag */
       hours: [
-        { open: '11:00', close: '19:30', closed: false },
-        { open: '11:00', close: '19:30', closed: false },
-        { open: '11:00', close: '19:30', closed: false },
-        { open: '11:00', close: '19:30', closed: false },
-        { open: '11:00', close: '20:00', closed: false },
-        { open: '12:00', close: '19:00', closed: false },
-        { open: '', close: '', closed: true },
+        { open: '16:00', close: '22:00', closed: false },
+        { open: '16:00', close: '22:00', closed: false },
+        { open: '16:00', close: '22:00', closed: false },
+        { open: '16:00', close: '22:30', closed: false },
+        { open: '16:00', close: '22:00', closed: false },
+        { open: '16:00', close: '22:00', closed: false },
+        { open: '16:00', close: '22:00', closed: false },
       ],
       dagensRet: {},   /* { 'YYYY-MM-DD': {title, desc, price} } */
       menu: {
         weekly: [[], [], [], [], [], [], []], /* ekstra retter pr. ugedag */
         categories: [
           {
-            id: 'smorrebrod', name: 'Smørrebrød & sandwich',
+            id: 'salater', name: 'Salater', availability: 'hverdage',
             items: [
-              { name: 'Klassisk smørrebrød (3 stk.)', desc: 'Vælg mellem dagens udvalg – altid hjemmelavet pålæg.', price: 65 },
-              { name: 'Lun sandwich med kylling', desc: 'Sprødt brød, marineret kylling, karrydressing og salat.', price: 59 },
-              { name: 'Frikadelle-sandwich', desc: 'Hjemmelavede frikadeller, rødkål og mayo.', price: 55 },
+              { name: 'Cæsar salat', desc: '', price: null },
+              { name: 'Vegetarsalat', desc: '', price: null },
             ],
           },
           {
-            id: 'salater', name: 'Salater',
+            id: 'retter', name: 'Retter', availability: 'hverdage',
             items: [
-              { name: 'Kyllingesalat', desc: 'Grillet kylling, sprød salat, croutoner og dressing.', price: 69 },
-              { name: 'Ugens vegetarsalat', desc: 'Sæsonens grønt, bælgfrugter og hjemmelavet dressing.', price: 65 },
+              { name: 'Spiis Burger', desc: 'Med to bøffer – i alt 250 g. Fås også som menu med sodavand, pommes og dip.', price: null },
+              { name: 'Børneburger', desc: 'Som Spiis Burgeren, bare med én bøf på 125 g. Fås også som menu med sodavand, pommes og dip.', price: null },
+              { name: 'Nachos med kylling', desc: '', price: null },
+              { name: 'Pasta bolognese', desc: '', price: null },
             ],
           },
           {
-            id: 'sodt', name: 'Sødt & kager',
+            id: 'friture', name: 'Friture', availability: 'alle',
             items: [
-              { name: 'Hjemmebagt kage', desc: 'Spørg efter dagens kage – bagt fra bunden.', price: 30 },
-              { name: 'Boller med smør', desc: 'Lune, hjemmebagte boller.', price: 15 },
+              { name: 'Nuggets med pommes', desc: '', price: null },
+              { name: 'Pommes frites', desc: 'Med eller uden dip.', price: null },
+              { name: 'Chili cheese tops', desc: '', price: null },
+              { name: 'Dip', desc: 'Ketchup, mayo, remoulade eller burgerdressing.', price: null },
             ],
           },
           {
-            id: 'drikke', name: 'Drikkevarer',
+            id: 'andet', name: 'Andet', availability: 'alle',
             items: [
-              { name: 'Kaffe / te', desc: 'Friskbrygget.', price: 20 },
-              { name: 'Sodavand', desc: 'Forskellige varianter.', price: 20 },
-              { name: 'Hjemmelavet lemonade', desc: 'Efter sæson.', price: 25 },
+              { name: 'Panini', desc: 'Med skinke og ost eller kylling og pesto.', price: null },
+              { name: 'Stort hjemmelavet surdejsbrød', desc: '', price: 40 },
+              { name: 'Halvt hjemmelavet surdejsbrød', desc: '', price: 25 },
+            ],
+          },
+          {
+            id: 'drikke', name: 'Drikkevarer', availability: 'alle',
+            items: [
+              { name: 'Sodavand', desc: 'Stort sortiment.', price: null },
+              { name: 'Capri-Sun & juicebrik', desc: '', price: null },
+              { name: 'Fadøl', desc: 'Rød Tuborg, Classic, Grøn Tuborg, Grimbergen og 1664 Blanc.', price: null },
+              { name: 'Breezer & Somersby', desc: '', price: null },
+              { name: 'Alkoholfri øl', desc: '', price: null },
+              { name: 'Vin', desc: 'Rødvin, hvidvin og rosé.', price: null },
+              { name: 'Snaps', desc: '', price: null },
             ],
           },
         ],
@@ -291,15 +307,21 @@ const SpiisStore = (() => {
     return { ok: true, reason: 'Dagen er ledig!' };
   }
 
-  /* ---------- tidsintervaller ud fra åbningstider ---------- */
-  function timeslotsFor(iso, stepMinutes = 30) {
+  /* ---------- tidsintervaller ud fra åbningstider ----------
+     useKitchenClose: true for madbestillinger, så tiderne stopper
+     ved køkkenets lukketid i stedet for stedets lukketid. */
+  function timeslotsFor(iso, stepMinutes = 30, useKitchenClose = false) {
     const h = hoursFor(iso);
     if (h.closed || !h.open || !h.close) return [];
-    const [oh, om] = h.open.split(':').map(Number);
-    const [ch, cm] = h.close.split(':').map(Number);
+    const toMin = (hhmm) => {
+      const [hh, mm] = hhmm.split(':').map(Number);
+      return hh * 60 + mm;
+    };
+    let end = toMin(h.close);
+    const kitchen = data.settings.kitchenClose;
+    if (useKitchenClose && kitchen) end = Math.min(end, toMin(kitchen));
     const slots = [];
-    let t = oh * 60 + om;
-    const end = ch * 60 + cm;
+    let t = toMin(h.open);
     while (t <= end) {
       slots.push(`${pad(Math.floor(t / 60))}:${pad(t % 60)}`);
       t += stepMinutes;

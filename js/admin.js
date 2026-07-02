@@ -418,6 +418,10 @@
             <div class="menued__cat" data-ci="${ci}">
               <div class="menued__catname">
                 <input class="inline-input" data-f="catname" value="${esc(cat.name)}" placeholder="Kategorinavn" />
+                <select class="inline-input" data-f="availability" style="width:auto;" title="Hvilke dage serveres kategorien?">
+                  <option value="alle" ${cat.availability !== 'hverdage' ? 'selected' : ''}>Alle dage</option>
+                  <option value="hverdage" ${cat.availability === 'hverdage' ? 'selected' : ''}>Kun hverdage</option>
+                </select>
                 <button class="abtn abtn--danger abtn--icon" data-act="del-cat" title="Slet kategori">🗑</button>
               </div>
               <div class="menued__items">
@@ -463,6 +467,7 @@
       const categories = $$('#menuCats .menued__cat').map((catEl) => ({
         id: `cat-${Math.random().toString(36).slice(2, 8)}`,
         name: $('[data-f="catname"]', catEl).value.trim() || 'Uden navn',
+        availability: $('[data-f="availability"]', catEl).value,
         items: $$('.menued__item', catEl).map((itemEl) => ({
           name: $('[data-f="name"]', itemEl).value.trim(),
           desc: $('[data-f="desc"]', itemEl).value.trim(),
@@ -495,6 +500,7 @@
         categories: $$('#menuCats .menued__cat').map((catEl) => ({
           id: 'cat',
           name: $('[data-f="catname"]', catEl).value,
+          availability: $('[data-f="availability"]', catEl).value,
           items: $$('.menued__item', catEl).map((itemEl) => ({
             name: $('[data-f="name"]', itemEl).value,
             desc: $('[data-f="desc"]', itemEl).value,
@@ -563,6 +569,12 @@
           <button class="abtn abtn--accent" id="hoursSave">Gem åbningstider</button>
         </div>
         <p class="sub" style="color:var(--ink-soft);margin-bottom:16px;">Tiderne styrer også, hvilke afhentnings- og bookingtider kunderne kan vælge på hjemmesiden.</p>
+        <div class="hoursrow" style="margin-bottom:14px;">
+          <strong>🍳 Køkkenet lukker</strong>
+          <span class="sub" style="color:var(--ink-soft);font-size:0.85rem;">Gælder alle dage – madbestillinger kan kun vælges frem til dette tidspunkt.</span>
+          <input class="inline-input" id="kitchenClose" type="time" value="${esc(S.getSettings().kitchenClose || '20:30')}" />
+          <span></span><span></span><span></span>
+        </div>
         <div class="hoursgrid">
           ${hours.map((h, i) => `
             <div class="hoursrow ${h.closed ? 'hoursrow--closed' : ''}" data-day="${i}">
@@ -592,7 +604,8 @@
     });
 
     $('#hoursSave').addEventListener('click', () => {
-      const newHours = $$('#view-tider .hoursrow').map((row) => {
+      /* kun dag-rækkerne i .hoursgrid – køkken-rækken ovenfor har ingen kontakt */
+      const newHours = $$('#view-tider .hoursgrid .hoursrow').map((row) => {
         const closed = !$('[data-f="open-toggle"]', row).checked;
         return {
           closed,
@@ -601,6 +614,7 @@
         };
       });
       S.setHours(newHours);
+      S.updateSettings({ kitchenClose: $('#kitchenClose').value || '' });
       toast('Åbningstiderne er gemt ✓');
     });
   }
