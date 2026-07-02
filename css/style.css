@@ -455,6 +455,25 @@ main .section {
 .today__stock.is-low { background: var(--accent-soft); color: var(--accent-deep); }
 .today__stock.is-soldout { background: #FBEAE7; color: #B3372B; }
 
+/* pulserende "live"-prik, mens køkkenet er åbent */
+.today__stock.is-live::before,
+.field__hint.is-live::before {
+  content: '';
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #3F7A3B;
+  margin-right: 8px;
+  vertical-align: middle;
+  animation: livedot 1.4s ease-in-out infinite;
+}
+.today__stock.is-low.is-live::before { background: var(--accent-deep); }
+@keyframes livedot {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.3; transform: scale(0.7); }
+}
+
 /* ugeplan */
 .weekplan { margin-top: 46px; }
 .weekplan__title {
@@ -486,6 +505,16 @@ main .section {
 }
 .dayplan__date { font-size: 0.82rem; color: var(--ink-soft); margin-bottom: 8px; }
 .dayplan__dish { font-weight: 600; line-height: 1.35; font-size: 0.98rem; }
+.dayplan__desc {
+  color: var(--ink-soft);
+  font-size: 0.85rem;
+  line-height: 1.45;
+  margin-top: 4px;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
 .dayplan__price { color: var(--ink-soft); font-size: 0.88rem; margin-top: 6px; }
 .dayplan__tag {
   display: inline-block;
@@ -968,6 +997,7 @@ main .section {
 .hours__kitchen { margin-top: 14px; color: var(--ink-soft); font-size: 0.92rem; }
 .hours__status { margin-top: 10px; font-weight: 600; }
 .hours__status.is-open { color: #3F7A3B; }
+.hours__status.is-soon { color: #B8860B; }
 .hours__status.is-closed { color: #B3372B; }
 
 .infocard__address { color: var(--ink-soft); margin-bottom: 18px; }
@@ -1072,6 +1102,19 @@ main .section {
   /* kortere hero, så dagens ret er lige under folden */
   .hero { min-height: 88svh; }
   .hero__content { padding: 100px 18px 70px; }
+
+  /* scroll-pillen er overflødig og klemt på mobil */
+  .hero__scroll { display: none; }
+
+  /* knapperne stables pænt i stedet for at klumpe */
+  .hero__cta {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+    max-width: 320px;
+    margin-left: auto;
+    margin-right: auto;
+  }
 
   /* fast bestil-knap i bunden */
   .mobilecta {

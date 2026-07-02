@@ -12,6 +12,41 @@
     { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]
   ));
 
+  /* ---------- klokke-hjælpere ---------- */
+  const toMin = (hhmm) => {
+    const [h, m] = hhmm.split(':').map(Number);
+    return h * 60 + m;
+  };
+  const nowMin = () => {
+    const n = new Date();
+    return n.getHours() * 60 + n.getMinutes();
+  };
+
+  /* køkkenets tilstand lige nu: 'foer' (før åbning), 'aaben' eller 'lukket' */
+  function kitchenStateToday() {
+    const h = S.hoursFor(S.todayISO());
+    if (h.closed) return 'lukket';
+    const kitchen = S.getSettings().kitchenClose || h.close;
+    const now = nowMin();
+    if (now > toMin(kitchen)) return 'lukket';
+    if (now >= toMin(h.open)) return 'aaben';
+    return 'foer';
+  }
+
+  /* afhentningstider for en dag – i dag vises kun fremtidige tider
+     (min. 20 min. varsel), så dagen "udløber" af sig selv */
+  function slotsFor(iso) {
+    let slots = S.timeslotsFor(iso, 30, true);
+    if (iso === S.todayISO()) {
+      const cutoff = nowMin() + 20;
+      slots = slots.filter((t) => toMin(t) >= cutoff);
+    }
+    return slots;
+  }
+
+  /* er dagen reelt slut for madbestillinger? */
+  const dayDone = (iso) => iso === S.todayISO() && slotsFor(iso).length === 0;
+
   /* ---------- navigation ---------- */
   const nav = $('#nav');
   const navLinks = $('#navLinks');
@@ -106,9 +141,10 @@
   function renderToday() {
     const today = S.todayISO();
     let iso = today;
-    let dish = S.getDagensRet(iso);
+    /* efter køkkenets lukketid er dagen slut – vis næste dag i stedet */
+    let dish = dayDone(today) ? null : S.getDagensRet(iso);
 
-    /* hvis der ikke er en ret i dag, så vis den næste planlagte */
+    /* hvis der ikke er en ret (eller dagen er slut), så vis den næste planlagte */
     if (!dish) {
       for (let i = 1; i <= 14 && !dish; i++) {
         iso = S.addDays(today, i);
@@ -148,6 +184,10 @@
     } else {
       stockEl.textContent = `${remaining} portioner tilbage`;
     }
+    /* pulserende "live"-prik mens køkkenet er åbent i dag */
+    if (iso === today && remaining !== null && remaining > 0 && kitchenStateToday() === 'aaben') {
+      stockEl.classList.add('is-live');
+    }
   }
 
   function renderWeekPlan() {
@@ -170,6 +210,7 @@
         <div class="dayplan__day">${day.weekday}${isToday ? ' · i dag' : ''}</div>
         <div class="dayplan__date">${esc(S.formatDate(day.iso, false))}</div>
         <div class="dayplan__dish">${day.dish ? esc(day.dish.title) : 'Følger snart…'}</div>
+        ${day.dish && day.dish.desc ? `<div class="dayplan__desc">${esc(day.dish.desc)}</div>` : ''}
         ${day.dish && day.dish.price ? `<div class="dayplan__price">${kr(day.dish.price)}</div>` : ''}
         ${stockTag}
       </div>`;
@@ -307,14 +348,28 @@
     }
 
     const status = $('#openStatus');
-    const now = new Date();
     const h = hours[todayIdx];
-    const hhmm = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
-    if (!h.closed && hhmm >= h.open && hhmm <= h.close) {
-      status.textContent = `● Vi har åbent nu – frem til kl. ${h.close}`;
-      status.className = 'hours__status is-open';
+    const now = nowMin();
+    const kitchen = S.getSettings().kitchenClose;
+    if (h.closed) {
+      status.textContent = '● Vi holder lukket i dag';
+      status.className = 'hours__status is-closed';
+    } else if (now < toMin(h.open)) {
+      status.textContent = `● Vi har lukket lige nu – vi åbner kl. ${h.open}`;
+      status.className = 'hours__status is-closed';
+    } else if (now <= toMin(h.close)) {
+      if (toMin(h.close) - now <= 60) {
+        status.textContent = `● Vi lukker snart – åbent til kl. ${h.close}`;
+        status.className = 'hours__status is-soon';
+      } else if (kitchen && now > toMin(kitchen)) {
+        status.textContent = `● Køkkenet er lukket for i dag – vi har åbent til kl. ${h.close}`;
+        status.className = 'hours__status is-soon';
+      } else {
+        status.textContent = `● Vi har åbent nu – frem til kl. ${h.close}`;
+        status.className = 'hours__status is-open';
+      }
     } else {
-      status.textContent = '● Vi har lukket lige nu';
+      status.textContent = '● Vi har lukket for i dag';
       status.className = 'hours__status is-closed';
     }
   }
@@ -336,7 +391,7 @@
   function renderOrderDates() {
     const plan = S.getPlan(14);
     const options = plan
-      .filter((d) => d.open)
+      .filter((d) => d.open && slotsFor(d.iso).length > 0)
       .map((d) => {
         const remaining = S.getRemaining(d.iso);
         const soldOut = d.dish && remaining !== null && remaining <= 0;
@@ -368,11 +423,14 @@
     if (dish && remaining !== null) hint += remaining > 0 ? ` · ${remaining} tilbage` : ' · udsolgt';
     orderDishHint.textContent = hint;
     orderDishHint.className = `field__hint ${dish && remaining !== null && remaining <= 5 ? (remaining <= 0 ? 'is-bad' : 'is-ok') : ''}`;
+    if (iso === S.todayISO() && dish && remaining !== null && remaining > 0 && kitchenStateToday() === 'aaben') {
+      orderDishHint.classList.add('is-live');
+    }
 
     renderBuilder();
 
-    /* madbestillinger kan kun afhentes frem til køkkenets lukketid */
-    const slots = S.timeslotsFor(iso, 30, true);
+    /* kun fremtidige afhentningstider – og aldrig efter køkkenets lukketid */
+    const slots = slotsFor(iso);
     orderTime.innerHTML = slots.map((t) => `<option value="${t}">kl. ${t}</option>`).join('');
     /* fornuftigt standardvalg: 17:30 hvis muligt */
     if (slots.includes('17:30')) orderTime.value = '17:30';
@@ -761,15 +819,28 @@
     renderHours();
     renderContact();
     renderCloudNotice();
-    /* genopfrisk datolisten (lagerstatus), medmindre man er midt i formularen */
-    const form = $('#orderForm');
-    if (!form.hidden && !form.contains(document.activeElement)) {
-      const prev = orderDate.value;
-      renderOrderDates();
-      if ([...orderDate.options].some((o) => o.value === prev && !o.disabled)) {
-        orderDate.value = prev;
-        onOrderDateChange();
-      }
-    }
+    refreshOrderDatesPreserving();
   });
+
+  /* genopfrisk datolisten uden at smide brugerens valg væk,
+     og aldrig midt i, at der tastes i formularen */
+  function refreshOrderDatesPreserving() {
+    const form = $('#orderForm');
+    if (form.hidden || form.contains(document.activeElement)) return;
+    const prev = orderDate.value;
+    renderOrderDates();
+    if ([...orderDate.options].some((o) => o.value === prev && !o.disabled)) {
+      orderDate.value = prev;
+      onOrderDateChange();
+    }
+  }
+
+  /* klokke-styrede tilstande (live-lager, "lukker snart", dagens dato
+     udløber ved køkkenluk) holdes friske */
+  setInterval(() => {
+    renderToday();
+    renderWeekPlan();
+    renderHours();
+    refreshOrderDatesPreserving();
+  }, 60000);
 })();
