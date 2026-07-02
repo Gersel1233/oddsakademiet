@@ -718,6 +718,16 @@ img, video, svg { display: block; max-width: 100%; }
   border-bottom: 1.6px dashed var(--line);
 }
 
+/* sidste kategori i fuld bredde med varerne fordelt i spalter */
+.menucat--wide { grid-column: 1 / -1; }
+.menucat--wide .menucat__items {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  column-gap: 40px;
+}
+.menucat--wide .menuline + .menuline { border-top: 0; }
+.menucat--wide .menuline { border-bottom: 1px solid rgba(28, 24, 20, 0.06); }
+
 /* ---------- om spiis ---------- */
 .about {
   display: grid;

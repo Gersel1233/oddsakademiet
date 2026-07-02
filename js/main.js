@@ -240,9 +240,14 @@
   function renderCategories() {
     const wrap = $('#menuCategories');
     const cats = S.getMenu().categories;
-    wrap.innerHTML = cats.map((cat, i) => `
-      <div class="card menucat" data-reveal style="--reveal-delay:${(i % 4) * 0.08}s">
+    wrap.innerHTML = cats.map((cat, i) => {
+      /* sidste kategori får fuld bredde med varerne i spalter,
+         så den ikke står alene i en smal kolonne */
+      const wide = cats.length >= 3 && i === cats.length - 1;
+      return `
+      <div class="card menucat ${wide ? 'menucat--wide' : ''}" data-reveal style="--reveal-delay:${(i % 4) * 0.08}s">
         <h4>${esc(cat.name)}${cat.availability === 'hverdage' ? '<span class="menucat__badge">Kun hverdage</span>' : ''}</h4>
+        <div class="menucat__items">
         ${cat.items.map((item) => `
           <div class="menuline">
             <div>
@@ -251,7 +256,9 @@
             </div>
             <span class="menuline__price">${item.price ? kr(item.price) : ''}</span>
           </div>`).join('')}
-      </div>`).join('');
+        </div>
+      </div>`;
+    }).join('');
     $$('[data-reveal]', wrap).forEach((el) => io.observe(el));
 
     /* note om weekend-udvalget, hvis nogle kategorier kun er hverdage */
