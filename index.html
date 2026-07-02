@@ -130,16 +130,21 @@
               <select id="orderDate" required></select>
               <small class="field__hint" id="orderDishHint"></small>
             </label>
+            <div class="field field--full">
+              <span>Vælg jeres retter</span>
+              <div class="builder" id="builder"><!-- js --></div>
+              <div class="basketbar" id="basketBar" hidden></div>
+            </div>
             <label class="field">
               <span>Tidspunkt</span>
               <select id="orderTime" required></select>
             </label>
             <label class="field">
-              <span>Antal kuverter</span>
-              <input type="number" id="orderQty" min="1" max="50" value="1" required />
+              <span>Antal personer</span>
+              <input type="number" id="orderPersons" min="1" max="100" value="2" required />
             </label>
             <div class="field field--full">
-              <span>Hvordan vil du spise?</span>
+              <span>Hvordan vil I spise?</span>
               <div class="segmented" role="radiogroup" aria-label="Takeaway eller spis her">
                 <label><input type="radio" name="orderType" value="togo" checked /><span>🥡 To-go</span></label>
                 <label><input type="radio" name="orderType" value="spise" /><span>🍽️ Spis her</span></label>

@@ -118,12 +118,16 @@
     badgeBookings.textContent = unread.bookings.length;
 
     const items = [
-      ...unread.orders.map((o) => ({
-        icon: '🥡',
-        title: `Ny bestilling: ${o.qty} × ${o.dish}`,
-        sub: `${o.name} · ${S.formatDate(o.date)} kl. ${o.time} · ${o.type === 'togo' ? 'To-go' : 'Spiser her'}`,
-        at: o.createdAt,
-      })),
+      ...unread.orders.map((o) => {
+        const lines = orderLines(o);
+        const summary = lines.slice(0, 3).map((l) => `${l.qty} × ${l.name}`).join(' · ') + (lines.length > 3 ? ' · …' : '');
+        return {
+          icon: '🥡',
+          title: `Ny bestilling: ${summary}`,
+          sub: `${o.name} · ${S.formatDate(o.date)} kl. ${o.time} · ${o.type === 'togo' ? 'To-go' : 'Spiser her'}${o.persons ? ` · ${o.persons} pers.` : ''}`,
+          at: o.createdAt,
+        };
+      }),
       ...unread.bookings.map((b) => ({
         icon: b.kind === 'moede' ? '📅' : '🎉',
         title: `${b.kind === 'moede' ? 'Ny mødebooking' : 'Nyt arrangement'}: ${b.subject}`,
@@ -195,11 +199,31 @@
   /* ============================================================
      OVERBLIK
      ============================================================ */
+  /* en bestilling kan indeholde flere retter (items) – ældre
+     bestillinger har kun dish/qty og vises som før */
+  function orderLines(o) {
+    if (o.items && o.items.length) return o.items.filter((l) => Number(l.qty) > 0);
+    return Number(o.qty) > 0 ? [{ name: o.dish || 'Dagens ret', qty: o.qty, price: o.price, kind: 'dagensret' }] : [];
+  }
+  const personsOf = (o) => (o.persons != null ? Number(o.persons) : Number(o.qty || 0));
+  const itemsOf = (o) => orderLines(o).reduce((s, l) => s + Number(l.qty), 0);
+
+  /* læg alle bestilte retter sammen pr. navn (til produktionslisten) */
+  function dishTotals(orders) {
+    const map = new Map();
+    orders.forEach((o) => orderLines(o).forEach((l) => {
+      map.set(l.name, (map.get(l.name) || 0) + Number(l.qty));
+    }));
+    return [...map.entries()].sort((a, b) => b[1] - a[1]);
+  }
+
   function orderRow(o, showDate = false) {
+    const lines = orderLines(o).map((l) => `${l.qty} × ${esc(l.name)}`).join(' · ') || 'Tom bestilling';
     return `
       <div class="row ${o.status === 'ny' ? 'row--new' : ''}">
         <div class="row__main">
-          <div class="row__title">${o.qty} × ${esc(o.dish)}
+          <div class="row__title">${lines}
+            ${personsOf(o) ? `<span class="tag">👥 ${personsOf(o)} pers.</span>` : ''}
             <span class="tag ${o.type === 'togo' ? 'tag--accent' : 'tag--ink'}">${o.type === 'togo' ? '🥡 To-go' : '🍽️ Spiser her'}</span>
             ${o.status === 'ny' ? '<span class="tag tag--red">Ny</span>' : '<span class="tag tag--green">Håndteret</span>'}
           </div>
@@ -246,22 +270,29 @@
   function renderOverblik() {
     const today = S.todayISO();
     const orders = S.getOrders(today);
-    const portions = orders.reduce((sum, o) => sum + Number(o.qty || 0), 0);
-    const togo = orders.filter((o) => o.type === 'togo').reduce((s, o) => s + Number(o.qty || 0), 0);
-    const dineIn = portions - togo;
+    const persons = orders.reduce((s, o) => s + personsOf(o), 0);
+    const itemsTotal = orders.reduce((s, o) => s + itemsOf(o), 0);
+    const togo = orders.filter((o) => o.type === 'togo').reduce((s, o) => s + personsOf(o), 0);
+    const dineIn = persons - togo;
     const dish = S.getDagensRet(today);
+    const dagensSold = S.getSold(today);
+    const totals = dishTotals(orders);
     const upcoming = S.getBookings().filter((b) => b.date >= today && b.status !== 'afvist');
     const newBookings = S.getBookings().filter((b) => b.status === 'ny').length;
 
     $('#view-overblik').innerHTML = `
       <div class="stats">
         <div class="stat stat--accent">
-          <div class="stat__label">Kuverter i dag</div>
-          <div class="stat__value">${portions}</div>
+          <div class="stat__label">Personer i dag</div>
+          <div class="stat__value">${persons}</div>
         </div>
         <div class="stat">
-          <div class="stat__label">Bestillinger i dag</div>
-          <div class="stat__value">${orders.length}</div>
+          <div class="stat__label">Retter i alt</div>
+          <div class="stat__value">${itemsTotal}</div>
+        </div>
+        <div class="stat">
+          <div class="stat__label">Dagens ret solgt</div>
+          <div class="stat__value">${dagensSold}${dish && dish.stock != null && dish.stock !== '' ? ` <small>/ ${dish.stock}</small>` : ''}</div>
         </div>
         <div class="stat">
           <div class="stat__label">To-go / spiser her</div>
@@ -271,6 +302,16 @@
           <div class="stat__label">Nye bookinger</div>
           <div class="stat__value">${newBookings}</div>
         </div>
+      </div>
+
+      <div class="acard">
+        <div class="acard__head">
+          <h2>🧾 Produktionsliste i dag</h2>
+          <span class="sub">alle bestilte retter lagt sammen på tværs af bestillinger</span>
+        </div>
+        ${totals.length
+          ? `<div class="prodlist">${totals.map(([n, q]) => `<span class="prod"><b>${q}</b>${esc(n)}</span>`).join('')}</div>`
+          : '<div class="empty">Ingen bestillinger endnu – listen fyldes op, efterhånden som kunderne bestiller.</div>'}
       </div>
 
       <div class="acard">
@@ -291,8 +332,8 @@
 
       <div class="acard">
         <div class="acard__head">
-          <h2>🥡 Bestillinger af dagens ret i dag</h2>
-          <span class="sub">${orders.length} bestilling${orders.length === 1 ? '' : 'er'} · ${portions} kuverter</span>
+          <h2>🥡 Dagens bestillinger</h2>
+          <span class="sub">${orders.length} bestilling${orders.length === 1 ? '' : 'er'} · ${itemsTotal} retter · ${persons} personer</span>
         </div>
         <div class="rowlist">
           ${orders.length ? orders.map((o) => orderRow(o)).join('') : '<div class="empty">Ingen bestillinger endnu i dag – de dukker op her, i samme sekund kunderne trykker "Send bestilling".</div>'}
@@ -324,7 +365,8 @@
 
     /* uge-total */
     const weekOrders = days.flatMap((iso) => S.getOrders(iso));
-    const weekPortions = weekOrders.reduce((s, o) => s + Number(o.qty || 0), 0);
+    const weekItems = weekOrders.reduce((s, o) => s + itemsOf(o), 0);
+    const weekPersons = weekOrders.reduce((s, o) => s + personsOf(o), 0);
     const weekBookings = allBookings.filter((b) => b.date >= ugeStart && b.date <= weekEnd && b.status !== 'afvist');
 
     $('#view-uge').innerHTML = `
@@ -338,17 +380,19 @@
           </div>
         </div>
         <p class="sub" style="color:var(--ink-soft);">
-          Hele ugen: <strong>${weekOrders.length}</strong> bestillinger · <strong>${weekPortions}</strong> kuverter · <strong>${weekBookings.length}</strong> booking${weekBookings.length === 1 ? '' : 'er'}
+          Hele ugen: <strong>${weekOrders.length}</strong> bestillinger · <strong>${weekItems}</strong> retter · <strong>${weekPersons}</strong> personer · <strong>${weekBookings.length}</strong> booking${weekBookings.length === 1 ? '' : 'er'}
         </p>
       </div>
 
       <div class="ugegrid">
         ${days.map((iso) => {
           const orders = S.getOrders(iso);
-          const portions = orders.reduce((s, o) => s + Number(o.qty || 0), 0);
-          const togo = orders.filter((o) => o.type === 'togo').reduce((s, o) => s + Number(o.qty || 0), 0);
+          const dayItems = orders.reduce((s, o) => s + itemsOf(o), 0);
+          const dayPersons = orders.reduce((s, o) => s + personsOf(o), 0);
+          const togo = orders.filter((o) => o.type === 'togo').reduce((s, o) => s + personsOf(o), 0);
           const dish = S.getDagensRet(iso);
           const sold = S.getSold(iso);
+          const totals = dishTotals(orders);
           const bookings = allBookings.filter((b) => b.date === iso && b.status !== 'afvist');
           const isToday = iso === today;
           const closed = !S.isOpenDay(iso);
@@ -365,9 +409,11 @@
             </div>
             <div class="ugeday__stats">
               <span><strong>${orders.length}</strong> bestillinger</span>
-              <span><strong>${portions}</strong> kuverter</span>
-              <span>🥡 <strong>${togo}</strong> · 🍽️ <strong>${portions - togo}</strong></span>
+              <span><strong>${dayItems}</strong> retter</span>
+              <span><strong>${dayPersons}</strong> pers.</span>
+              <span>🥡 <strong>${togo}</strong> · 🍽️ <strong>${dayPersons - togo}</strong></span>
             </div>
+            ${totals.length ? `<div class="ugeday__top">${totals.slice(0, 3).map(([n, q]) => `${q} × ${esc(n)}`).join(' · ')}${totals.length > 3 ? ' · …' : ''}</div>` : ''}
             ${bookings.length ? `
               <div class="ugeday__bookings">
                 ${bookings.map((b) => `<div>${b.kind === 'moede' ? '📅' : '🎉'} kl. ${esc(b.time)} · ${esc(b.subject)} <em>(${esc(b.name)})</em></div>`).join('')}
@@ -393,7 +439,8 @@
 
   function renderBestillinger() {
     const orders = S.getOrders(ordersDate);
-    const portions = orders.reduce((s, o) => s + Number(o.qty || 0), 0);
+    const itemsTotal = orders.reduce((s, o) => s + itemsOf(o), 0);
+    const persons = orders.reduce((s, o) => s + personsOf(o), 0);
     const dish = S.getDagensRet(ordersDate);
 
     $('#view-bestillinger').innerHTML = `
@@ -408,8 +455,9 @@
           </div>
         </div>
         <p class="sub" style="color:var(--ink-soft);margin-bottom:14px;">
-          ${esc(S.formatDate(ordersDate))} · ${dish ? `Dagens ret: <strong>${esc(dish.title)}</strong> · ` : ''}${orders.length} bestillinger · ${portions} kuverter i alt
+          ${esc(S.formatDate(ordersDate))} · ${dish ? `Dagens ret: <strong>${esc(dish.title)}</strong> · ` : ''}${orders.length} bestillinger · ${itemsTotal} retter · ${persons} personer
         </p>
+        ${orders.length ? `<div class="prodlist" style="margin-bottom:16px;">${dishTotals(orders).map(([n, q]) => `<span class="prod"><b>${q}</b>${esc(n)}</span>`).join('')}</div>` : ''}
         <div class="rowlist">
           ${orders.length ? orders.map((o) => orderRow(o)).join('') : '<div class="empty">Ingen bestillinger på denne dato.</div>'}
         </div>

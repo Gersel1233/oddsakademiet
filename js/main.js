@@ -319,27 +319,34 @@
     }
   }
 
-  /* ---------- bestil dagens ret ---------- */
+  /* ---------- bestil: kurv med dagens ret + hele menukortet ---------- */
   const orderDate = $('#orderDate');
   const orderTime = $('#orderTime');
   const orderDishHint = $('#orderDishHint');
+  const builderEl = $('#builder');
+  const basketBar = $('#basketBar');
+
+  /* kurven: key -> { name, qty, price, kind } */
+  let basket = {};
+  let builderIndex = {};
+  const openCats = new Set();
+
+  const basketLines = () => Object.values(basket).filter((l) => l.qty > 0);
 
   function renderOrderDates() {
     const plan = S.getPlan(14);
     const options = plan
-      .filter((d) => d.open && d.dish)
+      .filter((d) => d.open)
       .map((d) => {
         const remaining = S.getRemaining(d.iso);
-        const soldOut = remaining !== null && remaining <= 0;
-        const label = `${d.iso === S.todayISO() ? 'I dag – ' : ''}${S.formatDate(d.iso)} · ${d.dish.title}${soldOut ? ' · UDSOLGT' : ''}`;
-        return `<option value="${d.iso}" ${soldOut ? 'disabled' : ''}>${esc(label)}</option>`;
+        const soldOut = d.dish && remaining !== null && remaining <= 0;
+        const what = d.dish ? `${d.dish.title}${soldOut ? ' (udsolgt)' : ''}` : 'menukort';
+        const label = `${d.iso === S.todayISO() ? 'I dag – ' : ''}${S.formatDate(d.iso)} · ${what}`;
+        return `<option value="${d.iso}">${esc(label)}</option>`;
       });
     orderDate.innerHTML = options.length
       ? options.join('')
       : '<option value="">Ingen dage åbne for bestilling lige nu</option>';
-    /* spring frem til første dag, der ikke er udsolgt */
-    const firstOpen = [...orderDate.options].find((o) => !o.disabled && o.value);
-    if (firstOpen) orderDate.value = firstOpen.value;
     onOrderDateChange();
   }
 
@@ -348,21 +355,21 @@
     if (!iso) {
       orderTime.innerHTML = '<option value="">–</option>';
       orderDishHint.textContent = '';
+      builderEl.innerHTML = '';
+      basket = {};
+      renderBasketBar();
       return;
     }
     const dish = S.getDagensRet(iso);
     const remaining = S.getRemaining(iso);
-    let hint = dish ? `Dagens ret: ${dish.title}${dish.price ? ` · ${kr(dish.price)}` : ''}` : '';
-    if (remaining !== null) hint += remaining > 0 ? ` · ${remaining} tilbage` : ' · udsolgt';
+    let hint = dish
+      ? `Dagens ret: ${dish.title}${dish.price ? ` · ${kr(dish.price)}` : ''}`
+      : 'Ingen dagens ret denne dag – vælg frit fra menukortet.';
+    if (dish && remaining !== null) hint += remaining > 0 ? ` · ${remaining} tilbage` : ' · udsolgt';
     orderDishHint.textContent = hint;
-    orderDishHint.className = `field__hint ${remaining !== null && remaining <= 5 ? (remaining <= 0 ? 'is-bad' : 'is-ok') : ''}`;
+    orderDishHint.className = `field__hint ${dish && remaining !== null && remaining <= 5 ? (remaining <= 0 ? 'is-bad' : 'is-ok') : ''}`;
 
-    /* begræns antal til det, der er tilbage */
-    const qtyInput = $('#orderQty');
-    qtyInput.max = remaining !== null ? Math.max(1, remaining) : 50;
-    if (remaining !== null && Number(qtyInput.value) > remaining) {
-      qtyInput.value = Math.max(1, remaining);
-    }
+    renderBuilder();
 
     /* madbestillinger kan kun afhentes frem til køkkenets lukketid */
     const slots = S.timeslotsFor(iso, 30, true);
@@ -372,6 +379,111 @@
   }
   orderDate.addEventListener('change', onOrderDateChange);
 
+  /* kurv-opbyggeren: dagens ret øverst, menukortets kategorier under */
+  function renderBuilder() {
+    const iso = orderDate.value;
+    const dish = iso ? S.getDagensRet(iso) : null;
+    const remaining = iso ? S.getRemaining(iso) : null;
+    const menu = S.getMenu();
+    const wIdx = iso ? S.weekdayIndex(iso) : 0;
+    const weekend = wIdx >= 5;
+
+    /* indeks over alt, der kan bestilles på den valgte dag */
+    builderIndex = {};
+    if (dish) builderIndex.dagens = { name: dish.title, price: dish.price ?? null, kind: 'dagensret' };
+    const groups = [];
+    const extras = (menu.weekly[wIdx] || []).filter((i) => i.name);
+    if (extras.length) groups.push({ name: 'Dagens ekstra retter', items: extras });
+    menu.categories
+      .filter((cat) => cat.availability !== 'hverdage' || !weekend)
+      .forEach((cat) => groups.push({ name: cat.name, items: cat.items.filter((i) => i.name) }));
+    groups.forEach((g) => g.items.forEach((item) => {
+      builderIndex['m::' + item.name] = { name: item.name, price: item.price ?? null, kind: 'menu' };
+    }));
+
+    /* ryd kurven for varer, der ikke findes på den valgte dag */
+    Object.keys(basket).forEach((key) => {
+      if (!builderIndex[key]) delete basket[key];
+    });
+    if (basket.dagens && remaining !== null && basket.dagens.qty > remaining) {
+      basket.dagens.qty = remaining;
+      if (!basket.dagens.qty) delete basket.dagens;
+    }
+
+    const stepper = (key, max) => {
+      const qty = basket[key] ? basket[key].qty : 0;
+      const plusOff = max !== null && qty >= max;
+      return `<div class="stepper">
+        <button type="button" data-step="-1" data-key="${esc(key)}" aria-label="Én mindre" ${qty <= 0 ? 'disabled' : ''}>−</button>
+        <b>${qty}</b>
+        <button type="button" data-step="1" data-key="${esc(key)}" aria-label="Én mere" ${plusOff ? 'disabled' : ''}>+</button>
+      </div>`;
+    };
+
+    let html = '';
+    if (dish) {
+      const soldOut = remaining !== null && remaining <= 0;
+      html += `<div class="builder__dagens">
+        <div class="bitem__info">
+          <strong>${esc(dish.title)}<span class="menuline__badge">Dagens ret</span></strong>
+          ${dish.desc ? `<small>${esc(dish.desc)}</small>` : ''}
+          ${dish.price ? `<em>${kr(dish.price)}</em>` : ''}
+        </div>
+        ${soldOut ? '<span class="builder__soldout">Udsolgt</span>' : stepper('dagens', remaining)}
+      </div>`;
+    }
+    html += groups.map((g) => {
+      const count = g.items.reduce((s, item) => s + ((basket['m::' + item.name] || {}).qty || 0), 0);
+      const open = openCats.has(g.name) || count > 0;
+      return `<details class="bcat" data-cat="${esc(g.name)}" ${open ? 'open' : ''}>
+        <summary><span>${esc(g.name)}</span>${count ? `<span class="bcat__count">${count} valgt</span>` : '<span class="bcat__hint">+ tilføj</span>'}</summary>
+        ${g.items.map((item) => `
+          <div class="bitem">
+            <div class="bitem__info">
+              <strong>${esc(item.name)}</strong>
+              ${item.desc ? `<small>${esc(item.desc)}</small>` : ''}
+              ${item.price ? `<em>${kr(item.price)}</em>` : ''}
+            </div>
+            ${stepper('m::' + item.name, 50)}
+          </div>`).join('')}
+      </details>`;
+    }).join('');
+
+    builderEl.innerHTML = html || '<p class="builder__empty">Menuen for denne dag er på vej – ring til os, så hjælper vi.</p>';
+    builderEl.querySelectorAll('details').forEach((d) => {
+      d.addEventListener('toggle', () => {
+        if (d.open) openCats.add(d.dataset.cat);
+        else openCats.delete(d.dataset.cat);
+      });
+    });
+    renderBasketBar();
+  }
+
+  builderEl.addEventListener('click', (e) => {
+    const btn = e.target.closest('[data-step]');
+    if (!btn || btn.disabled) return;
+    const key = btn.dataset.key;
+    const info = builderIndex[key];
+    if (!info) return;
+    const cur = basket[key] ? basket[key].qty : 0;
+    let next = cur + Number(btn.dataset.step);
+    const max = key === 'dagens' ? S.getRemaining(orderDate.value) : 50;
+    if (max !== null && next > max) next = max;
+    if (next <= 0) delete basket[key];
+    else basket[key] = { name: info.name, qty: next, price: info.price, kind: info.kind };
+    renderBuilder();
+  });
+
+  function renderBasketBar() {
+    const lines = basketLines();
+    if (!lines.length) { basketBar.hidden = true; return; }
+    basketBar.hidden = false;
+    const totalItems = lines.reduce((s, l) => s + l.qty, 0);
+    const total = lines.reduce((s, l) => s + (l.price ? l.price * l.qty : 0), 0);
+    basketBar.innerHTML = `<strong>Jeres bestilling:</strong> ${lines.map((l) => `${l.qty} × ${esc(l.name)}`).join(' · ')}
+      <span class="basketbar__total">${totalItems} ret${totalItems === 1 ? '' : 'ter'}${total ? ` · i alt ${total} kr.` : ''}</span>`;
+  }
+
   $('#orderForm').addEventListener('submit', async (e) => {
     e.preventDefault();
     const error = $('#orderError');
@@ -379,39 +491,44 @@
 
     const iso = orderDate.value;
     const time = orderTime.value;
-    const qty = Number($('#orderQty').value);
+    const persons = Number($('#orderPersons').value);
     const type = $('input[name="orderType"]:checked').value;
     const name = $('#orderName').value.trim();
     const phone = $('#orderPhone').value.trim();
     const note = $('#orderNote').value.trim();
+    const lines = basketLines();
 
     const problems = [];
     if (!iso) problems.push('vælg en dato');
     if (!time) problems.push('vælg et tidspunkt');
-    if (!qty || qty < 1) problems.push('angiv antal kuverter');
+    if (!lines.length) problems.push('læg mindst én ret i bestillingen');
+    if (!persons || persons < 1) problems.push('angiv antal personer');
     if (!name) problems.push('skriv dit navn');
     if (!/^[\d+\s-]{6,}$/.test(phone)) problems.push('skriv et gyldigt telefonnummer');
 
     if (problems.length) {
-      error.textContent = `Hov! Du mangler at: ${problems.join(', ')}.`;
+      error.textContent = `Hov! I mangler at: ${problems.join(', ')}.`;
       error.hidden = false;
       return;
     }
 
     const dish = S.getDagensRet(iso);
+    const dagensQty = basket.dagens ? basket.dagens.qty : 0;
     const submitBtn = e.target.querySelector('button[type="submit"]');
     submitBtn.disabled = true;
     submitBtn.textContent = 'Sender…';
     const result = await S.addOrder({
       date: iso,
       time,
-      qty,
+      qty: dagensQty,
       type,
       name,
       phone,
       note,
-      dish: dish ? dish.title : 'Dagens ret',
-      price: dish ? dish.price : null,
+      dish: dagensQty > 0 && dish ? dish.title : '',
+      price: dagensQty > 0 && dish ? dish.price : null,
+      items: lines,
+      persons,
     });
     submitBtn.disabled = false;
     submitBtn.textContent = 'Send bestilling';
@@ -421,8 +538,8 @@
         error.textContent = 'Bestillingen kunne ikke sendes lige nu – prøv igen, eller ring til os.';
       } else {
         error.textContent = result.remaining > 0
-          ? `Åh nej – der er kun ${result.remaining} portion${result.remaining === 1 ? '' : 'er'} tilbage denne dag. Vælg færre kuverter eller en anden dag.`
-          : 'Dagens ret er desværre udsolgt denne dag – vælg en anden dag i kalenderen.';
+          ? `Åh nej – der er kun ${result.remaining} portion${result.remaining === 1 ? '' : 'er'} dagens ret tilbage denne dag. Sæt antallet ned eller vælg en anden dag.`
+          : 'Dagens ret er desværre lige blevet udsolgt – fjern den fra bestillingen eller vælg en anden dag.';
       }
       error.hidden = false;
       onOrderDateChange();
@@ -433,7 +550,7 @@
     const success = $('#orderSuccess');
     success.hidden = false;
     $('#orderSuccessText').textContent =
-      `${qty} × ${dish ? dish.title : 'dagens ret'} ${type === 'togo' ? 'til afhentning' : 'ved bordet'} ${S.formatDate(iso).toLowerCase()} kl. ${time}. Vi glæder os til at se dig, ${name}!`;
+      `${lines.map((l) => `${l.qty} × ${l.name}`).join(', ')} — til ${persons} person${persons === 1 ? '' : 'er'} ${type === 'togo' ? 'til afhentning' : 'ved bordet'} ${S.formatDate(iso).toLowerCase()} kl. ${time}. Vi glæder os til at se jer, ${name}!`;
     success.scrollIntoView({ behavior: 'smooth', block: 'center' });
   });
 
@@ -442,6 +559,7 @@
     const form = $('#orderForm');
     form.hidden = false;
     form.reset();
+    basket = {};
     renderOrderDates();
   });
 

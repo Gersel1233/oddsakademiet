@@ -497,10 +497,10 @@ const SpiisStore = (() => {
     return Math.max(0, Number(dish.stock) - getSold(iso));
   }
 
-  /* ---------- bestillinger (dagens ret) ---------- */
+  /* ---------- bestillinger (kurv med dagens ret + menukort) ---------- */
   async function addOrder(order) {
     if (cloud) {
-      /* lagertjekket sker atomisk i databasen (place_order) */
+      /* lagertjekket (kun dagens ret) sker atomisk i databasen */
       try {
         const res = await sbFetch('/rest/v1/rpc/place_order', {
           method: 'POST',
@@ -508,6 +508,7 @@ const SpiisStore = (() => {
             p_date: order.date, p_time: order.time, p_qty: order.qty, p_type: order.type,
             p_name: order.name, p_phone: order.phone, p_note: order.note || '',
             p_dish: order.dish || '', p_price: order.price,
+            p_items: order.items || [], p_persons: order.persons || null,
           }),
         });
         if (!res.ok) throw new Error();
