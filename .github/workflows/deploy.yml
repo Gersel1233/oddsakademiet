@@ -40,3 +40,6 @@ jobs:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
+        with:
+          # GitHubs Pages-kø kan være langsom i perioder – vent op til 20 min.
+          timeout: 1200000
