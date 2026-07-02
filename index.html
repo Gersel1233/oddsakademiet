@@ -239,14 +239,14 @@
           <p class="eyebrow">Arrangementer & møder</p>
           <h2>Book os</h2>
           <span class="dotline" aria-hidden="true"></span>
-          <p class="section__lead">Skal vi stå for maden til jeres arrangement, eller vil du mødes med os og vende mulighederne? Book direkte her – så har vi al informationen klar, inden vi ses.</p>
+          <p class="section__lead">Send en forespørgsel på jeres arrangement – så vender vi tilbage til jer. Eller book et møde med os, hvis I vil forbi og vende mulighederne.</p>
         </div>
 
         <div class="booking__choice" data-reveal>
           <button class="choice is-active" type="button" data-kind="arrangement">
             <span class="choice__icon">🎉</span>
-            <span class="choice__title">Book et arrangement</span>
-            <span class="choice__desc">Fødselsdag, fest, klubaften eller firmaevent – vi klarer maden.</span>
+            <span class="choice__title">Forespørg på et arrangement</span>
+            <span class="choice__desc">Fødselsdag, fest, klubaften eller firmaevent – fortæl os om det, så vender vi tilbage.</span>
           </button>
           <button class="choice" type="button" data-kind="moede">
             <span class="choice__icon">📅</span>
@@ -268,13 +268,13 @@
                 <textarea id="bookingDesc" rows="3" placeholder="Antal gæster, ønsker til menuen, særlige hensyn…"></textarea>
               </label>
               <label class="field">
-                <span>Ønsket dato</span>
-                <input type="date" id="bookingDate" required />
+                <span id="bookingDateLabel">Ønsket dato <em>(valgfrit)</em></span>
+                <input type="date" id="bookingDate" />
                 <small class="field__hint" id="bookingAvail"></small>
               </label>
-              <label class="field">
+              <label class="field" id="bookingTimeField" hidden>
                 <span>Tidspunkt</span>
-                <select id="bookingTime" required></select>
+                <select id="bookingTime"></select>
               </label>
               <label class="field">
                 <span>Navn</span>
@@ -285,14 +285,14 @@
                 <input type="tel" id="bookingPhone" placeholder="12 34 56 78" autocomplete="tel" required />
               </label>
               <label class="field field--full">
-                <span>E-mail <em>(valgfrit)</em></span>
+                <span id="bookingEmailLabel">E-mail <em>(vi svarer på mail eller telefon)</em></span>
                 <input type="email" id="bookingEmail" placeholder="din@mail.dk" autocomplete="email" />
               </label>
             </div>
             <p class="form__error" id="bookingError" hidden></p>
             <p class="form__error" id="bookingOffline" hidden></p>
-            <button type="submit" class="btn btn--accent btn--big form__submit" id="bookingSubmit">Send booking</button>
-            <p class="form__note">Vi bekræfter din booking hurtigst muligt på telefon.</p>
+            <button type="submit" class="btn btn--accent btn--big form__submit" id="bookingSubmit">Send forespørgsel</button>
+            <p class="form__note" id="bookingNote">Vi vender tilbage til jer hurtigst muligt på telefon eller mail.</p>
           </form>
 
           <aside class="booking__aside" data-reveal>
@@ -313,9 +313,9 @@
           <div class="success__check" aria-hidden="true">
             <svg viewBox="0 0 52 52"><circle cx="26" cy="26" r="24" fill="none"/><path fill="none" d="M14 27l8 8 16-17"/></svg>
           </div>
-          <h3>Tak for din booking!</h3>
+          <h3 id="bookingSuccessTitle">Tak for jeres forespørgsel! 🎉</h3>
           <p id="bookingSuccessText"></p>
-          <button class="btn btn--ghost-dark" id="bookAgainBtn" type="button">Lav en ny booking</button>
+          <button class="btn btn--ghost-dark" id="bookAgainBtn" type="button">Send en ny</button>
         </div>
       </div>
     </section>

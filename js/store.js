@@ -571,7 +571,7 @@ const SpiisStore = (() => {
           headers: { Prefer: 'return=minimal' },
           body: JSON.stringify([{
             kind: booking.kind, subject: booking.subject, descr: booking.desc || '',
-            date: booking.date, time: booking.time, name: booking.name,
+            date: booking.date || null, time: booking.time || '', name: booking.name,
             phone: booking.phone, email: booking.email || '',
           }]),
         });

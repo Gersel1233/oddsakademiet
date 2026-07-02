@@ -45,8 +45,8 @@ create table if not exists public.bookings (
   kind text not null default 'arrangement',
   subject text not null,
   descr text not null default '',
-  date date not null,
-  "time" text not null,
+  date date,        /* arrangement-forespørgsler kan mangle dato */
+  "time" text,
   name text not null,
   phone text not null,
   email text not null default '',

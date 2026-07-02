@@ -115,6 +115,7 @@ const SpiisDatepicker = (() => {
         </div>` : ''}
         <div class="dp-foot">
           <button type="button" class="dp-link" data-today>I dag</button>
+          <button type="button" class="dp-link" data-clear>Ryd</button>
           <button type="button" class="dp-link" data-close>Luk</button>
         </div>`;
     }
@@ -161,6 +162,14 @@ const SpiisDatepicker = (() => {
         if (stateFor(today) === 'ok') { pick(today); return; }
         view = { year: Number(today.slice(0, 4)), month: Number(today.slice(5, 7)) - 1 };
         render();
+        return;
+      }
+      if (e.target.closest('[data-clear]')) {
+        input.value = '';
+        input.dispatchEvent(new Event('input', { bubbles: true }));
+        input.dispatchEvent(new Event('change', { bubbles: true }));
+        sync();
+        close();
         return;
       }
       if (e.target.closest('[data-close]')) { close(); return; }

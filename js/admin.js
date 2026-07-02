@@ -130,8 +130,8 @@
       }),
       ...unread.bookings.map((b) => ({
         icon: b.kind === 'moede' ? '📅' : '🎉',
-        title: `${b.kind === 'moede' ? 'Ny mødebooking' : 'Nyt arrangement'}: ${b.subject}`,
-        sub: `${b.name} · ${S.formatDate(b.date)} kl. ${b.time}`,
+        title: `${b.kind === 'moede' ? 'Ny mødebooking' : 'Ny arrangement-forespørgsel'}: ${b.subject}`,
+        sub: `${b.name} · ${b.date ? `${S.formatDate(b.date)}${b.time ? ` kl. ${b.time}` : ''}` : 'dato ikke fastlagt'}`,
         at: b.createdAt,
       })),
     ].sort((a, b) => (b.at || '').localeCompare(a.at || ''));
@@ -242,25 +242,29 @@
   }
 
   function bookingRow(b) {
+    const isMoede = b.kind === 'moede';
     const statusTag = {
-      ny: '<span class="tag tag--red">Ny</span>',
-      bekraeftet: '<span class="tag tag--green">Bekræftet</span>',
+      ny: `<span class="tag tag--red">${isMoede ? 'Ny' : 'Ny – skal kontaktes'}</span>`,
+      bekraeftet: `<span class="tag tag--green">${isMoede ? 'Bekræftet' : 'Aftalt'}</span>`,
       afvist: '<span class="tag">Afvist</span>',
     }[b.status] || '';
+    const when = b.date
+      ? `${esc(S.formatDate(b.date))}${b.time ? ` kl. ${esc(b.time)}` : ''}`
+      : '📆 Dato ikke fastlagt endnu';
     return `
       <div class="row ${b.status === 'ny' ? 'row--new' : ''}">
         <div class="row__main">
-          <div class="row__title">${b.kind === 'moede' ? '📅' : '🎉'} ${esc(b.subject)}
-            <span class="tag ${b.kind === 'moede' ? 'tag--ink' : 'tag--accent'}">${b.kind === 'moede' ? 'Møde' : 'Arrangement'}</span>
+          <div class="row__title">${isMoede ? '📅' : '🎉'} ${esc(b.subject)}
+            <span class="tag ${isMoede ? 'tag--ink' : 'tag--accent'}">${isMoede ? 'Møde' : 'Forespørgsel'}</span>
             ${statusTag}
           </div>
           <div class="row__sub">
-            ${esc(S.formatDate(b.date))} kl. ${esc(b.time)} · ${esc(b.name)} · 📞 ${esc(b.phone)}${b.email ? ` · ✉️ ${esc(b.email)}` : ''}
+            ${when} · ${esc(b.name)} · 📞 ${esc(b.phone)}${b.email ? ` · ✉️ ${esc(b.email)}` : ''}
             ${b.desc ? `<br/>💬 ${esc(b.desc)}` : ''}
           </div>
         </div>
         <div class="row__actions">
-          ${b.status !== 'bekraeftet' ? `<button class="abtn abtn--green" data-act="booking-ok" data-id="${b.id}">✓ Bekræft</button>` : ''}
+          ${b.status !== 'bekraeftet' ? `<button class="abtn abtn--green" data-act="booking-ok" data-id="${b.id}">${isMoede ? '✓ Bekræft' : '✓ Aftalt'}</button>` : ''}
           ${b.status !== 'afvist' ? `<button class="abtn abtn--ghost" data-act="booking-no" data-id="${b.id}">Afvis</button>` : ''}
           <button class="abtn abtn--danger abtn--icon" data-act="booking-del" data-id="${b.id}" aria-label="Slet">🗑</button>
         </div>
@@ -277,7 +281,8 @@
     const dish = S.getDagensRet(today);
     const dagensSold = S.getSold(today);
     const totals = dishTotals(orders);
-    const upcoming = S.getBookings().filter((b) => b.date >= today && b.status !== 'afvist');
+    const upcoming = S.getBookings().filter((b) =>
+      b.status === 'ny' || (b.status === 'bekraeftet' && b.date && b.date >= today));
     const newBookings = S.getBookings().filter((b) => b.status === 'ny').length;
 
     $('#view-overblik').innerHTML = `
@@ -342,11 +347,11 @@
 
       <div class="acard">
         <div class="acard__head">
-          <h2>📅 Kommende bookinger</h2>
+          <h2>📅 Bookinger & forespørgsler</h2>
           <button class="abtn abtn--ghost" data-goto="bookinger">Se alle →</button>
         </div>
         <div class="rowlist">
-          ${upcoming.length ? upcoming.slice(0, 5).map(bookingRow).join('') : '<div class="empty">Ingen kommende bookinger.</div>'}
+          ${upcoming.length ? upcoming.slice(0, 5).map(bookingRow).join('') : '<div class="empty">Ingen nye forespørgsler eller kommende aftaler.</div>'}
         </div>
       </div>`;
   }
@@ -416,7 +421,7 @@
             ${totals.length ? `<div class="ugeday__top">${totals.slice(0, 3).map(([n, q]) => `${q} × ${esc(n)}`).join(' · ')}${totals.length > 3 ? ' · …' : ''}</div>` : ''}
             ${bookings.length ? `
               <div class="ugeday__bookings">
-                ${bookings.map((b) => `<div>${b.kind === 'moede' ? '📅' : '🎉'} kl. ${esc(b.time)} · ${esc(b.subject)} <em>(${esc(b.name)})</em></div>`).join('')}
+                ${bookings.map((b) => `<div>${b.kind === 'moede' ? '📅' : '🎉'} ${b.time ? `kl. ${esc(b.time)} · ` : ''}${esc(b.subject)} <em>(${esc(b.name)})</em></div>`).join('')}
               </div>` : ''}
             <textarea class="inline-input ugeday__note" data-note="${iso}" rows="2" placeholder="Noter til dagen – fx 'Husk ekstra pommes'…">${esc(S.getNote(iso))}</textarea>
             <div class="ugeday__actions">
@@ -482,8 +487,10 @@
   function renderBookinger() {
     const all = S.getBookings();
     const today = S.todayISO();
-    const upcoming = all.filter((b) => b.date >= today);
-    const past = all.filter((b) => b.date < today).reverse();
+    /* nye forespørgsler/bookinger skal kontaktes – også dem uden dato */
+    const needsContact = all.filter((b) => b.status === 'ny');
+    const upcoming = all.filter((b) => b.status === 'bekraeftet' && b.date && b.date >= today);
+    const past = all.filter((b) => b.status !== 'ny' && !upcoming.includes(b)).reverse();
     const blocked = S.getBlockedDates().filter((d) => d >= today);
 
     $('#view-bookinger').innerHTML = `
@@ -505,18 +512,28 @@
 
       <div class="acard">
         <div class="acard__head">
-          <h2>📅 Kommende bookinger</h2>
-          <span class="sub">${upcoming.length} i alt</span>
+          <h2>📞 Nye – skal kontaktes</h2>
+          <span class="sub">forespørgsler og mødebookinger, der venter på svar fra jer</span>
         </div>
         <div class="rowlist">
-          ${upcoming.length ? upcoming.map(bookingRow).join('') : '<div class="empty">Ingen kommende bookinger endnu.</div>'}
+          ${needsContact.length ? needsContact.map(bookingRow).join('') : '<div class="empty">Ingen ubesvarede lige nu – flot! 🎉</div>'}
         </div>
       </div>
 
       <div class="acard">
-        <div class="acard__head"><h2>🗂 Tidligere bookinger</h2></div>
+        <div class="acard__head">
+          <h2>📅 Kommende aftaler</h2>
+          <span class="sub">${upcoming.length} i alt</span>
+        </div>
         <div class="rowlist">
-          ${past.length ? past.slice(0, 10).map(bookingRow).join('') : '<div class="empty">Ingen tidligere bookinger.</div>'}
+          ${upcoming.length ? upcoming.map(bookingRow).join('') : '<div class="empty">Ingen kommende aftaler endnu.</div>'}
+        </div>
+      </div>
+
+      <div class="acard">
+        <div class="acard__head"><h2>🗂 Tidligere & afviste</h2></div>
+        <div class="rowlist">
+          ${past.length ? past.slice(0, 10).map(bookingRow).join('') : '<div class="empty">Ingen endnu.</div>'}
         </div>
       </div>`;
 
@@ -920,7 +937,11 @@
       if (!confirm('Slet denne bestilling?')) return;
       S.deleteOrder(id);
     }
-    else if (act === 'booking-ok') { S.updateBooking(id, { status: 'bekraeftet', read: true }); toast('Booking bekræftet – husk at ringe til kunden ✓'); }
+    else if (act === 'booking-ok') {
+      const bk = S.getBookings().find((x) => x.id === id);
+      S.updateBooking(id, { status: 'bekraeftet', read: true });
+      toast(bk && bk.kind === 'moede' ? 'Mødet er bekræftet – husk at ringe til kunden ✓' : 'Markeret som aftalt ✓');
+    }
     else if (act === 'booking-no') { S.updateBooking(id, { status: 'afvist', read: true }); }
     else if (act === 'booking-del') {
       if (!confirm('Slet denne booking?')) return;

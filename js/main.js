@@ -569,21 +569,35 @@
   const bookingTime = $('#bookingTime');
   const bookingAvail = $('#bookingAvail');
 
+  /* arrangement = uforpligtende forespørgsel · møde = rigtig booking */
+  function syncBookingMode() {
+    const isMoede = bookingKind.value === 'moede';
+    $('#bookingSubjectLabel').textContent = isMoede
+      ? 'Hvad vil du gerne tale med os om?'
+      : 'Hvad drejer arrangementet sig om?';
+    $('#bookingSubject').placeholder = isMoede
+      ? 'Fx menu til konfirmation i maj'
+      : 'Fx konfirmation for 30 personer';
+    $('#bookingDateLabel').innerHTML = isMoede ? 'Ønsket dato' : 'Ønsket dato <em>(valgfrit)</em>';
+    $('#bookingTimeField').hidden = !isMoede;
+    $('#bookingEmailLabel').innerHTML = isMoede
+      ? 'E-mail <em>(valgfrit)</em>'
+      : 'E-mail <em>(vi svarer på mail eller telefon)</em>';
+    $('#bookingSubmit').textContent = isMoede ? 'Book mødet' : 'Send forespørgsel';
+    $('#bookingNote').textContent = isMoede
+      ? 'Vi bekræfter din booking hurtigst muligt på telefon.'
+      : 'Vi vender tilbage til jer hurtigst muligt på telefon eller mail.';
+  }
+
   $$('.choice').forEach((btn) => {
     btn.addEventListener('click', () => {
       $$('.choice').forEach((b) => b.classList.remove('is-active'));
       btn.classList.add('is-active');
-      const kind = btn.dataset.kind;
-      bookingKind.value = kind;
-      $('#bookingSubjectLabel').textContent = kind === 'moede'
-        ? 'Hvad vil du gerne tale med os om?'
-        : 'Hvad drejer arrangementet sig om?';
-      $('#bookingSubject').placeholder = kind === 'moede'
-        ? 'Fx menu til konfirmation i maj'
-        : 'Fx konfirmation for 30 personer';
-      $('#bookingSubmit').textContent = kind === 'moede' ? 'Book mødet' : 'Send booking';
+      bookingKind.value = btn.dataset.kind;
+      syncBookingMode();
     });
   });
+  syncBookingMode();
 
   bookingDate.min = S.todayISO();
 
@@ -620,17 +634,18 @@
     error.hidden = true;
 
     const kind = bookingKind.value;
+    const isMoede = kind === 'moede';
     const subject = $('#bookingSubject').value.trim();
     const desc = $('#bookingDesc').value.trim();
     const iso = bookingDate.value;
-    const time = bookingTime.value;
+    const time = isMoede ? bookingTime.value : '';
     const name = $('#bookingName').value.trim();
     const phone = $('#bookingPhone').value.trim();
     const email = $('#bookingEmail').value.trim();
 
     const problems = [];
     if (!subject) problems.push('skriv hvad det drejer sig om');
-    if (!iso) problems.push('vælg en dato');
+    if (isMoede && !iso) problems.push('vælg en dato');
     if (!name) problems.push('skriv dit navn');
     if (!/^[\d+\s-]{6,}$/.test(phone)) problems.push('skriv et gyldigt telefonnummer');
 
@@ -640,14 +655,17 @@
       return;
     }
 
-    const avail = S.isDateAvailable(iso);
-    if (!avail.ok) {
-      error.textContent = `Datoen kan ikke bookes: ${avail.reason}`;
-      error.hidden = false;
-      return;
+    /* er der valgt en dato, skal den være ledig – uanset type */
+    if (iso) {
+      const avail = S.isDateAvailable(iso);
+      if (!avail.ok) {
+        error.textContent = `Datoen kan ikke vælges: ${avail.reason}`;
+        error.hidden = false;
+        return;
+      }
     }
-    if (!time) {
-      error.textContent = 'Vælg et tidspunkt for din booking.';
+    if (isMoede && !time) {
+      error.textContent = 'Vælg et tidspunkt for dit møde.';
       error.hidden = false;
       return;
     }
@@ -655,12 +673,12 @@
     const submitBtn = $('#bookingSubmit');
     submitBtn.disabled = true;
     submitBtn.textContent = 'Sender…';
-    const result = await S.addBooking({ kind, subject, desc, date: iso, time, name, phone, email });
+    const result = await S.addBooking({ kind, subject, desc, date: iso || null, time, name, phone, email });
     submitBtn.disabled = false;
-    submitBtn.textContent = kind === 'moede' ? 'Book mødet' : 'Send booking';
+    submitBtn.textContent = isMoede ? 'Book mødet' : 'Send forespørgsel';
 
     if (!result.ok) {
-      error.textContent = 'Bookingen kunne ikke sendes lige nu – prøv igen, eller ring til os.';
+      error.textContent = `${isMoede ? 'Bookingen' : 'Forespørgslen'} kunne ikke sendes lige nu – prøv igen, eller ring til os.`;
       error.hidden = false;
       return;
     }
@@ -670,8 +688,10 @@
     document.querySelector('.booking__choice').hidden = true;
     const success = $('#bookingSuccess');
     success.hidden = false;
-    $('#bookingSuccessText').textContent =
-      `${kind === 'moede' ? 'Dit møde' : 'Dit arrangement'} er booket ${S.formatDate(iso).toLowerCase()} kl. ${time}. Vi ringer til dig på ${phone} og bekræfter hurtigst muligt.`;
+    $('#bookingSuccessTitle').textContent = isMoede ? 'Tak for din booking!' : 'Tak for jeres forespørgsel! 🎉';
+    $('#bookingSuccessText').textContent = isMoede
+      ? `Dit møde er booket ${S.formatDate(iso).toLowerCase()} kl. ${time}. Vi ringer til dig på ${phone} og bekræfter hurtigst muligt.`
+      : `Vi har modtaget jeres forespørgsel${iso ? ` med ønsket dato ${S.formatDate(iso).toLowerCase()}` : ''} og vender tilbage til jer på telefon eller mail hurtigst muligt – vi glæder os til at høre mere om jeres arrangement!`;
     success.scrollIntoView({ behavior: 'smooth', block: 'center' });
   });
 
@@ -682,6 +702,8 @@
     form.reset();
     document.querySelector('.booking__aside').hidden = false;
     document.querySelector('.booking__choice').hidden = false;
+    $$('.choice').forEach((b) => b.classList.toggle('is-active', b.dataset.kind === bookingKind.value));
+    syncBookingMode();
     onBookingDateChange();
   });
 
