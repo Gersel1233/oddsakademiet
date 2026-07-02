@@ -653,19 +653,23 @@
       btn.classList.add('is-active');
       bookingKind.value = btn.dataset.kind;
       syncBookingMode();
+      /* en dag kan være ledig til møde men optaget til arrangement */
+      onBookingDateChange();
     });
   });
   syncBookingMode();
 
   bookingDate.min = S.todayISO();
 
-  /* Spiis-kalender: lukkede og optagede dage kan slet ikke vælges */
+  /* Spiis-kalender: lukkede og optagede dage kan slet ikke vælges.
+     Dage med et aftalt arrangement er kun optaget for NYE arrangementer. */
   SpiisDatepicker.attach(bookingDate, {
     min: S.todayISO(),
     legend: true,
     state: (iso) => {
       if (!S.isOpenDay(iso)) return 'closed';
       if (S.getBlockedDates().includes(iso)) return 'blocked';
+      if (bookingKind.value !== 'moede' && S.getArrangementDates().includes(iso)) return 'blocked';
       return 'ok';
     },
   });
@@ -673,7 +677,7 @@
   function onBookingDateChange() {
     const iso = bookingDate.value;
     if (!iso) { bookingAvail.textContent = ''; bookingAvail.className = 'field__hint'; return; }
-    const avail = S.isDateAvailable(iso);
+    const avail = S.isDateAvailable(iso, bookingKind.value);
     bookingAvail.textContent = (avail.ok ? '✓ ' : '✕ ') + avail.reason;
     bookingAvail.className = `field__hint ${avail.ok ? 'is-ok' : 'is-bad'}`;
 
@@ -715,7 +719,7 @@
 
     /* er der valgt en dato, skal den være ledig – uanset type */
     if (iso) {
-      const avail = S.isDateAvailable(iso);
+      const avail = S.isDateAvailable(iso, kind);
       if (!avail.ok) {
         error.textContent = `Datoen kan ikke vælges: ${avail.reason}`;
         error.hidden = false;

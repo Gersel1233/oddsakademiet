@@ -136,6 +136,7 @@ const SpiisStore = (() => {
       orders: [],       /* bestillinger af dagens ret */
       bookings: [],     /* arrangementer & møder */
       blockedDates: [], /* datoer chefen har lukket for booking */
+      arrangementDates: [], /* dage med aftalt arrangement – blokeres automatisk for nye arrangement-forespørgsler */
       notes: {},        /* chefens egne noter pr. dag { 'YYYY-MM-DD': tekst } */
       log: [],
     };
@@ -164,6 +165,7 @@ const SpiisStore = (() => {
       if (!parsed || !parsed.settings) return null;
       /* blid migrering af felter, der er kommet til senere */
       if (!parsed.notes) parsed.notes = {};
+      if (!parsed.arrangementDates) parsed.arrangementDates = [];
       return parsed;
     } catch {
       return null;
@@ -227,7 +229,7 @@ const SpiisStore = (() => {
     return res;
   }
 
-  const CONFIG_KEYS = ['settings', 'hours', 'dagensRet', 'menu', 'blockedDates'];
+  const CONFIG_KEYS = ['settings', 'hours', 'dagensRet', 'menu', 'blockedDates', 'arrangementDates'];
 
   function mergeConfig(remote) {
     if (!remote) return;
@@ -246,6 +248,7 @@ const SpiisStore = (() => {
       dagensRet: data.dagensRet,
       menu: data.menu,
       blockedDates: data.blockedDates,
+      arrangementDates: data.arrangementDates || [],
     };
   }
 
@@ -606,6 +609,7 @@ const SpiisStore = (() => {
         body: JSON.stringify(patch),
       }).catch(() => {});
     }
+    syncArrangementDates();
   }
   function deleteBooking(id) {
     data.bookings = data.bookings.filter((x) => x.id !== id);
@@ -613,10 +617,29 @@ const SpiisStore = (() => {
     if (cloud) {
       sbFetch(`/rest/v1/bookings?id=eq.${encodeURIComponent(id)}`, { method: 'DELETE', auth: true }).catch(() => {});
     }
+    syncArrangementDates();
+  }
+
+  /* Dage med et aftalt arrangement blokeres automatisk for nye
+     arrangement-forespørgsler på hjemmesiden. Listen genberegnes
+     ved hver ændring, så den også rydder op, når et arrangement
+     afvises, slettes eller flyttes til en anden dag. */
+  function syncArrangementDates() {
+    const computed = [...new Set(
+      data.bookings
+        .filter((b) => b.kind === 'arrangement' && b.status === 'bekraeftet' && b.date && b.date >= todayISO())
+        .map((b) => b.date)
+    )].sort();
+    if (JSON.stringify(computed) !== JSON.stringify(data.arrangementDates || [])) {
+      data.arrangementDates = computed;
+      save();
+      pushConfig();
+    }
   }
 
   /* ---------- tilgængelighed for booking ---------- */
   const getBlockedDates = () => data.blockedDates.slice();
+  const getArrangementDates = () => (data.arrangementDates || []).slice();
   function blockDate(iso) {
     if (!data.blockedDates.includes(iso)) {
       data.blockedDates.push(iso);
@@ -630,10 +653,14 @@ const SpiisStore = (() => {
     save();
     pushConfig();
   }
-  function isDateAvailable(iso) {
+  function isDateAvailable(iso, kind) {
     if (!iso || iso < todayISO()) return { ok: false, reason: 'Datoen er passeret.' };
     if (!isOpenDay(iso)) return { ok: false, reason: 'Vi holder lukket denne dag.' };
     if (data.blockedDates.includes(iso)) return { ok: false, reason: 'Dagen er desværre optaget – vælg en anden dag.' };
+    /* dage med et aftalt arrangement er kun lukket for NYE arrangementer – møder kan stadig bookes */
+    if (kind !== 'moede' && (data.arrangementDates || []).includes(iso)) {
+      return { ok: false, reason: 'Dagen er allerede optaget af et arrangement – vælg en anden dag.' };
+    }
     return { ok: true, reason: 'Dagen er ledig!' };
   }
 
@@ -736,7 +763,7 @@ const SpiisStore = (() => {
     getMenu, setMenu,
     addOrder, getOrders, updateOrder, deleteOrder,
     addBooking, getBookings, updateBooking, deleteBooking,
-    getBlockedDates, blockDate, unblockDate, isDateAvailable,
+    getBlockedDates, getArrangementDates, blockDate, unblockDate, isDateAvailable,
     timeslotsFor,
     getUnread, markAllRead,
     exportData, resetData,

@@ -14,6 +14,8 @@
   --green-soft: #E4F0DF;
   --red: #B3372B;
   --red-soft: #FBEAE7;
+  --moede: #3D5A80;
+  --moede-soft: #E9F0F7;
   --line: rgba(28, 24, 20, 0.12);
   --shadow: 0 16px 40px -18px rgba(28, 24, 20, 0.22);
   --radius: 18px;
@@ -399,6 +401,11 @@ button { font-family: var(--font-body); }
 .row--done { opacity: 0.55; }
 .row--done:hover { opacity: 1; }
 
+/* tydelig forskel på bookinger: orange kant = arrangement, blå kant = møde */
+.row--arr { border-left: 6px solid var(--accent); }
+.row--moede { border-left: 6px solid var(--moede); }
+.row--moede.row--new { border-color: var(--moede); border-left-width: 6px; background: var(--moede-soft); }
+
 /* dato/tid-editor på bookinger: foldes ud i rækken */
 .bkedit {
   flex-basis: 100%;
@@ -414,6 +421,7 @@ button { font-family: var(--font-body); }
 .bkedit .afield--wide { flex-basis: 100%; max-width: none; }
 .bkedit .afield > span em { font-style: normal; font-weight: 500; color: var(--ink-soft); font-size: 0.8rem; }
 .bkedit .abtn { margin-bottom: 2px; }
+.bkedit__hint { flex-basis: 100%; font-size: 0.84rem; color: var(--ink-soft); }
 
 /* tjekliste-flueben: tryk for færdig, tryk igen for at fortryde */
 .checkbtn {
@@ -476,6 +484,7 @@ button { font-family: var(--font-body); }
 .tag--green { background: var(--green-soft); color: var(--green); }
 .tag--red { background: var(--red-soft); color: var(--red); }
 .tag--ink { background: var(--ink); color: var(--cream); }
+.tag--moede { background: var(--moede); color: #fff; }
 
 .empty {
   text-align: center;
@@ -708,6 +717,13 @@ button { font-family: var(--font-body); }
   cursor: pointer;
   font-size: 0.75rem;
   line-height: 1;
+}
+/* auto-blokeret pga. aftalt arrangement – fjernes via selve arrangementet */
+.blocked__chip--auto {
+  background: var(--accent-soft);
+  color: var(--accent-deep);
+  padding-right: 14px;
+  cursor: help;
 }
 
 /* toast */

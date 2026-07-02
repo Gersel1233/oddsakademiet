@@ -296,10 +296,10 @@
       ? `${esc(S.formatDate(b.date))}${b.time ? ` kl. ${esc(b.time)}` : ''}`
       : '📆 Dato ikke fastlagt endnu';
     return `
-      <div class="row ${b.status === 'ny' ? 'row--new' : ''}">
+      <div class="row ${isMoede ? 'row--moede' : 'row--arr'} ${b.status === 'ny' ? 'row--new' : ''}">
         <div class="row__main">
           <div class="row__title">${isMoede ? '📅' : '🎉'} ${esc(b.subject)}
-            <span class="tag ${isMoede ? 'tag--ink' : 'tag--accent'}">${isMoede ? 'Møde' : 'Forespørgsel'}</span>
+            <span class="tag ${isMoede ? 'tag--moede' : 'tag--accent'}">${isMoede ? '📅 Møde' : '🎉 Arrangement'}</span>
             ${statusTag}
           </div>
           <div class="row__sub">
@@ -317,6 +317,7 @@
           <label class="afield"><span>Dato</span><input type="date" class="bkedit__date" value="${esc(b.date || '')}" /></label>
           <label class="afield"><span>Tidspunkt</span><select class="bkedit__time"></select></label>
           <label class="afield afield--wide"><span>Intern note <em>(kun til jer – aldrig synlig for kunder)</em></span><textarea class="bkedit__note" rows="2" placeholder="Fx: Dæk op til 20 på venstre fløj med servietter, bestik og flag">${esc(b.staff_note || '')}</textarea></label>
+          ${isMoede ? '' : '<div class="bkedit__hint">🚫 Når du gemmer, blokeres dagen automatisk i kalenderen, så andre ikke kan sende arrangement-forespørgsler samme dag. Møder og madbestillinger påvirkes ikke.</div>'}
           <button class="abtn abtn--accent" data-act="booking-save" data-id="${b.id}">✓ Gem</button>
           <button class="abtn abtn--ghost" data-act="booking-close">Luk</button>
         </div>
@@ -556,20 +557,22 @@
     const upcoming = all.filter((b) => b.status === 'bekraeftet' && b.date && b.date >= today);
     const past = all.filter((b) => b.status !== 'ny' && !upcoming.includes(b)).reverse();
     const blocked = S.getBlockedDates().filter((d) => d >= today);
+    const autoBlocked = S.getArrangementDates().filter((d) => d >= today && !blocked.includes(d));
 
     $('#view-bookinger').innerHTML = `
       <div class="acard">
         <div class="acard__head">
           <h2>🚫 Luk dage for booking</h2>
-          <span class="sub">Dage du blokerer, kan ikke vælges i bookingformularen på hjemmesiden.</span>
+          <span class="sub">Dage du blokerer, kan ikke vælges i bookingformularen på hjemmesiden. Dage med et aftalt arrangement blokeres automatisk for nye arrangementer.</span>
         </div>
         <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
           <input type="date" class="inline-input" id="blockDate" min="${today}" style="width:180px;" />
           <button class="abtn abtn--accent" id="blockBtn">Blokér dato</button>
         </div>
         <div class="blocked">
-          ${blocked.length
+          ${blocked.length || autoBlocked.length
             ? blocked.map((d) => `<span class="blocked__chip">${esc(S.formatDate(d))}<button data-unblock="${d}" aria-label="Fjern blokering">✕</button></span>`).join('')
+              + autoBlocked.map((d) => `<span class="blocked__chip blocked__chip--auto" title="Blokeres automatisk, fordi der er et aftalt arrangement. Fjernes, hvis arrangementet flyttes, afvises eller slettes.">🎉 ${esc(S.formatDate(d))}</span>`).join('')
             : '<span class="sub" style="color:var(--ink-soft);">Ingen blokerede dage.</span>'}
         </div>
       </div>
@@ -610,6 +613,7 @@
         if (S.getBlockedDates().includes(iso)) return 'blocked';
         return 'ok';
       },
+      marker: (iso) => S.getArrangementDates().includes(iso),
     });
 
     $('#blockBtn').addEventListener('click', () => {
@@ -1019,7 +1023,12 @@
           timeSel.innerHTML = opts.join('');
         }
         timeSel.value = bk.time || '18:00';
-        SpiisDatepicker.attach(editor.querySelector('.bkedit__date'), { min: S.todayISO() });
+        SpiisDatepicker.attach(editor.querySelector('.bkedit__date'), {
+          min: S.todayISO(),
+          /* prik på dage, der allerede har et aftalt arrangement */
+          marker: (iso) => S.getBookings().some((x) =>
+            x.id !== id && x.kind === 'arrangement' && x.status === 'bekraeftet' && x.date === iso),
+        });
       }
       return;
     }
@@ -1029,8 +1038,11 @@
       const time = editor.querySelector('.bkedit__time').value;
       const staffNote = editor.querySelector('.bkedit__note').value.trim();
       if (!date) { toast('Vælg en dato for aftalen'); return; }
+      const bk = S.getBookings().find((x) => x.id === id);
       S.updateBooking(id, { date, time, staff_note: staffNote, status: 'bekraeftet', read: true });
-      toast(`Gemt: ${S.formatDate(date)} kl. ${time} ✓`);
+      toast(bk && bk.kind === 'arrangement'
+        ? `Gemt: ${S.formatDate(date)} kl. ${time} ✓ – dagen er blokeret for nye arrangementer`
+        : `Gemt: ${S.formatDate(date)} kl. ${time} ✓`);
     }
     else if (act === 'booking-close') {
       btn.closest('.bkedit').hidden = true;
