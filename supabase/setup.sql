@@ -1,0 +1,213 @@
+-- ============================================================
+-- SPIIS – database-opsætning
+-- Kør denne fil ÉN gang i Supabase: SQL Editor → New query →
+-- indsæt det hele → Run. Den kan køres igen uden problemer.
+--
+-- Chefens login-e-mail er sat til spiis.bestilling@gmail.com
+-- (ret i is_admin() herunder, hvis den skal være en anden).
+-- ============================================================
+
+create extension if not exists pgcrypto;
+
+-- Hvem er chefen? Kun denne e-mail kan se/ændre data i admin.
+create or replace function public.is_admin() returns boolean
+language sql stable as $$
+  select coalesce(auth.jwt()->>'email','') = 'spiis.bestilling@gmail.com'
+$$;
+
+-- ---------- tabeller ----------
+create table if not exists public.config (
+  id int primary key check (id = 1),
+  data jsonb not null default '{}'::jsonb,
+  updated_at timestamptz not null default now()
+);
+
+create table if not exists public.orders (
+  id uuid primary key default gen_random_uuid(),
+  date date not null,
+  "time" text not null,
+  qty int not null check (qty between 1 and 100),
+  type text not null default 'togo',
+  name text not null,
+  phone text not null,
+  note text not null default '',
+  dish text not null default '',
+  price numeric,
+  status text not null default 'ny',
+  read boolean not null default false,
+  created_at timestamptz not null default now()
+);
+
+create table if not exists public.bookings (
+  id uuid primary key default gen_random_uuid(),
+  kind text not null default 'arrangement',
+  subject text not null,
+  descr text not null default '',
+  date date not null,
+  "time" text not null,
+  name text not null,
+  phone text not null,
+  email text not null default '',
+  status text not null default 'ny',
+  read boolean not null default false,
+  created_at timestamptz not null default now()
+);
+
+create table if not exists public.notes (
+  date date primary key,
+  text text not null default ''
+);
+
+-- ---------- adgangsregler (RLS) ----------
+alter table public.config enable row level security;
+alter table public.orders enable row level security;
+alter table public.bookings enable row level security;
+alter table public.notes enable row level security;
+
+-- config (menu, åbningstider, dagens ret): alle kan læse, kun chefen kan ændre
+drop policy if exists config_select on public.config;
+create policy config_select on public.config for select using (true);
+drop policy if exists config_update on public.config;
+create policy config_update on public.config for update
+  using (public.is_admin()) with check (public.is_admin());
+
+-- bestillinger: oprettes KUN via place_order-funktionen; kun chefen kan læse/ændre/slette
+drop policy if exists orders_select on public.orders;
+create policy orders_select on public.orders for select using (public.is_admin());
+drop policy if exists orders_update on public.orders;
+create policy orders_update on public.orders for update
+  using (public.is_admin()) with check (public.is_admin());
+drop policy if exists orders_delete on public.orders;
+create policy orders_delete on public.orders for delete using (public.is_admin());
+
+-- bookinger: alle kan oprette, kun chefen kan læse/ændre/slette
+drop policy if exists bookings_insert on public.bookings;
+create policy bookings_insert on public.bookings for insert with check (true);
+drop policy if exists bookings_select on public.bookings;
+create policy bookings_select on public.bookings for select using (public.is_admin());
+drop policy if exists bookings_update on public.bookings;
+create policy bookings_update on public.bookings for update
+  using (public.is_admin()) with check (public.is_admin());
+drop policy if exists bookings_delete on public.bookings;
+create policy bookings_delete on public.bookings for delete using (public.is_admin());
+
+-- chefens dagsnoter: kun chefen
+drop policy if exists notes_all on public.notes;
+create policy notes_all on public.notes for all
+  using (public.is_admin()) with check (public.is_admin());
+
+-- ---------- funktioner ----------
+-- Placér en bestilling med atomisk lagertjek, så to kunder ikke
+-- kan snuppe de sidste portioner samtidig.
+create or replace function public.place_order(
+  p_date date, p_time text, p_qty int, p_type text,
+  p_name text, p_phone text, p_note text, p_dish text, p_price numeric
+) returns jsonb
+language plpgsql security definer set search_path = public as $$
+declare
+  v_stock int;
+  v_sold int;
+  v_remaining int;
+begin
+  if p_qty is null or p_qty < 1 or p_qty > 100 then
+    return jsonb_build_object('ok', false, 'remaining', 0);
+  end if;
+  if coalesce(trim(p_name),'') = '' or coalesce(trim(p_phone),'') = '' then
+    return jsonb_build_object('ok', false, 'remaining', 0);
+  end if;
+
+  -- lås config-rækken, så lagertjek + indsættelse sker uden kapløb
+  perform 1 from config where id = 1 for update;
+
+  select nullif(data->'dagensRet'->to_char(p_date,'YYYY-MM-DD')->>'stock','')::int
+    into v_stock from config where id = 1;
+
+  if v_stock is not null then
+    select coalesce(sum(qty),0) into v_sold from orders where date = p_date;
+    v_remaining := greatest(v_stock - v_sold, 0);
+    if p_qty > v_remaining then
+      return jsonb_build_object('ok', false, 'remaining', v_remaining);
+    end if;
+  end if;
+
+  insert into orders(date, "time", qty, type, name, phone, note, dish, price)
+  values (p_date, p_time, p_qty, p_type,
+          left(trim(p_name), 120), left(trim(p_phone), 40),
+          left(coalesce(p_note,''), 400), left(coalesce(p_dish,''), 200), p_price);
+
+  return jsonb_build_object('ok', true);
+end $$;
+
+grant execute on function public.place_order to anon, authenticated;
+
+-- Solgte kuverter pr. dag (kun tal – ingen navne/numre), så hjemmesiden
+-- kan vise "X portioner tilbage" uden adgang til selve bestillingerne.
+create or replace function public.get_sold() returns table(date date, sold bigint)
+language sql stable security definer set search_path = public as $$
+  select date, sum(qty)::bigint from orders
+  where date >= current_date - 1
+  group by date
+$$;
+
+grant execute on function public.get_sold to anon, authenticated;
+
+-- ---------- startindhold (menu, åbningstider, kontakt) ----------
+insert into public.config (id, data) values (1, $json$
+{
+  "settings": {
+    "name": "Spiis",
+    "tagline": "Velsmag og kvalitet i hver en bid – nemt, hurtigt og altid en fornøjelse!",
+    "address": "Karlslunde Idrætsforening, Kongens Enge 42, 2690 Karlslunde",
+    "phone": "93 99 58 58",
+    "email": "spiis.bestilling@gmail.com",
+    "kitchenClose": "20:30"
+  },
+  "hours": [
+    { "open": "16:00", "close": "22:00", "closed": false },
+    { "open": "16:00", "close": "22:00", "closed": false },
+    { "open": "16:00", "close": "22:00", "closed": false },
+    { "open": "16:00", "close": "22:30", "closed": false },
+    { "open": "16:00", "close": "22:00", "closed": false },
+    { "open": "16:00", "close": "22:00", "closed": false },
+    { "open": "16:00", "close": "22:00", "closed": false }
+  ],
+  "dagensRet": {},
+  "blockedDates": [],
+  "menu": {
+    "weekly": [[], [], [], [], [], [], []],
+    "categories": [
+      { "id": "salater", "name": "Salater", "availability": "hverdage", "items": [
+        { "name": "Cæsar salat", "desc": "", "price": null },
+        { "name": "Vegetarsalat", "desc": "", "price": null }
+      ]},
+      { "id": "retter", "name": "Retter", "availability": "hverdage", "items": [
+        { "name": "Spiis Burger", "desc": "Med to bøffer – i alt 250 g. Fås også som menu med sodavand, pommes og dip.", "price": null },
+        { "name": "Børneburger", "desc": "Som Spiis Burgeren, bare med én bøf på 125 g. Fås også som menu med sodavand, pommes og dip.", "price": null },
+        { "name": "Nachos med kylling", "desc": "", "price": null },
+        { "name": "Pasta bolognese", "desc": "", "price": null }
+      ]},
+      { "id": "friture", "name": "Friture", "availability": "alle", "items": [
+        { "name": "Nuggets med pommes", "desc": "", "price": null },
+        { "name": "Pommes frites", "desc": "Med eller uden dip.", "price": null },
+        { "name": "Chili cheese tops", "desc": "", "price": null },
+        { "name": "Dip", "desc": "Ketchup, mayo, remoulade eller burgerdressing.", "price": null }
+      ]},
+      { "id": "andet", "name": "Andet", "availability": "alle", "items": [
+        { "name": "Panini", "desc": "Med skinke og ost eller kylling og pesto.", "price": null },
+        { "name": "Stort hjemmelavet surdejsbrød", "desc": "", "price": 40 },
+        { "name": "Halvt hjemmelavet surdejsbrød", "desc": "", "price": 25 }
+      ]},
+      { "id": "drikke", "name": "Drikkevarer", "availability": "alle", "items": [
+        { "name": "Sodavand", "desc": "Stort sortiment.", "price": null },
+        { "name": "Capri-Sun & juicebrik", "desc": "", "price": null },
+        { "name": "Fadøl", "desc": "Rød Tuborg, Classic, Grøn Tuborg, Grimbergen og 1664 Blanc.", "price": null },
+        { "name": "Breezer & Somersby", "desc": "", "price": null },
+        { "name": "Alkoholfri øl", "desc": "", "price": null },
+        { "name": "Vin", "desc": "Rødvin, hvidvin og rosé.", "price": null },
+        { "name": "Snaps", "desc": "", "price": null }
+      ]}
+    ]
+  }
+}
+$json$::jsonb)
+on conflict (id) do nothing;

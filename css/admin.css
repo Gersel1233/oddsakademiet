@@ -84,6 +84,17 @@ button { font-family: var(--font-body); }
   border-color: var(--accent);
   box-shadow: 0 0 0 4px rgba(217, 108, 44, 0.15);
 }
+#loginEmail {
+  letter-spacing: normal;
+  font-size: 1rem;
+  text-align: left;
+  margin-bottom: 10px;
+}
+.login__card input.is-password {
+  letter-spacing: 0.15em;
+  font-size: 1.1rem;
+  text-align: left;
+}
 .login__error { color: var(--red); font-weight: 600; font-size: 0.9rem; margin-top: 10px; }
 .login__card form button { width: 100%; margin-top: 16px; }
 .login__back {

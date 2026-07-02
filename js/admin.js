@@ -28,27 +28,65 @@
   const app = $('#app');
 
   function isAuthed() {
-    return sessionStorage.getItem(AUTH_KEY) === '1';
+    /* sky: rigtigt login · lokalt: PIN-flag */
+    return S.hasSession() || sessionStorage.getItem(AUTH_KEY) === '1';
   }
   function showApp() {
     loginScreen.hidden = true;
     app.hidden = false;
+    if (S.isCloud()) S.startAdminPolling();
     renderAll();
   }
-  $('#loginForm').addEventListener('submit', (e) => {
+
+  /* skift login-formularen til e-mail/adgangskode, når skyen er aktiv */
+  function syncLoginMode() {
+    const emailInput = $('#loginEmail');
+    const pinInput = $('#loginPin');
+    if (S.isCloud() && emailInput.hidden) {
+      emailInput.hidden = false;
+      emailInput.value = S.getSettings().email || '';
+      pinInput.placeholder = 'Adgangskode';
+      pinInput.maxLength = 64;
+      pinInput.removeAttribute('inputmode');
+      pinInput.classList.add('is-password');
+      $('#loginHint').textContent = 'Log ind med chefens e-mail og adgangskode.';
+      $('#loginError').textContent = 'Forkert e-mail eller adgangskode.';
+    }
+  }
+  syncLoginMode();
+
+  $('#loginForm').addEventListener('submit', async (e) => {
     e.preventDefault();
+    const errorEl = $('#loginError');
+    if (S.isCloud() || !$('#loginEmail').hidden) {
+      const btn = $('#loginSubmit');
+      btn.disabled = true;
+      btn.textContent = 'Logger ind…';
+      const result = await S.adminLogin($('#loginEmail').value.trim(), $('#loginPin').value);
+      btn.disabled = false;
+      btn.textContent = 'Log ind';
+      if (result.ok) {
+        errorEl.hidden = true;
+        showApp();
+      } else {
+        errorEl.textContent = result.msg || 'Forkert e-mail eller adgangskode.';
+        errorEl.hidden = false;
+      }
+      return;
+    }
     const pin = $('#loginPin').value.trim();
     if (pin === S.getSettings().pin) {
       sessionStorage.setItem(AUTH_KEY, '1');
-      $('#loginError').hidden = true;
+      errorEl.hidden = true;
       showApp();
     } else {
-      $('#loginError').hidden = false;
+      errorEl.hidden = false;
       $('#loginPin').value = '';
       $('#loginPin').focus();
     }
   });
   $('#logoutBtn').addEventListener('click', () => {
+    S.logout();
     sessionStorage.removeItem(AUTH_KEY);
     location.reload();
   });
@@ -721,20 +759,28 @@
         <button class="abtn abtn--accent" id="setSave" style="margin-top:16px;">Gem oplysninger</button>
       </div>
 
+      ${S.isCloud() ? `
+      <div class="acard">
+        <div class="acard__head"><h2>🔑 Login</h2></div>
+        <p class="sub" style="color:var(--ink-soft);">
+          Dashboardet er koblet på den fælles database – du logger ind med chefens e-mail og adgangskode.
+          Adgangskoden skiftes i Supabase under <strong>Authentication → Users</strong>.
+        </p>
+      </div>` : `
       <div class="acard">
         <div class="acard__head"><h2>🔑 PIN-kode til admin</h2></div>
         <div class="formgrid">
           <label class="afield"><span>Ny PIN (4-8 cifre)</span><input id="setPin" inputmode="numeric" maxlength="8" placeholder="••••" /></label>
         </div>
         <button class="abtn" id="pinSave" style="margin-top:16px;">Skift PIN</button>
-      </div>
+      </div>`}
 
       <div class="acard">
         <div class="acard__head"><h2>💾 Data</h2></div>
-        <p class="sub" style="color:var(--ink-soft);margin-bottom:14px;">Download en sikkerhedskopi af alle bestillinger, bookinger og menuer – eller nulstil til demo-indholdet.</p>
+        <p class="sub" style="color:var(--ink-soft);margin-bottom:14px;">Download en sikkerhedskopi af alle bestillinger, bookinger og menuer${S.isCloud() ? '.' : ' – eller nulstil til demo-indholdet.'}</p>
         <div style="display:flex;gap:10px;flex-wrap:wrap;">
           <button class="abtn abtn--ghost" id="exportBtn">⬇ Download backup (JSON)</button>
-          <button class="abtn abtn--danger" id="resetBtn">Nulstil alle data</button>
+          ${S.isCloud() ? '' : '<button class="abtn abtn--danger" id="resetBtn">Nulstil alle data</button>'}
         </div>
       </div>`;
 
@@ -748,7 +794,7 @@
       toast('Oplysninger gemt ✓');
     });
 
-    $('#pinSave').addEventListener('click', () => {
+    $('#pinSave')?.addEventListener('click', () => {
       const pin = $('#setPin').value.trim();
       if (!/^\d{4,8}$/.test(pin)) { toast('PIN skal være 4-8 cifre'); return; }
       S.updateSettings({ pin });
@@ -765,7 +811,7 @@
       URL.revokeObjectURL(a.href);
     });
 
-    $('#resetBtn').addEventListener('click', () => {
+    $('#resetBtn')?.addEventListener('click', () => {
       if (!confirm('Er du sikker? Alle bestillinger, bookinger og menuændringer slettes og erstattes med demo-indhold.')) return;
       S.resetData();
       renderAll();
@@ -844,7 +890,13 @@
   }
 
   S.subscribe(() => {
-    if (app.hidden) return;
+    syncLoginMode();
+    if (app.hidden) {
+      /* skyen blev klar efter sideindlæsning, og chefen er allerede logget ind */
+      if (S.isCloud() && S.hasSession()) showApp();
+      return;
+    }
+    if (S.isCloud()) S.startAdminPolling();
     renderBell();
     renderListViews();
   });

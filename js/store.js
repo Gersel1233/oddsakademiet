@@ -190,16 +190,212 @@ const SpiisStore = (() => {
     }
   });
 
+  /* ============================================================
+     SKY – fælles database via Supabase (js/config.js).
+     Aktiveres automatisk, når databasen svarer; ellers kører alt
+     lokalt i browseren som hidtil. Menu/tider/dagens ret læses af
+     alle; bestillinger og bookinger kan alle OPRETTE, men kun
+     chefen (login) kan læse og ændre dem.
+     ============================================================ */
+  const CLOUD = (typeof window !== 'undefined' && window.SPIIS_CLOUD && window.SPIIS_CLOUD.url)
+    ? window.SPIIS_CLOUD : null;
+  const SES_KEY = 'spiis-sb-session';
+  let cloud = false;
+  let cloudReady = null;
+  let soldByDate = {}; /* { 'YYYY-MM-DD': solgte kuverter } fra get_sold */
+  let session = null;
+  try { session = JSON.parse(sessionStorage.getItem(SES_KEY) || 'null'); } catch { session = null; }
+
+  async function sbFetch(path, { method = 'GET', body, headers = {}, auth = false, retry = true } = {}) {
+    const h = {
+      apikey: CLOUD.anonKey,
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${auth && session ? session.access_token : CLOUD.anonKey}`,
+      ...headers,
+    };
+    const res = await fetch(CLOUD.url + path, { method, headers: h, body });
+    if (res.status === 401 && auth && retry && session && session.refresh_token) {
+      if (await refreshSession()) return sbFetch(path, { method, body, headers, auth, retry: false });
+    }
+    return res;
+  }
+
+  const CONFIG_KEYS = ['settings', 'hours', 'dagensRet', 'menu', 'blockedDates'];
+
+  function mergeConfig(remote) {
+    if (!remote) return;
+    CONFIG_KEYS.forEach((k) => {
+      if (remote[k] != null) data[k] = remote[k];
+    });
+    /* pin bruges kun lokalt og ligger aldrig i skyen */
+    if (!data.settings.pin) data.settings.pin = '9399';
+  }
+
+  function configSlice() {
+    const { pin, ...settings } = data.settings;
+    return {
+      settings,
+      hours: data.hours,
+      dagensRet: data.dagensRet,
+      menu: data.menu,
+      blockedDates: data.blockedDates,
+    };
+  }
+
+  function pushConfig() {
+    if (!cloud) return;
+    sbFetch('/rest/v1/config?id=eq.1', {
+      method: 'PATCH',
+      auth: true,
+      headers: { Prefer: 'return=minimal' },
+      body: JSON.stringify({ data: configSlice() }),
+    }).then((res) => {
+      if (!res.ok) console.error('Spiis: kunne ikke gemme i skyen (' + res.status + ')');
+    }).catch(() => console.error('Spiis: netværksfejl ved gem i skyen'));
+  }
+
+  /* databasen bruger descr/created_at – js bruger desc/createdAt */
+  const rowToOrder = (r) => ({ ...r, createdAt: r.created_at });
+  const rowToBooking = (r) => ({ ...r, desc: r.descr, createdAt: r.created_at });
+
+  async function refreshPublic() {
+    if (!cloud) return;
+    try {
+      const [cfgRes, soldRes] = await Promise.all([
+        sbFetch('/rest/v1/config?id=eq.1&select=data'),
+        sbFetch('/rest/v1/rpc/get_sold', { method: 'POST', body: '{}' }),
+      ]);
+      if (cfgRes.ok) {
+        const rows = await cfgRes.json();
+        if (rows[0]) mergeConfig(rows[0].data);
+      }
+      if (soldRes.ok) {
+        const rows = await soldRes.json();
+        soldByDate = {};
+        rows.forEach((r) => { soldByDate[r.date] = Number(r.sold) || 0; });
+      }
+      save(false);
+      emit();
+    } catch { /* prøver igen ved næste opdatering */ }
+  }
+
+  async function fetchAdminData() {
+    if (!cloud || !session) return;
+    const [oRes, bRes, nRes] = await Promise.all([
+      sbFetch('/rest/v1/orders?select=*&order=created_at.asc', { auth: true }),
+      sbFetch('/rest/v1/bookings?select=*&order=created_at.asc', { auth: true }),
+      sbFetch('/rest/v1/notes?select=*', { auth: true }),
+    ]);
+    if (oRes.ok) data.orders = (await oRes.json()).map(rowToOrder);
+    if (bRes.ok) data.bookings = (await bRes.json()).map(rowToBooking);
+    if (nRes.ok) {
+      const rows = await nRes.json();
+      data.notes = {};
+      rows.forEach((r) => { data.notes[r.date] = r.text; });
+    }
+    save(false);
+    emit();
+  }
+
+  async function refreshSession() {
+    try {
+      const res = await fetch(`${CLOUD.url}/auth/v1/token?grant_type=refresh_token`, {
+        method: 'POST',
+        headers: { apikey: CLOUD.anonKey, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ refresh_token: session.refresh_token }),
+      });
+      if (!res.ok) throw new Error();
+      const out = await res.json();
+      session = { access_token: out.access_token, refresh_token: out.refresh_token, email: out.user && out.user.email };
+      sessionStorage.setItem(SES_KEY, JSON.stringify(session));
+      return true;
+    } catch {
+      session = null;
+      sessionStorage.removeItem(SES_KEY);
+      emit();
+      return false;
+    }
+  }
+
+  async function adminLogin(email, password) {
+    if (cloudReady) await cloudReady;
+    if (!cloud) return { ok: false, msg: 'Databasen svarer ikke – prøv igen om lidt.' };
+    try {
+      const res = await fetch(`${CLOUD.url}/auth/v1/token?grant_type=password`, {
+        method: 'POST',
+        headers: { apikey: CLOUD.anonKey, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      });
+      const out = await res.json().catch(() => ({}));
+      if (!res.ok || !out.access_token) {
+        return { ok: false, msg: 'Forkert e-mail eller adgangskode.' };
+      }
+      session = { access_token: out.access_token, refresh_token: out.refresh_token, email: out.user && out.user.email };
+      sessionStorage.setItem(SES_KEY, JSON.stringify(session));
+      await fetchAdminData().catch(() => {});
+      return { ok: true };
+    } catch {
+      return { ok: false, msg: 'Netværksfejl – tjek forbindelsen og prøv igen.' };
+    }
+  }
+
+  function logout() {
+    session = null;
+    sessionStorage.removeItem(SES_KEY);
+  }
+
+  const isCloud = () => cloud;
+  const hasSession = () => !!(session && session.access_token);
+
+  let adminPollTimer = null;
+  function startAdminPolling() {
+    if (!cloud || adminPollTimer) return;
+    adminPollTimer = setInterval(() => { fetchAdminData().catch(() => {}); }, 25000);
+  }
+
+  function initCloud() {
+    if (!CLOUD) return;
+    cloudReady = (async () => {
+      try {
+        const res = await sbFetch('/rest/v1/config?id=eq.1&select=data');
+        if (!res.ok) throw new Error();
+        cloud = true;
+        /* i sky-tilstand ejes bestillinger/bookinger/noter af databasen */
+        data.orders = [];
+        data.bookings = [];
+        data.notes = {};
+        const rows = await res.json();
+        if (rows[0]) mergeConfig(rows[0].data);
+        await refreshPublic();
+        if (hasSession()) await fetchAdminData().catch(() => {});
+        save(false);
+        emit();
+        setInterval(refreshPublic, 60000);
+        document.addEventListener('visibilitychange', () => {
+          if (document.visibilityState === 'visible') {
+            refreshPublic();
+            if (hasSession()) fetchAdminData().catch(() => {});
+          }
+        });
+      } catch {
+        cloud = false; /* databasen er ikke sat op (endnu) – kør lokalt */
+      }
+    })();
+  }
+  initCloud();
+
   /* ---------- settings & åbningstider ---------- */
   const getSettings = () => ({ ...data.settings });
   function updateSettings(patch) {
     data.settings = { ...data.settings, ...patch };
     save();
+    pushConfig();
   }
   const getHours = () => data.hours.map((h) => ({ ...h }));
   function setHours(hours) {
     data.hours = hours;
     save();
+    pushConfig();
   }
   function hoursFor(iso) {
     return data.hours[weekdayIndex(iso)];
@@ -214,6 +410,7 @@ const SpiisStore = (() => {
     if (dish && dish.title) data.dagensRet[iso] = dish;
     else delete data.dagensRet[iso];
     save();
+    pushConfig();
   }
   /* De næste `days` dage med dato, ugedag, ret og åben/lukket */
   function getPlan(days = 7, fromIso = todayISO()) {
@@ -236,13 +433,16 @@ const SpiisStore = (() => {
   function setMenu(menu) {
     data.menu = menu;
     save();
+    pushConfig();
   }
 
   /* ---------- lager for dagens ret ---------- */
   function getSold(iso) {
-    return data.orders
+    const local = data.orders
       .filter((o) => o.date === iso)
       .reduce((sum, o) => sum + Number(o.qty || 0), 0);
+    /* på kundesiden i sky-tilstand kommer tallet fra get_sold */
+    return cloud ? Math.max(local, soldByDate[iso] || 0) : local;
   }
   /* null = intet loft sat; ellers antal portioner tilbage (kan ikke gå under 0) */
   function getRemaining(iso) {
@@ -252,7 +452,29 @@ const SpiisStore = (() => {
   }
 
   /* ---------- bestillinger (dagens ret) ---------- */
-  function addOrder(order) {
+  async function addOrder(order) {
+    if (cloud) {
+      /* lagertjekket sker atomisk i databasen (place_order) */
+      try {
+        const res = await sbFetch('/rest/v1/rpc/place_order', {
+          method: 'POST',
+          body: JSON.stringify({
+            p_date: order.date, p_time: order.time, p_qty: order.qty, p_type: order.type,
+            p_name: order.name, p_phone: order.phone, p_note: order.note || '',
+            p_dish: order.dish || '', p_price: order.price,
+          }),
+        });
+        if (!res.ok) throw new Error();
+        const out = await res.json();
+        if (out.ok) {
+          soldByDate[order.date] = (soldByDate[order.date] || 0) + Number(order.qty);
+          emit();
+        }
+        return out;
+      } catch {
+        return { ok: false, error: 'net' };
+      }
+    }
     const remaining = getRemaining(order.date);
     if (remaining !== null && Number(order.qty) > remaining) {
       return { ok: false, remaining };
@@ -275,15 +497,43 @@ const SpiisStore = (() => {
   }
   function updateOrder(id, patch) {
     const o = data.orders.find((x) => x.id === id);
-    if (o) { Object.assign(o, patch); save(); }
+    if (!o) return;
+    Object.assign(o, patch);
+    save();
+    if (cloud) {
+      sbFetch(`/rest/v1/orders?id=eq.${encodeURIComponent(id)}`, {
+        method: 'PATCH', auth: true, headers: { Prefer: 'return=minimal' },
+        body: JSON.stringify(patch),
+      }).catch(() => {});
+    }
   }
   function deleteOrder(id) {
     data.orders = data.orders.filter((x) => x.id !== id);
     save();
+    if (cloud) {
+      sbFetch(`/rest/v1/orders?id=eq.${encodeURIComponent(id)}`, { method: 'DELETE', auth: true }).catch(() => {});
+    }
   }
 
   /* ---------- bookinger (arrangementer & møder) ---------- */
-  function addBooking(booking) {
+  async function addBooking(booking) {
+    if (cloud) {
+      try {
+        const res = await sbFetch('/rest/v1/bookings', {
+          method: 'POST',
+          headers: { Prefer: 'return=minimal' },
+          body: JSON.stringify([{
+            kind: booking.kind, subject: booking.subject, descr: booking.desc || '',
+            date: booking.date, time: booking.time, name: booking.name,
+            phone: booking.phone, email: booking.email || '',
+          }]),
+        });
+        if (!res.ok) throw new Error();
+        return { ok: true };
+      } catch {
+        return { ok: false, error: 'net' };
+      }
+    }
     const entry = {
       id: uid(),
       createdAt: new Date().toISOString(),
@@ -293,18 +543,29 @@ const SpiisStore = (() => {
     };
     data.bookings.push(entry);
     save();
-    return entry;
+    return { ok: true, booking: entry };
   }
   function getBookings() {
     return data.bookings.slice().sort((a, b) => (a.date || '').localeCompare(b.date || ''));
   }
   function updateBooking(id, patch) {
     const b = data.bookings.find((x) => x.id === id);
-    if (b) { Object.assign(b, patch); save(); }
+    if (!b) return;
+    Object.assign(b, patch);
+    save();
+    if (cloud) {
+      sbFetch(`/rest/v1/bookings?id=eq.${encodeURIComponent(id)}`, {
+        method: 'PATCH', auth: true, headers: { Prefer: 'return=minimal' },
+        body: JSON.stringify(patch),
+      }).catch(() => {});
+    }
   }
   function deleteBooking(id) {
     data.bookings = data.bookings.filter((x) => x.id !== id);
     save();
+    if (cloud) {
+      sbFetch(`/rest/v1/bookings?id=eq.${encodeURIComponent(id)}`, { method: 'DELETE', auth: true }).catch(() => {});
+    }
   }
 
   /* ---------- tilgængelighed for booking ---------- */
@@ -314,11 +575,13 @@ const SpiisStore = (() => {
       data.blockedDates.push(iso);
       data.blockedDates.sort();
       save();
+      pushConfig();
     }
   }
   function unblockDate(iso) {
     data.blockedDates = data.blockedDates.filter((d) => d !== iso);
     save();
+    pushConfig();
   }
   function isDateAvailable(iso) {
     if (!iso || iso < todayISO()) return { ok: false, reason: 'Datoen er passeret.' };
@@ -355,6 +618,17 @@ const SpiisStore = (() => {
     if (text && text.trim()) data.notes[iso] = text;
     else delete data.notes[iso];
     save();
+    if (cloud) {
+      if (text && text.trim()) {
+        sbFetch('/rest/v1/notes', {
+          method: 'POST', auth: true,
+          headers: { Prefer: 'resolution=merge-duplicates,return=minimal' },
+          body: JSON.stringify([{ date: iso, text }]),
+        }).catch(() => {});
+      } else {
+        sbFetch(`/rest/v1/notes?date=eq.${iso}`, { method: 'DELETE', auth: true }).catch(() => {});
+      }
+    }
   }
 
   /* ---------- uge-hjælpere ---------- */
@@ -380,6 +654,16 @@ const SpiisStore = (() => {
     data.orders.forEach((o) => { o.read = true; });
     data.bookings.forEach((b) => { b.read = true; });
     save();
+    if (cloud) {
+      sbFetch('/rest/v1/orders?read=eq.false', {
+        method: 'PATCH', auth: true, headers: { Prefer: 'return=minimal' },
+        body: JSON.stringify({ read: true }),
+      }).catch(() => {});
+      sbFetch('/rest/v1/bookings?read=eq.false', {
+        method: 'PATCH', auth: true, headers: { Prefer: 'return=minimal' },
+        body: JSON.stringify({ read: true }),
+      }).catch(() => {});
+    }
   }
 
   /* ---------- eksport / nulstil ---------- */
@@ -410,5 +694,8 @@ const SpiisStore = (() => {
     getUnread, markAllRead,
     exportData, resetData,
     subscribe,
+    /* sky */
+    isCloud, hasSession, adminLogin, logout, startAdminPolling,
+    refreshAdmin: fetchAdminData, refreshPublic,
   };
 })();

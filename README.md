@@ -37,16 +37,28 @@ der kan hostes på **GitHub Pages** – ingen build-step, ingen npm.
 | `js/main.js` / `js/admin.js` | Logik for hhv. hjemmeside og dashboard |
 | `assets/hero.mp4` | Hero-videoen |
 
-## Vigtigt om data
+## Data: fælles database (Supabase)
 
-Data (bestillinger, bookinger, menu) gemmes lige nu i **browserens localStorage**.
-Det betyder, at alt virker perfekt som demo og til test – bestiller man på siden,
-lander det i admin-dashboardet med det samme (også i en anden fane).
+Sitet er koblet på en **Supabase-database** via `js/config.js` (projekt-URL +
+anon-nøgle). Når databasen svarer, deles alt på tværs af enheder:
 
-**Men:** data deles ikke mellem forskellige enheder. Skal kundernes bestillinger
-lande på chefens computer/telefon i drift, skal `js/store.js` kobles på en lille
-backend (fx Supabase eller Firebase – gratis tier rækker fint). Datalaget er
-bygget, så det er en isoleret udskiftning – resten af koden skal ikke røres.
+- Kunder kan **oprette** bestillinger og bookinger – men ikke læse dem
+  (navne og numre er kun synlige for chefen)
+- Bestillinger går gennem databasefunktionen `place_order`, som tjekker
+  portionslageret **atomisk** – to kunder kan ikke snuppe de sidste portioner samtidig
+- Hjemmesiden viser "X tilbage" via `get_sold` (kun tal, ingen persondata)
+- Chefen logger ind i admin med **e-mail + adgangskode** (Supabase Auth);
+  kun chefens e-mail (defineret i `is_admin()` i SQL'en) kan læse/ændre data
+- Menu, åbningstider, dagens ret og blokerede datoer ligger i `config`-tabellen
+  (læsbar for alle, kun chefen kan ændre); dagsnoter er kun for chefen
+
+**Opsætning (én gang):** kør `supabase/setup.sql` i Supabase → SQL Editor,
+og opret chefens bruger under Authentication → Users → Add user
+(spiis.bestilling@gmail.com + valgfri adgangskode, "Auto Confirm User").
+
+**Fallback:** svarer databasen ikke (eller er `js/config.js` tømt), kører hele
+sitet automatisk videre lokalt i browseren med PIN-login (9399) – praktisk til
+test og udvikling.
 
 ## Deploy
 

@@ -103,7 +103,7 @@
       stockEl.textContent = 'Udsolgt i dag – vi ses i morgen!';
       stockEl.classList.add('is-soldout');
     } else if (remaining <= 5) {
-      stockEl.textContent = `🔥 Kun ${remaining} portioner tilbage!`;
+      stockEl.textContent = `🔥 Kun ${remaining} portion${remaining === 1 ? '' : 'er'} tilbage!`;
       stockEl.classList.add('is-low');
     } else {
       stockEl.textContent = `${remaining} portioner tilbage`;
@@ -320,7 +320,7 @@
   }
   orderDate.addEventListener('change', onOrderDateChange);
 
-  $('#orderForm').addEventListener('submit', (e) => {
+  $('#orderForm').addEventListener('submit', async (e) => {
     e.preventDefault();
     const error = $('#orderError');
     error.hidden = true;
@@ -347,7 +347,10 @@
     }
 
     const dish = S.getDagensRet(iso);
-    const result = S.addOrder({
+    const submitBtn = e.target.querySelector('button[type="submit"]');
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Sender…';
+    const result = await S.addOrder({
       date: iso,
       time,
       qty,
@@ -358,11 +361,17 @@
       dish: dish ? dish.title : 'Dagens ret',
       price: dish ? dish.price : null,
     });
+    submitBtn.disabled = false;
+    submitBtn.textContent = 'Send bestilling';
 
     if (!result.ok) {
-      error.textContent = result.remaining > 0
-        ? `Åh nej – der er kun ${result.remaining} portion${result.remaining === 1 ? '' : 'er'} tilbage denne dag. Vælg færre kuverter eller en anden dag.`
-        : 'Dagens ret er desværre udsolgt denne dag – vælg en anden dag i kalenderen.';
+      if (result.error === 'net') {
+        error.textContent = 'Bestillingen kunne ikke sendes lige nu – prøv igen, eller ring til os.';
+      } else {
+        error.textContent = result.remaining > 0
+          ? `Åh nej – der er kun ${result.remaining} portion${result.remaining === 1 ? '' : 'er'} tilbage denne dag. Vælg færre kuverter eller en anden dag.`
+          : 'Dagens ret er desværre udsolgt denne dag – vælg en anden dag i kalenderen.';
+      }
       error.hidden = false;
       onOrderDateChange();
       return;
@@ -424,7 +433,7 @@
   bookingDate.addEventListener('input', onBookingDateChange);
   onBookingDateChange();
 
-  $('#bookingForm').addEventListener('submit', (e) => {
+  $('#bookingForm').addEventListener('submit', async (e) => {
     e.preventDefault();
     const error = $('#bookingError');
     error.hidden = true;
@@ -462,7 +471,18 @@
       return;
     }
 
-    S.addBooking({ kind, subject, desc, date: iso, time, name, phone, email });
+    const submitBtn = $('#bookingSubmit');
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Sender…';
+    const result = await S.addBooking({ kind, subject, desc, date: iso, time, name, phone, email });
+    submitBtn.disabled = false;
+    submitBtn.textContent = kind === 'moede' ? 'Book mødet' : 'Send booking';
+
+    if (!result.ok) {
+      error.textContent = 'Bookingen kunne ikke sendes lige nu – prøv igen, eller ring til os.';
+      error.hidden = false;
+      return;
+    }
 
     $('#bookingForm').hidden = true;
     document.querySelector('.booking__aside').hidden = true;

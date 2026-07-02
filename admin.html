@@ -22,11 +22,12 @@
         <path d="M20 30v4M24 30v4M28 30v4" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/>
       </svg>
       <h1>Spiis <span>Admin</span></h1>
-      <p>Indtast din PIN-kode for at åbne dashboardet.</p>
+      <p id="loginHint">Indtast din PIN-kode for at åbne dashboardet.</p>
       <form id="loginForm">
-        <input type="password" id="loginPin" inputmode="numeric" maxlength="8" placeholder="••••" autocomplete="off" autofocus />
+        <input type="email" id="loginEmail" placeholder="E-mail" autocomplete="username" hidden />
+        <input type="password" id="loginPin" inputmode="numeric" maxlength="8" placeholder="••••" autocomplete="current-password" autofocus />
         <p class="login__error" id="loginError" hidden>Forkert PIN – prøv igen.</p>
-        <button type="submit" class="abtn abtn--accent abtn--big">Log ind</button>
+        <button type="submit" class="abtn abtn--accent abtn--big" id="loginSubmit">Log ind</button>
       </form>
       <a href="index.html" class="login__back">← Tilbage til hjemmesiden</a>
     </div>
@@ -98,6 +99,7 @@
 
   <div class="toast" id="toast" hidden></div>
 
+  <script src="js/config.js"></script>
   <script src="js/store.js"></script>
   <script src="js/admin.js"></script>
 </body>
