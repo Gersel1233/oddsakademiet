@@ -412,6 +412,11 @@
         </div>
       </div>`;
 
+    /* Spiis-kalender med prik på dage, der har bestillinger */
+    SpiisDatepicker.attach($('#ordersDate'), {
+      marker: (iso) => S.getOrders(iso).length > 0,
+    });
+
     $('#ordersDate').addEventListener('change', (e) => {
       if (e.target.value) { ordersDate = e.target.value; renderBestillinger(); }
     });
@@ -463,6 +468,17 @@
           ${past.length ? past.slice(0, 10).map(bookingRow).join('') : '<div class="empty">Ingen tidligere bookinger.</div>'}
         </div>
       </div>`;
+
+    /* Spiis-kalender: allerede blokerede dage vises med rødt */
+    SpiisDatepicker.attach($('#blockDate'), {
+      min: today,
+      legend: true,
+      state: (iso) => {
+        if (!S.isOpenDay(iso)) return 'closed';
+        if (S.getBlockedDates().includes(iso)) return 'blocked';
+        return 'ok';
+      },
+    });
 
     $('#blockBtn').addEventListener('click', () => {
       const val = $('#blockDate').value;

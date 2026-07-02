@@ -1,0 +1,181 @@
+/* ============================================================
+   Spiis – egen datovælger (bruges på både hjemmeside og admin)
+   Farver hentes fra sidens egne CSS-variabler.
+   ============================================================ */
+
+.dp-wrap { position: relative; display: block; }
+
+.dp-input-hidden {
+  position: absolute !important;
+  width: 1px; height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.dp-btn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  font-family: var(--font-body);
+  font-size: 1rem;
+  font-weight: 500;
+  text-align: left;
+  padding: 13px 16px;
+  border-radius: 13px;
+  border: 1.6px solid var(--line);
+  background: var(--cream);
+  color: var(--ink);
+  cursor: pointer;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+.dp-btn:hover, .dp-btn:focus-visible {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 4px rgba(217, 108, 44, 0.14);
+}
+.dp-btn--empty { color: var(--ink-soft); }
+.dp-btn__icon { font-size: 1.05rem; }
+
+.dp-pop {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  z-index: 120;
+  width: min(316px, calc(100vw - 32px));
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  box-shadow: 0 26px 60px -18px rgba(28, 24, 20, 0.4);
+  padding: 14px;
+  animation: dpIn 0.22s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.dp-pop--right { left: auto; right: 0; }
+@keyframes dpIn {
+  from { opacity: 0; transform: translateY(-6px); }
+  to { opacity: 1; transform: none; }
+}
+
+.dp-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+.dp-head strong {
+  font-family: var(--font-display);
+  font-size: 1.05rem;
+  font-weight: 600;
+}
+.dp-nav {
+  width: 38px; height: 38px;
+  border-radius: 11px;
+  border: 1.6px solid var(--line);
+  background: var(--cream);
+  color: var(--ink);
+  font-size: 1.25rem;
+  line-height: 1;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+.dp-nav:hover { border-color: var(--accent); background: var(--accent-soft); }
+
+.dp-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 3px;
+}
+.dp-wd {
+  text-align: center;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+  padding: 4px 0 7px;
+}
+.dp-day {
+  position: relative;
+  aspect-ratio: 1;
+  min-height: 38px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  font-family: var(--font-body);
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--ink);
+  cursor: pointer;
+  transition: background 0.12s ease, color 0.12s ease, transform 0.12s ease;
+}
+.dp-day:not(:disabled):hover { background: var(--accent-soft); transform: scale(1.06); }
+.dp-day--out { pointer-events: none; }
+
+.dp-day--today { box-shadow: inset 0 0 0 1.8px var(--accent); }
+.dp-day--selected,
+.dp-day--selected:not(:disabled):hover {
+  background: var(--accent);
+  color: #fff;
+}
+
+.dp-day--muted:disabled { color: rgba(28, 24, 20, 0.25); cursor: default; }
+.dp-day--closed:disabled {
+  color: rgba(28, 24, 20, 0.3);
+  text-decoration: line-through;
+  cursor: default;
+}
+.dp-day--blocked:disabled {
+  color: #B3372B;
+  background: #FBEAE7;
+  cursor: default;
+}
+
+.dp-day--dot::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: 4px;
+  transform: translateX(-50%);
+  width: 5px; height: 5px;
+  border-radius: 50%;
+  background: var(--accent);
+}
+.dp-day--selected.dp-day--dot::after { background: #fff; }
+
+.dp-legend {
+  display: flex;
+  gap: 14px;
+  justify-content: center;
+  margin-top: 10px;
+  font-size: 0.78rem;
+  color: var(--ink-soft);
+}
+.dp-legend span { display: inline-flex; align-items: center; gap: 5px; }
+.dp-leg {
+  width: 10px; height: 10px;
+  border-radius: 50%;
+  display: inline-block;
+}
+.dp-leg--ok { background: var(--accent); }
+.dp-leg--blocked { background: #B3372B; }
+.dp-leg--closed { background: rgba(28, 24, 20, 0.25); }
+
+.dp-foot {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px dashed var(--line);
+}
+.dp-link {
+  background: none;
+  border: 0;
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: var(--accent-deep);
+  cursor: pointer;
+  padding: 6px 8px;
+}
+.dp-link:hover { text-decoration: underline; }

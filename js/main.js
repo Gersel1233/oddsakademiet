@@ -444,6 +444,17 @@
 
   bookingDate.min = S.todayISO();
 
+  /* Spiis-kalender: lukkede og optagede dage kan slet ikke vælges */
+  SpiisDatepicker.attach(bookingDate, {
+    min: S.todayISO(),
+    legend: true,
+    state: (iso) => {
+      if (!S.isOpenDay(iso)) return 'closed';
+      if (S.getBlockedDates().includes(iso)) return 'blocked';
+      return 'ok';
+    },
+  });
+
   function onBookingDateChange() {
     const iso = bookingDate.value;
     if (!iso) { bookingAvail.textContent = ''; bookingAvail.className = 'field__hint'; return; }
