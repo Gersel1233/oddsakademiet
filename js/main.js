@@ -60,6 +60,24 @@
     window.addEventListener('load', () => setTimeout(loadHeroVideo, 250), { once: true });
   }
 
+  /* pausér video og marquee, når de er ude af syne – sparer CPU/batteri
+     og gør scroll mere flydende */
+  const heroIo = new IntersectionObserver((entries) => {
+    entries.forEach((en) => {
+      hero.classList.toggle('is-offscreen', !en.isIntersecting);
+      if (!heroVideo.src) return;
+      if (en.isIntersecting) heroVideo.play?.().catch(() => {});
+      else heroVideo.pause?.();
+    });
+  }, { threshold: 0.05 });
+  heroIo.observe(hero);
+
+  const marquee = $('.marquee');
+  const marqueeIo = new IntersectionObserver((entries) => {
+    entries.forEach((en) => marquee.classList.toggle('is-paused', !en.isIntersecting));
+  });
+  marqueeIo.observe(marquee);
+
   /* fast bestil-knap på mobil – gemmer sig, mens man står ved formularen */
   const mobileCta = $('#mobileCta');
   const ctaIo = new IntersectionObserver((entries) => {

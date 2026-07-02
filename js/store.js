@@ -265,6 +265,9 @@ const SpiisStore = (() => {
   const rowToOrder = (r) => ({ ...r, createdAt: r.created_at });
   const rowToBooking = (r) => ({ ...r, desc: r.descr, createdAt: r.created_at });
 
+  /* spring gen-tegning over, når polling ikke bragte nyt – ellers
+     genopbygges siden hvert minut uden grund */
+  let lastPublicSnap = '';
   async function refreshPublic() {
     if (!cloud) return;
     try {
@@ -272,14 +275,22 @@ const SpiisStore = (() => {
         sbFetch('/rest/v1/config?id=eq.1&select=data'),
         sbFetch('/rest/v1/rpc/get_sold', { method: 'POST', body: '{}' }),
       ]);
+      let remoteCfg = null;
       if (cfgRes.ok) {
         const rows = await cfgRes.json();
-        if (rows[0]) mergeConfig(rows[0].data);
+        if (rows[0]) remoteCfg = rows[0].data;
       }
-      if (soldRes.ok) {
-        const rows = await soldRes.json();
+      let remoteSold = null;
+      if (soldRes.ok) remoteSold = await soldRes.json();
+
+      const snap = JSON.stringify([remoteCfg, remoteSold]);
+      if (snap === lastPublicSnap) return;
+      lastPublicSnap = snap;
+
+      if (remoteCfg) mergeConfig(remoteCfg);
+      if (remoteSold) {
         soldByDate = {};
-        rows.forEach((r) => { soldByDate[r.date] = Number(r.sold) || 0; });
+        remoteSold.forEach((r) => { soldByDate[r.date] = Number(r.sold) || 0; });
       }
       save(false);
       emit();
@@ -304,6 +315,7 @@ const SpiisStore = (() => {
     return rows;
   }
 
+  let lastAdminSnap = '';
   async function fetchAdminData() {
     if (!cloud || !session) return;
     /* bestillinger fra de seneste 60 dage – rigeligt til ugeoverblik og
@@ -314,6 +326,9 @@ const SpiisStore = (() => {
       sbRows('/rest/v1/bookings?select=*&order=created_at.asc'),
       sbRows('/rest/v1/notes?select=*'),
     ]);
+    const snap = JSON.stringify([orders, bookings, notes]);
+    if (snap === lastAdminSnap) return;
+    lastAdminSnap = snap;
     data.orders = orders.map(rowToOrder);
     data.bookings = bookings.map(rowToBooking);
     data.notes = {};

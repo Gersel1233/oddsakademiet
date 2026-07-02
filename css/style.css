@@ -52,6 +52,13 @@ img, video, svg { display: block; max-width: 100%; }
 .container--narrow { width: min(760px, 92vw); }
 
 .section { padding: clamp(72px, 10vw, 130px) 0; position: relative; }
+
+/* sektioner under folden renderes først, når man nærmer sig dem –
+   gør både indlæsning og scroll mærkbart lettere */
+main .section {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 900px;
+}
 .section--tint { background: var(--cream-2); }
 .section--dark { background: var(--dark); color: #F5EFE6; }
 
@@ -359,6 +366,9 @@ img, video, svg { display: block; max-width: 100%; }
   white-space: nowrap;
 }
 .marquee__track i { color: var(--accent); font-style: normal; }
+/* animationer sættes på pause, når de er ude af syne (sparer CPU/batteri) */
+.marquee.is-paused .marquee__track { animation-play-state: paused; }
+.hero.is-offscreen video { animation-play-state: paused; }
 @keyframes marquee {
   from { transform: translateX(0); }
   to { transform: translateX(-50%); }
