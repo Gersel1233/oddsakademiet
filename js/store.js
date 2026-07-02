@@ -210,9 +210,16 @@ const SpiisStore = (() => {
     const h = {
       apikey: CLOUD.anonKey,
       'Content-Type': 'application/json',
-      Authorization: `Bearer ${auth && session ? session.access_token : CLOUD.anonKey}`,
       ...headers,
     };
+    /* Authorization: brugerens token når logget ind. For anonyme kald
+       sendes nøglen kun som Bearer, hvis den er en legacy-JWT ("eyJ…");
+       nye publishable-nøgler (sb_publishable_…) må kun stå i apikey. */
+    if (auth && session) {
+      h.Authorization = `Bearer ${session.access_token}`;
+    } else if (CLOUD.anonKey.startsWith('eyJ')) {
+      h.Authorization = `Bearer ${CLOUD.anonKey}`;
+    }
     const res = await fetch(CLOUD.url + path, { method, headers: h, body });
     if (res.status === 401 && auth && retry && session && session.refresh_token) {
       if (await refreshSession()) return sbFetch(path, { method, body, headers, auth, retry: false });
