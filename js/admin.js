@@ -604,16 +604,16 @@
         </div>
       </div>`;
 
-    /* Spiis-kalender: allerede blokerede dage vises med rødt */
+    /* Spiis-kalender: blokerede dage OG dage med aftalt arrangement vises med rødt */
     SpiisDatepicker.attach($('#blockDate'), {
       min: today,
       legend: true,
       state: (iso) => {
         if (!S.isOpenDay(iso)) return 'closed';
         if (S.getBlockedDates().includes(iso)) return 'blocked';
+        if (S.getArrangementDates().includes(iso)) return 'blocked';
         return 'ok';
       },
-      marker: (iso) => S.getArrangementDates().includes(iso),
     });
 
     $('#blockBtn').addEventListener('click', () => {
