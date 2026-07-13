@@ -15,7 +15,7 @@
   --dark: #211B15;
   --dark-2: #2C251D;
   --line: rgba(28, 24, 20, 0.12);
-  --shadow: 0 20px 50px -20px rgba(28, 24, 20, 0.25);
+  --shadow: 0 1px 2px rgba(28, 24, 20, 0.04), 0 22px 48px -22px rgba(28, 24, 20, 0.28);
   --radius: 22px;
   --font-display: 'Fraunces', serif;
   --font-body: 'Outfit', sans-serif;
@@ -59,8 +59,26 @@ main .section {
   content-visibility: auto;
   contain-intrinsic-size: auto 900px;
 }
-.section--tint { background: var(--cream-2); }
 .section--dark { background: var(--dark); color: #F5EFE6; }
+
+/* bløde, varme lysglimt i baggrunden – giver dybde uden at forstyrre */
+#dagensret::before,
+#booking::before {
+  content: '';
+  position: absolute;
+  width: min(440px, 58vw);
+  height: min(440px, 58vw);
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(217, 108, 44, 0.09), transparent 68%);
+  pointer-events: none;
+}
+#dagensret::before { top: 30px; right: 3%; }
+#booking::before { bottom: 40px; left: 3%; }
+
+/* blød glidning fra creme til den tonede sektion */
+.section--tint {
+  background: linear-gradient(180deg, var(--cream) 0%, var(--cream-2) 90px, var(--cream-2) calc(100% - 90px), var(--cream) 100%);
+}
 
 .section__head { text-align: center; max-width: 640px; margin: 0 auto clamp(36px, 5vw, 64px); }
 .section__head h2,
@@ -122,8 +140,22 @@ main .section {
   background: var(--accent);
   color: #fff;
   box-shadow: 0 12px 30px -12px rgba(217, 108, 44, 0.7);
+  position: relative;
+  overflow: hidden;
 }
 .btn--accent:hover { background: var(--accent-deep); box-shadow: 0 16px 34px -12px rgba(217, 108, 44, 0.8); }
+/* blødt lysstrejf hen over knappen ved hover */
+.btn--accent::after {
+  content: '';
+  position: absolute;
+  top: 0; left: -70%;
+  width: 45%; height: 100%;
+  background: linear-gradient(100deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+  transform: skewX(-20deg);
+  transition: left 0.55s ease;
+  pointer-events: none;
+}
+.btn--accent:hover::after { left: 130%; }
 
 .btn--ghost {
   border-color: rgba(255, 255, 255, 0.7);
@@ -261,7 +293,8 @@ main .section {
 .hero__overlay {
   position: absolute; inset: 0;
   background:
-    linear-gradient(180deg, rgba(15, 12, 9, 0.5) 0%, rgba(15, 12, 9, 0.25) 40%, rgba(15, 12, 9, 0.65) 100%);
+    radial-gradient(120% 90% at 50% 12%, transparent 38%, rgba(15, 12, 9, 0.5) 100%),
+    linear-gradient(180deg, rgba(15, 12, 9, 0.52) 0%, rgba(15, 12, 9, 0.18) 42%, rgba(15, 12, 9, 0.7) 100%);
 }
 .hero__content {
   position: relative;
@@ -289,7 +322,27 @@ main .section {
 .hero__title em {
   font-style: italic;
   color: #F5B27E;
+  position: relative;
+  z-index: 1;
+  padding: 0 0.06em;
 }
+/* håndtegnet streg, der vokser frem under "travl" til sidst i intro-animationen */
+.hero__title em::after {
+  content: '';
+  position: absolute;
+  left: 0; right: 0; bottom: 0.05em;
+  height: 0.2em;
+  background: linear-gradient(90deg, var(--accent), rgba(245, 178, 126, 0.85));
+  border-radius: 999px;
+  opacity: 0.4;
+  z-index: -1;
+  transform: scaleX(0);
+  transform-origin: left center;
+}
+.hero.is-ready .hero__title em::after {
+  animation: underlineIn 0.7s 1.2s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+@keyframes underlineIn { to { transform: scaleX(1); } }
 .hero__line { display: block; overflow: hidden; }
 .hero__line > span { display: inline-block; }
 .hero__sub {
@@ -388,11 +441,11 @@ main .section {
   display: grid;
   grid-template-columns: 220px 1fr;
   gap: 0;
-  background: #fff;
+  background: linear-gradient(135deg, #fff 55%, #FFF7EE 100%);
   border-radius: var(--radius);
   overflow: hidden;
-  box-shadow: var(--shadow);
-  border: 1px solid rgba(28, 24, 20, 0.05);
+  box-shadow: 0 1px 2px rgba(28, 24, 20, 0.04), 0 28px 60px -24px rgba(184, 84, 23, 0.3);
+  border: 1px solid rgba(217, 108, 44, 0.16);
 }
 .today__badge {
   background: linear-gradient(160deg, var(--accent) 0%, var(--accent-deep) 100%);
@@ -439,10 +492,14 @@ main .section {
 }
 .today__price {
   font-family: var(--font-display);
-  font-size: 1.7rem;
+  font-size: 1.55rem;
   font-weight: 700;
   color: var(--accent-deep);
+  background: var(--accent-soft);
+  border-radius: 999px;
+  padding: 4px 20px;
 }
+.today__price:empty { display: none; }
 .today__stock {
   font-weight: 600;
   font-size: 0.95rem;
@@ -494,7 +551,7 @@ main .section {
   padding: 18px;
   transition: transform 0.25s ease, box-shadow 0.25s ease;
 }
-.dayplan:hover { transform: translateY(-4px); box-shadow: var(--shadow); }
+.dayplan:hover { transform: translateY(-4px); box-shadow: var(--shadow); border-color: rgba(217, 108, 44, 0.35); }
 .dayplan--closed { opacity: 0.55; background: transparent; border-style: dashed; }
 .dayplan__day {
   font-size: 0.78rem;
@@ -870,14 +927,35 @@ main .section {
   grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
   gap: 18px;
 }
-.menucat { padding: 26px; }
+.menucat {
+  padding: 26px;
+  transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.3s ease, border-color 0.3s ease;
+}
+.menucat:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 1px 2px rgba(28, 24, 20, 0.04), 0 30px 56px -24px rgba(28, 24, 20, 0.32);
+  border-color: rgba(217, 108, 44, 0.22);
+}
 .menucat h4 {
   font-family: var(--font-display);
   font-size: 1.15rem;
   font-weight: 600;
   margin-bottom: 6px;
-  padding-bottom: 10px;
+  padding-bottom: 12px;
   border-bottom: 1.6px dashed var(--line);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.menucat__icon {
+  display: inline-grid;
+  place-items: center;
+  width: 36px; height: 36px;
+  border-radius: 12px;
+  background: var(--accent-soft);
+  font-size: 1.05rem;
+  flex-shrink: 0;
 }
 
 /* sidste kategori i fuld bredde med varerne fordelt i spalter */

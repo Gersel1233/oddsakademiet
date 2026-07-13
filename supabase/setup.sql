@@ -61,6 +61,14 @@ create table if not exists public.notes (
   text text not null default ''
 );
 
+create table if not exists public.push_subscriptions (
+  id uuid primary key default gen_random_uuid(),
+  endpoint text not null unique,
+  p256dh text not null,
+  auth text not null,
+  created_at timestamptz not null default now()
+);
+
 -- ---------- adgangsregler (RLS) ----------
 alter table public.config enable row level security;
 alter table public.orders enable row level security;
@@ -97,6 +105,12 @@ create policy bookings_delete on public.bookings for delete using (public.is_adm
 -- chefens dagsnoter: kun chefen
 drop policy if exists notes_all on public.notes;
 create policy notes_all on public.notes for all
+  using (public.is_admin()) with check (public.is_admin());
+
+-- push-abonnementer (notifikationer i admin-appen): kun chefen
+alter table public.push_subscriptions enable row level security;
+drop policy if exists push_all on public.push_subscriptions;
+create policy push_all on public.push_subscriptions for all
   using (public.is_admin()) with check (public.is_admin());
 
 -- ---------- funktioner ----------

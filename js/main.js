@@ -296,6 +296,17 @@
     renderDayMenu();
   });
 
+  /* lille ikon pr. kategori – kendes på id/navn, ellers en tallerken */
+  function catIcon(cat) {
+    const key = `${cat.id || ''} ${cat.name || ''}`.toLowerCase();
+    if (/salat/.test(key)) return '🥗';
+    if (/friture|pommes|frit/.test(key)) return '🍟';
+    if (/drik/.test(key)) return '🥤';
+    if (/ret/.test(key)) return '🍔';
+    if (/andet|brød|panini/.test(key)) return '🥖';
+    return '🍽️';
+  }
+
   function renderCategories() {
     const wrap = $('#menuCategories');
     const cats = S.getMenu().categories;
@@ -305,7 +316,7 @@
       const wide = cats.length >= 3 && i === cats.length - 1;
       return `
       <div class="card menucat ${wide ? 'menucat--wide' : ''}" data-reveal style="--reveal-delay:${(i % 4) * 0.08}s">
-        <h4>${esc(cat.name)}${cat.availability === 'hverdage' ? '<span class="menucat__badge">Kun hverdage</span>' : ''}</h4>
+        <h4><span class="menucat__icon" aria-hidden="true">${catIcon(cat)}</span>${esc(cat.name)}${cat.availability === 'hverdage' ? '<span class="menucat__badge">Kun hverdage</span>' : ''}</h4>
         <div class="menucat__items">
         ${cat.items.map((item) => `
           <div class="menuline">

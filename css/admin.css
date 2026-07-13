@@ -726,6 +726,23 @@ button { font-family: var(--font-body); }
   cursor: help;
 }
 
+/* "installér som app" / "slå notifikationer til"-bannere */
+#pwaBanner { display: grid; gap: 10px; margin-bottom: 20px; }
+.pwa {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: #fff;
+  border: 1.6px solid rgba(217, 108, 44, 0.35);
+  border-radius: 16px;
+  padding: 13px 16px;
+  box-shadow: var(--shadow);
+}
+.pwa > span { font-size: 1.6rem; }
+.pwa > div { flex: 1; min-width: 0; }
+.pwa strong { display: block; font-size: 0.98rem; }
+.pwa small { color: var(--ink-soft); font-size: 0.85rem; }
+
 /* toast */
 .toast {
   position: fixed;

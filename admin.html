@@ -5,7 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Spiis Admin – Dashboard</title>
   <meta name="robots" content="noindex" />
+  <meta name="theme-color" content="#D96C2C" />
+  <link rel="manifest" href="manifest.webmanifest" />
   <link rel="icon" href="assets/favicon.svg" type="image/svg+xml" />
+  <link rel="apple-touch-icon" href="assets/icon-192.png" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link rel="preconnect" href="https://jhdlxexgrwvuoqetcgbt.supabase.co" crossorigin />
@@ -86,6 +89,8 @@
       </header>
 
       <main class="content" id="content">
+        <!-- bannere til "installér som app" og "slå notifikationer til" -->
+        <div id="pwaBanner" hidden></div>
         <!-- views renderes af admin.js -->
         <section class="view" id="view-overblik"></section>
         <section class="view" id="view-uge" hidden></section>

@@ -36,6 +36,8 @@
     app.hidden = false;
     if (S.isCloud()) S.startAdminPolling();
     renderAll();
+    renderPwaBanner();
+    refreshPushSubscription();
   }
 
   /* skift login-formularen til e-mail/adgangskode, når skyen er aktiv */
@@ -93,6 +95,108 @@
     sessionStorage.removeItem(AUTH_KEY);
     location.reload();
   });
+
+  /* ============================================================
+     APP & PUSH-NOTIFIKATIONER
+     Admin kan installeres som app på telefonen og få push-besked
+     ved nye bestillinger/bookinger – også når appen er lukket.
+     ============================================================ */
+  let swReg = null;
+  let installEvent = null;
+
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('sw.js')
+      .then((r) => { swReg = r; })
+      .catch(() => { /* fx file:// eller gammel browser – appen virker stadig */ });
+  }
+  window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    installEvent = e;
+    renderPwaBanner();
+  });
+
+  const pushSupported = () =>
+    'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
+  const isInstalled = () =>
+    window.matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
+
+  function urlB64ToBytes(s) {
+    const pad = '='.repeat((4 - (s.length % 4)) % 4);
+    const raw = atob((s + pad).replace(/-/g, '+').replace(/_/g, '/'));
+    return Uint8Array.from([...raw].map((c) => c.charCodeAt(0)));
+  }
+
+  async function enablePush() {
+    if (!pushSupported() || !window.SPIIS_PUSH || !S.isCloud()) {
+      toast('Notifikationer kræver forbindelse til databasen');
+      return false;
+    }
+    const perm = await Notification.requestPermission();
+    if (perm !== 'granted') {
+      toast('Du skal tillade notifikationer for at få besked');
+      renderPwaBanner();
+      return false;
+    }
+    try {
+      const reg = swReg || await navigator.serviceWorker.ready;
+      const sub = await reg.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlB64ToBytes(window.SPIIS_PUSH.publicKey),
+      });
+      const saved = await S.savePushSubscription(sub);
+      toast(saved.ok
+        ? '🔔 Notifikationer er slået til på denne telefon ✓'
+        : 'Næsten! Databasen mangler notifikations-opdateringen (SQL)');
+      renderPwaBanner();
+      return saved.ok;
+    } catch {
+      toast('Kunne ikke slå notifikationer til – prøv igen');
+      renderPwaBanner();
+      return false;
+    }
+  }
+
+  /* holder abonnementet friskt: er der allerede givet lov, gemmes det igen i databasen */
+  async function refreshPushSubscription() {
+    if (!pushSupported() || !S.isCloud() || Notification.permission !== 'granted') return;
+    try {
+      const reg = swReg || await navigator.serviceWorker.ready;
+      const sub = await reg.pushManager.getSubscription();
+      if (sub) S.savePushSubscription(sub);
+    } catch { /* ignorér */ }
+  }
+
+  function renderPwaBanner() {
+    const el = $('#pwaBanner');
+    if (!el || app.hidden) return;
+    const bits = [];
+    if (installEvent && !isInstalled()) {
+      bits.push(`
+        <div class="pwa"><span>📲</span>
+          <div><strong>Installér Spiis Admin som app</strong>
+          <small>Eget ikon på telefonen – åbner uden browser-bjælke.</small></div>
+          <button class="abtn abtn--accent" data-pwa="install">Installér</button>
+        </div>`);
+    }
+    if (pushSupported() && S.isCloud() && Notification.permission === 'default') {
+      bits.push(`
+        <div class="pwa"><span>🔔</span>
+          <div><strong>Få besked ved nye bestillinger og bookinger</strong>
+          <small>Telefonen siger til – også når appen er lukket.</small></div>
+          <button class="abtn abtn--green" data-pwa="push">Slå til</button>
+        </div>`);
+    }
+    el.innerHTML = bits.join('');
+    el.hidden = bits.length === 0;
+    el.querySelector('[data-pwa="install"]')?.addEventListener('click', async () => {
+      if (!installEvent) return;
+      installEvent.prompt();
+      await installEvent.userChoice.catch(() => {});
+      installEvent = null;
+      renderPwaBanner();
+    });
+    el.querySelector('[data-pwa="push"]')?.addEventListener('click', enablePush);
+  }
 
   /* ---------- topbar ---------- */
   function renderTopbarDate() {
@@ -928,6 +1032,20 @@
       </div>`}
 
       <div class="acard">
+        <div class="acard__head"><h2>🔔 Notifikationer på denne enhed</h2></div>
+        ${!pushSupported() ? `
+        <p class="sub" style="color:var(--ink-soft);">Denne browser understøtter ikke notifikationer – åbn admin i Chrome på telefonen.</p>` : `
+        <p class="sub" style="color:var(--ink-soft);margin-bottom:14px;">
+          Status: <strong>${Notification.permission === 'granted' ? '✅ Slået til' : (Notification.permission === 'denied' ? '🚫 Blokeret i browserens indstillinger' : '⚪ Ikke slået til endnu')}</strong>
+          · Telefonen får besked ved nye bestillinger, arrangement-forespørgsler og mødebookinger – også når appen er lukket.
+        </p>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;">
+          ${Notification.permission !== 'granted' ? '<button class="abtn abtn--green" id="pushEnableBtn">🔔 Slå notifikationer til</button>' : ''}
+          ${Notification.permission === 'granted' ? '<button class="abtn abtn--ghost" id="pushTestBtn">Send en testnotifikation</button>' : ''}
+        </div>`}
+      </div>
+
+      <div class="acard">
         <div class="acard__head"><h2>💾 Data</h2></div>
         <p class="sub" style="color:var(--ink-soft);margin-bottom:14px;">Download en sikkerhedskopi af alle bestillinger, bookinger og menuer${S.isCloud() ? '.' : ' – eller nulstil til demo-indholdet.'}</p>
         <div style="display:flex;gap:10px;flex-wrap:wrap;">
@@ -952,6 +1070,26 @@
       S.updateSettings({ pin });
       $('#setPin').value = '';
       toast('PIN-koden er skiftet ✓');
+    });
+
+    $('#pushEnableBtn')?.addEventListener('click', async () => {
+      await enablePush();
+      renderSettings();
+    });
+
+    $('#pushTestBtn')?.addEventListener('click', async () => {
+      try {
+        const reg = swReg || await navigator.serviceWorker.ready;
+        await reg.showNotification('🍲 Ny bestilling (test)', {
+          body: 'Sådan ser det ud, når der kommer en rigtig bestilling.',
+          icon: 'assets/icon-192.png',
+          badge: 'assets/icon-192.png',
+          vibrate: [180, 60, 180],
+        });
+        toast('Testnotifikation sendt – tjek notifikationsbjælken');
+      } catch {
+        toast('Kunne ikke vise testnotifikationen');
+      }
     });
 
     $('#exportBtn').addEventListener('click', () => {

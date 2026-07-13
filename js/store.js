@@ -637,6 +637,28 @@ const SpiisStore = (() => {
     }
   }
 
+  /* ---------- push-notifikationer (admin-appen) ----------
+     Abonnementet fra browseren gemmes i databasen, så Supabase
+     kan sende push, når der kommer nye bestillinger/bookinger. */
+  async function savePushSubscription(sub) {
+    if (!cloud) return { ok: false };
+    try {
+      const s = sub.toJSON ? sub.toJSON() : sub;
+      const res = await sbFetch('/rest/v1/push_subscriptions?on_conflict=endpoint', {
+        method: 'POST', auth: true,
+        headers: { Prefer: 'resolution=merge-duplicates,return=minimal' },
+        body: JSON.stringify([{ endpoint: s.endpoint, p256dh: s.keys.p256dh, auth: s.keys.auth }]),
+      });
+      return { ok: res.ok };
+    } catch { return { ok: false }; }
+  }
+  async function deletePushSubscription(endpoint) {
+    if (!cloud) return;
+    sbFetch(`/rest/v1/push_subscriptions?endpoint=eq.${encodeURIComponent(endpoint)}`, {
+      method: 'DELETE', auth: true,
+    }).catch(() => {});
+  }
+
   /* ---------- tilgængelighed for booking ---------- */
   const getBlockedDates = () => data.blockedDates.slice();
   const getArrangementDates = () => (data.arrangementDates || []).slice();
@@ -772,5 +794,6 @@ const SpiisStore = (() => {
     isCloud, isCloudConfigured, isCloudDown,
     hasSession, adminLogin, logout, startAdminPolling,
     refreshAdmin: fetchAdminData, refreshPublic,
+    savePushSubscription, deletePushSubscription,
   };
 })();
