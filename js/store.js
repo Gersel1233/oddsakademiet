@@ -521,6 +521,8 @@ const SpiisStore = (() => {
 
   /* ---------- bestillinger (kurv med dagens ret + menukort) ---------- */
   async function addOrder(order) {
+    /* dage med privat arrangement (eller lukkede dage) tager ikke imod bestillinger */
+    if (isOrderingClosed(order.date)) return { ok: false, reason: 'lukket' };
     /* udsolgte varer og "få tilbage"-antal stoppes før afsendelse
        – databasen tjekker og tæller også selv (kapløbs-sikkert) */
     const soldout = soldoutNames();
@@ -704,6 +706,11 @@ const SpiisStore = (() => {
   /* ---------- tilgængelighed for booking ---------- */
   const getBlockedDates = () => data.blockedDates.slice();
   const getArrangementDates = () => (data.arrangementDates || []).slice();
+
+  /* dage med aftalt arrangement (eller manuelt lukkede dage) er
+     helt lukket for almindelige madbestillinger – køkkenet er optaget */
+  const isOrderingClosed = (iso) =>
+    data.blockedDates.includes(iso) || (data.arrangementDates || []).includes(iso);
   function blockDate(iso) {
     if (!data.blockedDates.includes(iso)) {
       data.blockedDates.push(iso);
@@ -827,7 +834,7 @@ const SpiisStore = (() => {
     getMenu, setMenu,
     addOrder, getOrders, updateOrder, deleteOrder,
     addBooking, getBookings, updateBooking, deleteBooking,
-    getBlockedDates, getArrangementDates, blockDate, unblockDate, isDateAvailable,
+    getBlockedDates, getArrangementDates, isOrderingClosed, blockDate, unblockDate, isDateAvailable,
     timeslotsFor,
     getUnread, markAllRead,
     exportData, resetData,

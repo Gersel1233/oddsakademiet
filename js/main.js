@@ -141,13 +141,15 @@
   function renderToday() {
     const today = S.todayISO();
     let iso = today;
-    /* efter køkkenets lukketid er dagen slut – vis næste dag i stedet */
-    let dish = dayDone(today) ? null : S.getDagensRet(iso);
+    /* efter køkkenets lukketid er dagen slut – og dage med privat
+       arrangement springes over, for dér kan man ikke bestille */
+    let dish = (dayDone(today) || S.isOrderingClosed(today)) ? null : S.getDagensRet(iso);
 
     /* hvis der ikke er en ret (eller dagen er slut), så vis den næste planlagte */
     if (!dish) {
       for (let i = 1; i <= 14 && !dish; i++) {
         iso = S.addDays(today, i);
+        if (S.isOrderingClosed(iso)) continue;
         dish = S.getDagensRet(iso);
       }
     }
@@ -200,6 +202,14 @@
           <div class="dayplan__day">${day.weekday}${isToday ? ' · i dag' : ''}</div>
           <div class="dayplan__date">${esc(S.formatDate(day.iso, false))}</div>
           <div class="dayplan__dish">Lukket</div>
+        </div>`;
+      }
+      if (S.isOrderingClosed(day.iso)) {
+        return `<div class="dayplan dayplan--closed">
+          <div class="dayplan__day">${day.weekday}${isToday ? ' · i dag' : ''}</div>
+          <div class="dayplan__date">${esc(S.formatDate(day.iso, false))}</div>
+          <div class="dayplan__dish">🎉 Privat arrangement</div>
+          <div class="dayplan__desc">Lukket for bestillinger denne dag.</div>
         </div>`;
       }
       const remaining = S.getRemaining(day.iso);
@@ -402,7 +412,7 @@
   function renderOrderDates() {
     const plan = S.getPlan(14);
     const options = plan
-      .filter((d) => d.open && slotsFor(d.iso).length > 0)
+      .filter((d) => d.open && slotsFor(d.iso).length > 0 && !S.isOrderingClosed(d.iso))
       .map((d) => {
         const remaining = S.getRemaining(d.iso);
         const soldOut = d.dish && remaining !== null && remaining <= 0;
@@ -653,6 +663,9 @@
     if (!result.ok) {
       if (result.error === 'net') {
         error.textContent = 'Bestillingen kunne ikke sendes lige nu – prøv igen, eller ring til os.';
+      } else if (result.reason === 'lukket') {
+        error.textContent = 'Denne dag er netop blevet lukket for bestillinger (privat arrangement) – vælg venligst en anden dag.';
+        if (S.isCloud()) S.refreshPublic();
       } else if (result.reason === 'udsolgt') {
         error.textContent = `„${result.item}" er desværre lige blevet udsolgt i dag – den er fjernet fra jeres bestilling, så prøv bare igen.`;
         Object.keys(basket).forEach((k) => { if (basket[k].name === result.item) delete basket[k]; });

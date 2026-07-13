@@ -27,6 +27,13 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      # Stempl filerne med versionsnummer, så browsere og telefoner aldrig
+      # kan blande gammel og ny kode efter en opdatering (cache-sikring)
+      - name: Version assets
+        run: |
+          V="${GITHUB_SHA::8}"
+          sed -i "s/__V__/${V}/g" index.html admin.html
+
       - name: Setup Pages
         uses: actions/configure-pages@v5
         with:

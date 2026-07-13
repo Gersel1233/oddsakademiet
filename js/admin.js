@@ -435,7 +435,7 @@
           <label class="afield"><span>Dato</span><input type="date" class="bkedit__date" value="${esc(b.date || '')}" /></label>
           <label class="afield"><span>Tidspunkt</span><select class="bkedit__time"></select></label>
           <label class="afield afield--wide"><span>Intern note <em>(kun til jer – aldrig synlig for kunder)</em></span><textarea class="bkedit__note" rows="2" placeholder="Fx: Dæk op til 20 på venstre fløj med servietter, bestik og flag">${esc(b.staff_note || '')}</textarea></label>
-          ${isMoede ? '' : '<div class="bkedit__hint">🚫 Når du gemmer, blokeres dagen automatisk i kalenderen, så andre ikke kan sende arrangement-forespørgsler samme dag. Møder og madbestillinger påvirkes ikke.</div>'}
+          ${isMoede ? '' : '<div class="bkedit__hint">🚫 Når du gemmer, lukkes dagen automatisk: ingen nye arrangement-forespørgsler og ingen almindelige madbestillinger den dag. Møder påvirkes ikke. Alt åbner igen, hvis arrangementet flyttes, afvises eller slettes.</div>'}
           <button class="abtn abtn--accent" data-act="booking-save" data-id="${b.id}">✓ Gem</button>
           <button class="abtn abtn--ghost" data-act="booking-close">Luk</button>
         </div>
@@ -680,8 +680,8 @@
     $('#view-bookinger').innerHTML = `
       <div class="acard">
         <div class="acard__head">
-          <h2>🚫 Luk dage for booking</h2>
-          <span class="sub">Dage du blokerer, kan ikke vælges i bookingformularen på hjemmesiden. Dage med et aftalt arrangement blokeres automatisk for nye arrangementer.</span>
+          <h2>🚫 Luk dage</h2>
+          <span class="sub">Lukkede dage kan hverken vælges til booking eller madbestilling på hjemmesiden. Dage med et aftalt arrangement lukkes helt automatisk.</span>
         </div>
         <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
           <input type="date" class="inline-input" id="blockDate" min="${today}" style="width:180px;" />
@@ -1211,7 +1211,7 @@
       const bk = S.getBookings().find((x) => x.id === id);
       S.updateBooking(id, { date, time, staff_note: staffNote, status: 'bekraeftet', read: true });
       toast(bk && bk.kind === 'arrangement'
-        ? `Gemt: ${S.formatDate(date)} kl. ${time} ✓ – dagen er blokeret for nye arrangementer`
+        ? `Gemt: ${S.formatDate(date)} kl. ${time} ✓ – dagen er lukket for andre arrangementer og madbestillinger`
         : `Gemt: ${S.formatDate(date)} kl. ${time} ✓`);
     }
     else if (act === 'booking-close') {

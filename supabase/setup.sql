@@ -153,6 +153,12 @@ begin
   -- lås config-rækken, så lagertjek + nedtælling + indsættelse sker uden kapløb
   select data into v_cfg from config where id = 1 for update;
 
+  -- dage med aftalt arrangement eller manuelt lukkede dage tager ikke imod bestillinger
+  if coalesce(v_cfg->'blockedDates' ? to_char(p_date, 'YYYY-MM-DD'), false)
+     or coalesce(v_cfg->'arrangementDates' ? to_char(p_date, 'YYYY-MM-DD'), false) then
+    return jsonb_build_object('ok', false, 'reason', 'lukket');
+  end if;
+
   -- menukort-varer: afvis udsolgte, håndhæv "få tilbage"-antal og tæl ned.
   -- Rammer antallet 0, markeres retten automatisk som udsolgt.
   -- (dagens ret har sit eget lagertjek nedenfor)
