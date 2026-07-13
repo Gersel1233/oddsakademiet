@@ -704,6 +704,24 @@ button { font-family: var(--font-body); }
   align-items: center;
   margin-bottom: 8px;
 }
+/* faste retter har også "få tilbage" + udsolgt-knap */
+.menued__item--full { grid-template-columns: 1.2fr 1.6fr 74px 104px auto auto; }
+.menued__item--out [data-f="name"] { text-decoration: line-through; color: var(--ink-soft); background: var(--red-soft); }
+.soldbtn {
+  border: 1.6px solid rgba(179, 55, 43, 0.35);
+  background: #fff;
+  color: var(--red);
+  border-radius: 999px;
+  padding: 8px 14px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: transform 0.15s ease, background 0.15s ease;
+}
+.soldbtn:active { transform: scale(0.95); }
+.soldbtn.is-out { background: var(--red); border-color: var(--red); color: #fff; }
 
 /* blokerede datoer */
 .blocked { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }

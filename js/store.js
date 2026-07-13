@@ -500,8 +500,20 @@ const SpiisStore = (() => {
     return Math.max(0, Number(dish.stock) - getSold(iso));
   }
 
+  /* varer, chefen har markeret som udsolgt på menukortet */
+  function soldoutNames() {
+    const set = new Set();
+    ((data.menu && data.menu.categories) || []).forEach((c) =>
+      (c.items || []).forEach((i) => { if (i.soldout && i.name) set.add(i.name); }));
+    return set;
+  }
+
   /* ---------- bestillinger (kurv med dagens ret + menukort) ---------- */
   async function addOrder(order) {
+    /* udsolgte varer stoppes før afsendelse – databasen tjekker også selv */
+    const soldout = soldoutNames();
+    const blocked = (order.items || []).find((l) => l.kind !== 'dagensret' && soldout.has(l.name));
+    if (blocked) return { ok: false, reason: 'udsolgt', item: blocked.name };
     if (cloud) {
       /* lagertjekket (kun dagens ret) sker atomisk i databasen */
       try {

@@ -319,9 +319,9 @@
         <h4><span class="menucat__icon" aria-hidden="true">${catIcon(cat)}</span>${esc(cat.name)}${cat.availability === 'hverdage' ? '<span class="menucat__badge">Kun hverdage</span>' : ''}</h4>
         <div class="menucat__items">
         ${cat.items.map((item) => `
-          <div class="menuline">
+          <div class="menuline ${item.soldout ? 'menuline--soldout' : ''}">
             <div>
-              <div class="menuline__name">${esc(item.name)}</div>
+              <div class="menuline__name">${esc(item.name)}${item.soldout ? '<span class="menuline__badge menuline__badge--out">Udsolgt i dag</span>' : (item.left ? `<span class="menuline__badge menuline__badge--few">Kun ${esc(item.left)} tilbage</span>` : '')}</div>
               ${item.desc ? `<div class="menuline__desc">${esc(item.desc)}</div>` : ''}
             </div>
             <span class="menuline__price">${item.price ? kr(item.price) : ''}</span>
@@ -467,12 +467,15 @@
       .filter((cat) => cat.availability !== 'hverdage' || !weekend)
       .forEach((cat) => groups.push({ name: cat.name, items: cat.items.filter((i) => i.name) }));
     groups.forEach((g) => g.items.forEach((item) => {
-      builderIndex['m::' + item.name] = { name: item.name, price: item.price ?? null, kind: 'menu', cat: g.name };
+      builderIndex['m::' + item.name] = {
+        name: item.name, price: item.price ?? null, kind: 'menu', cat: g.name,
+        soldout: !!item.soldout, left: item.left ?? null,
+      };
     }));
 
-    /* ryd kurven for varer, der ikke findes på den valgte dag */
+    /* ryd kurven for varer, der ikke findes på den valgte dag – eller er udsolgt */
     Object.keys(basket).forEach((key) => {
-      if (!builderIndex[key]) delete basket[key];
+      if (!builderIndex[key] || builderIndex[key].soldout) delete basket[key];
     });
     if (basket.dagens && remaining !== null && basket.dagens.qty > remaining) {
       basket.dagens.qty = remaining;
@@ -507,13 +510,13 @@
       return `<details class="bcat" data-cat="${esc(g.name)}" ${open ? 'open' : ''}>
         <summary><span>${esc(g.name)}</span>${count ? `<span class="bcat__count">${count} valgt</span>` : '<span class="bcat__hint">+ tilføj</span>'}</summary>
         ${g.items.map((item) => `
-          <div class="bitem">
+          <div class="bitem ${item.soldout ? 'bitem--soldout' : ''}">
             <div class="bitem__info">
-              <strong>${esc(item.name)}</strong>
+              <strong>${esc(item.name)}${item.soldout ? '<span class="menuline__badge menuline__badge--out">Udsolgt i dag</span>' : (item.left ? `<span class="menuline__badge menuline__badge--few">Kun ${esc(item.left)} tilbage</span>` : '')}</strong>
               ${item.desc ? `<small>${esc(item.desc)}</small>` : ''}
               ${item.price ? `<em>${kr(item.price)}</em>` : ''}
             </div>
-            ${stepper('m::' + item.name, 50)}
+            ${item.soldout ? '<span class="builder__soldout">Udsolgt</span>' : stepper('m::' + item.name, 50)}
           </div>`).join('')}
       </details>`;
     }).join('');
@@ -533,7 +536,7 @@
     if (!btn || btn.disabled) return;
     const key = btn.dataset.key;
     const info = builderIndex[key];
-    if (!info) return;
+    if (!info || info.soldout) return;
     const cur = basket[key] ? basket[key].qty : 0;
     let next = cur + Number(btn.dataset.step);
     const max = key === 'dagens' ? S.getRemaining(orderDate.value) : 50;
@@ -605,6 +608,10 @@
     if (!result.ok) {
       if (result.error === 'net') {
         error.textContent = 'Bestillingen kunne ikke sendes lige nu – prøv igen, eller ring til os.';
+      } else if (result.reason === 'udsolgt') {
+        error.textContent = `„${result.item}" er desværre lige blevet udsolgt i dag – den er fjernet fra jeres bestilling, så prøv bare igen.`;
+        Object.keys(basket).forEach((k) => { if (basket[k].name === result.item) delete basket[k]; });
+        if (S.isCloud()) S.refreshPublic();
       } else {
         error.textContent = result.remaining > 0
           ? `Åh nej – der er kun ${result.remaining} portion${result.remaining === 1 ? '' : 'er'} dagens ret tilbage denne dag. Sæt antallet ned eller vælg en anden dag.`

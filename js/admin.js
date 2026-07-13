@@ -819,10 +819,12 @@
               </div>
               <div class="menued__items">
                 ${cat.items.map((item, ii) => `
-                  <div class="menued__item" data-ii="${ii}">
+                  <div class="menued__item menued__item--full ${item.soldout ? 'menued__item--out' : ''}" data-ii="${ii}">
                     <input class="inline-input" data-f="name" value="${esc(item.name)}" placeholder="Navn" />
                     <input class="inline-input" data-f="desc" value="${esc(item.desc || '')}" placeholder="Beskrivelse" />
                     <input class="inline-input" data-f="price" type="number" min="0" value="${esc(item.price ?? '')}" placeholder="Pris" />
+                    <input class="inline-input" data-f="left" type="number" min="1" max="99" value="${esc(item.left ?? '')}" placeholder="Få tilbage?" title="Valgfrit: skriv fx 2, så viser hjemmesiden 'Kun 2 tilbage'" />
+                    <button class="soldbtn ${item.soldout ? 'is-out' : ''}" data-act="toggle-soldout" data-f="soldout" data-on="${item.soldout ? 1 : 0}" title="${item.soldout ? 'Tryk for at sætte retten til salg igen' : 'Tryk, når retten er udsolgt i dag'}">${item.soldout ? 'UDSOLGT ✕' : 'Udsolgt?'}</button>
                     <button class="abtn abtn--danger abtn--icon" data-act="del-item" title="Fjern ret">✕</button>
                   </div>`).join('')}
               </div>
@@ -865,6 +867,8 @@
           name: $('[data-f="name"]', itemEl).value.trim(),
           desc: $('[data-f="desc"]', itemEl).value.trim(),
           price: $('[data-f="price"]', itemEl).value ? Number($('[data-f="price"]', itemEl).value) : null,
+          soldout: $('[data-f="soldout"]', itemEl)?.dataset.on === '1',
+          left: $('[data-f="left"]', itemEl)?.value ? Number($('[data-f="left"]', itemEl).value) : null,
         })).filter((i) => i.name),
       }));
       const weekly = $$('#menuWeekly .menued__cat').map((dayEl) =>
@@ -898,6 +902,8 @@
             name: $('[data-f="name"]', itemEl).value,
             desc: $('[data-f="desc"]', itemEl).value,
             price: $('[data-f="price"]', itemEl).value ? Number($('[data-f="price"]', itemEl).value) : null,
+            soldout: $('[data-f="soldout"]', itemEl)?.dataset.on === '1',
+            left: $('[data-f="left"]', itemEl)?.value ? Number($('[data-f="left"]', itemEl).value) : null,
           })),
         })),
         weekly: $$('#menuWeekly .menued__cat').map((dayEl) =>
@@ -910,12 +916,24 @@
       };
     }
 
+    /* "få tilbage"-feltet gemmer selv, når man har skrevet tallet */
+    $('#view-menukort').onchange = (e) => {
+      if (e.target.matches && e.target.matches('[data-f="left"]')) collectAndSave();
+    };
+
     /* onclick (ikke addEventListener) så vi ikke stabler lyttere ved gen-render */
     $('#view-menukort').onclick = (e) => {
       const btn = e.target.closest('[data-act]');
       if (!btn) return;
       const act = btn.dataset.act;
-      if (act === 'add-item' || act === 'add-witem') {
+      if (act === 'toggle-soldout') {
+        /* ét tryk markerer udsolgt OG gemmer med det samme – hurtigt midt i en travl aften */
+        const on = btn.dataset.on === '1';
+        btn.dataset.on = on ? '0' : '1';
+        const name = $('[data-f="name"]', btn.closest('.menued__item')).value.trim() || 'Retten';
+        collectAndSave();
+        toast(on ? `„${name}" er til salg igen ✓` : `„${name}" er markeret UDSOLGT – kan ikke bestilles ✓`);
+      } else if (act === 'add-item' || act === 'add-witem') {
         const menu2 = collectCurrent();
         if (act === 'add-item') {
           const ci = Number(btn.closest('.menued__cat').dataset.ci);

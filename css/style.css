@@ -885,6 +885,18 @@ main .section {
   margin-left: 8px;
   vertical-align: middle;
 }
+.menuline__badge--out { background: #FBEAE7; color: #B3372B; }
+.menuline__badge--few { background: #FFF3E4; color: var(--accent-deep); }
+
+/* udsolgte varer: streget ud og kan ikke bestilles */
+.menuline--soldout .menuline__name { color: var(--ink-soft); }
+.menuline--soldout .menuline__name,
+.menuline--soldout .menuline__price { text-decoration: line-through; text-decoration-color: rgba(179, 55, 43, 0.55); }
+.menuline--soldout .menuline__desc { opacity: 0.6; }
+.bitem--soldout { opacity: 0.68; }
+.bitem--soldout .bitem__info strong { text-decoration: line-through; text-decoration-color: rgba(179, 55, 43, 0.55); color: var(--ink-soft); }
+.bitem--soldout .menuline__badge { text-decoration: none; display: inline-block; }
+
 .menuline__desc { color: var(--ink-soft); font-size: 0.92rem; margin-top: 2px; }
 .menuline__price {
   font-family: var(--font-display);

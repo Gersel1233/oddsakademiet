@@ -126,6 +126,7 @@ declare
   v_stock int;
   v_sold int;
   v_remaining int;
+  v_blocked text;
   v_items jsonb := coalesce(p_items, '[]'::jsonb);
 begin
   if p_qty is null or p_qty < 0 or p_qty > 100 then
@@ -144,6 +145,25 @@ begin
 
   -- lås config-rækken, så lagertjek + indsættelse sker uden kapløb
   perform 1 from config where id = 1 for update;
+
+  -- afvis varer, chefen har markeret som udsolgt på menukortet
+  -- (dagens ret har sit eget lagertjek nedenfor)
+  select it->>'name' into v_blocked
+  from jsonb_array_elements(v_items) it
+  where coalesce(it->>'kind', '') <> 'dagensret'
+    and exists (
+      select 1
+      from config cfg,
+           jsonb_array_elements(cfg.data->'menu'->'categories') c,
+           jsonb_array_elements(c->'items') i
+      where cfg.id = 1
+        and coalesce((i->>'soldout')::boolean, false)
+        and i->>'name' = it->>'name'
+    )
+  limit 1;
+  if v_blocked is not null then
+    return jsonb_build_object('ok', false, 'reason', 'udsolgt', 'item', v_blocked);
+  end if;
 
   if p_qty > 0 then
     select nullif(data->'dagensRet'->to_char(p_date,'YYYY-MM-DD')->>'stock','')::int
