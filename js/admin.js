@@ -119,6 +119,11 @@
     'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
   const isInstalled = () =>
     window.matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
+  /* iPhone/iPad: ingen automatisk installations-prompt – der skal Safaris Del-knap til */
+  const isIOS = () =>
+    /iPhone|iPad|iPod/.test(navigator.userAgent)
+    || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  const isIOSChrome = () => isIOS() && /CriOS/.test(navigator.userAgent);
 
   function urlB64ToBytes(s) {
     const pad = '='.repeat((4 - (s.length % 4)) % 4);
@@ -176,6 +181,15 @@
           <div><strong>Installér Spiis Admin som app</strong>
           <small>Eget ikon på telefonen – åbner uden browser-bjælke.</small></div>
           <button class="abtn abtn--accent" data-pwa="install">Installér</button>
+        </div>`);
+    }
+    if (isIOS() && !isInstalled()) {
+      bits.push(`
+        <div class="pwa"><span>📲</span>
+          <div><strong>Installér som app på din iPhone</strong>
+          <small>${isIOSChrome()
+            ? 'Åbn spiis.dk/admin i <b>Safari</b> → tryk på Del-knappen (firkant med pil op) → vælg <b>»Føj til hjemmeskærm«</b>.'
+            : 'Tryk på <b>Del-knappen</b> (firkant med pil op) → scroll ned → vælg <b>»Føj til hjemmeskærm«</b>.'}</small></div>
         </div>`);
     }
     if (pushSupported() && S.isCloud() && Notification.permission === 'default') {
