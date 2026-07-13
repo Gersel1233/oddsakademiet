@@ -51,6 +51,7 @@ create table if not exists public.bookings (
   phone text not null,
   email text not null default '',
   staff_note text not null default '', /* intern note – kun synlig i admin */
+  block_orders boolean not null default true, /* arrangement: luk også for madbestillinger den dag */
   status text not null default 'ny',
   read boolean not null default false,
   created_at timestamptz not null default now()
@@ -153,9 +154,10 @@ begin
   -- lås config-rækken, så lagertjek + nedtælling + indsættelse sker uden kapløb
   select data into v_cfg from config where id = 1 for update;
 
-  -- dage med aftalt arrangement eller manuelt lukkede dage tager ikke imod bestillinger
+  -- manuelt lukkede dage – og arrangement-dage hvor chefen har valgt at
+  -- lukke for madbestillinger – tager ikke imod bestillinger
   if coalesce(v_cfg->'blockedDates' ? to_char(p_date, 'YYYY-MM-DD'), false)
-     or coalesce(v_cfg->'arrangementDates' ? to_char(p_date, 'YYYY-MM-DD'), false) then
+     or coalesce(v_cfg->'orderClosedDates' ? to_char(p_date, 'YYYY-MM-DD'), false) then
     return jsonb_build_object('ok', false, 'reason', 'lukket');
   end if;
 

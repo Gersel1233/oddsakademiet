@@ -419,6 +419,9 @@
           <div class="row__title">${isMoede ? '📅' : '🎉'} ${esc(b.subject)}
             <span class="tag ${isMoede ? 'tag--moede' : 'tag--accent'}">${isMoede ? '📅 Møde' : '🎉 Arrangement'}</span>
             ${statusTag}
+            ${!isMoede && b.status === 'bekraeftet' ? (b.block_orders === false
+              ? '<span class="tag tag--green">🍲 Åbent for bestillinger</span>'
+              : '<span class="tag tag--red">🍲 Lukket for bestillinger</span>') : ''}
           </div>
           <div class="row__sub">
             ${when} · ${esc(b.name)} · 📞 ${esc(b.phone)}${b.email ? ` · ✉️ ${esc(b.email)}` : ''}
@@ -435,7 +438,13 @@
           <label class="afield"><span>Dato</span><input type="date" class="bkedit__date" value="${esc(b.date || '')}" /></label>
           <label class="afield"><span>Tidspunkt</span><select class="bkedit__time"></select></label>
           <label class="afield afield--wide"><span>Intern note <em>(kun til jer – aldrig synlig for kunder)</em></span><textarea class="bkedit__note" rows="2" placeholder="Fx: Dæk op til 20 på venstre fløj med servietter, bestik og flag">${esc(b.staff_note || '')}</textarea></label>
-          ${isMoede ? '' : '<div class="bkedit__hint">🚫 Når du gemmer, lukkes dagen automatisk: ingen nye arrangement-forespørgsler og ingen almindelige madbestillinger den dag. Møder påvirkes ikke. Alt åbner igen, hvis arrangementet flyttes, afvises eller slettes.</div>'}
+          ${isMoede ? '' : `
+          <label class="bkedit__check">
+            <input type="checkbox" class="bkedit__block" ${b.block_orders === false ? '' : 'checked'} />
+            <span><strong>🍲 Luk for almindelige madbestillinger denne dag</strong><br/>
+            <em>Fjern fluebenet ved små arrangementer, hvor Spiis holder åbent som normalt.</em></span>
+          </label>
+          <div class="bkedit__hint">🚫 Dagen blokeres altid for nye arrangement-forespørgsler, når du gemmer – fluebenet ovenfor bestemmer, om der også lukkes for madbestillinger. Alt åbner igen, hvis arrangementet flyttes, afvises eller slettes.</div>`}
           <button class="abtn abtn--accent" data-act="booking-save" data-id="${b.id}">✓ Gem</button>
           <button class="abtn abtn--ghost" data-act="booking-close">Luk</button>
         </div>
@@ -1209,9 +1218,12 @@
       const staffNote = editor.querySelector('.bkedit__note').value.trim();
       if (!date) { toast('Vælg en dato for aftalen'); return; }
       const bk = S.getBookings().find((x) => x.id === id);
-      S.updateBooking(id, { date, time, staff_note: staffNote, status: 'bekraeftet', read: true });
+      const patch = { date, time, staff_note: staffNote, status: 'bekraeftet', read: true };
+      const blockEl = editor.querySelector('.bkedit__block');
+      if (blockEl) patch.block_orders = blockEl.checked;
+      S.updateBooking(id, patch);
       toast(bk && bk.kind === 'arrangement'
-        ? `Gemt: ${S.formatDate(date)} kl. ${time} ✓ – dagen er lukket for andre arrangementer og madbestillinger`
+        ? `Gemt: ${S.formatDate(date)} kl. ${time} ✓ – ${patch.block_orders ? 'dagen er lukket for andre arrangementer og madbestillinger' : 'Spiis holder åbent for bestillinger ved siden af'}`
         : `Gemt: ${S.formatDate(date)} kl. ${time} ✓`);
     }
     else if (act === 'booking-close') {

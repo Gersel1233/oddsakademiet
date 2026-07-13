@@ -137,6 +137,7 @@ const SpiisStore = (() => {
       bookings: [],     /* arrangementer & møder */
       blockedDates: [], /* datoer chefen har lukket for booking */
       arrangementDates: [], /* dage med aftalt arrangement – blokeres automatisk for nye arrangement-forespørgsler */
+      orderClosedDates: [], /* arrangement-dage hvor der OGSÅ er lukket for madbestillinger */
       notes: {},        /* chefens egne noter pr. dag { 'YYYY-MM-DD': tekst } */
       log: [],
     };
@@ -166,6 +167,7 @@ const SpiisStore = (() => {
       /* blid migrering af felter, der er kommet til senere */
       if (!parsed.notes) parsed.notes = {};
       if (!parsed.arrangementDates) parsed.arrangementDates = [];
+      if (!parsed.orderClosedDates) parsed.orderClosedDates = [];
       return parsed;
     } catch {
       return null;
@@ -229,7 +231,7 @@ const SpiisStore = (() => {
     return res;
   }
 
-  const CONFIG_KEYS = ['settings', 'hours', 'dagensRet', 'menu', 'blockedDates', 'arrangementDates'];
+  const CONFIG_KEYS = ['settings', 'hours', 'dagensRet', 'menu', 'blockedDates', 'arrangementDates', 'orderClosedDates'];
 
   function mergeConfig(remote) {
     if (!remote) return;
@@ -249,6 +251,7 @@ const SpiisStore = (() => {
       menu: data.menu,
       blockedDates: data.blockedDates,
       arrangementDates: data.arrangementDates || [],
+      orderClosedDates: data.orderClosedDates || [],
     };
   }
 
@@ -651,6 +654,18 @@ const SpiisStore = (() => {
       sbFetch(`/rest/v1/bookings?id=eq.${encodeURIComponent(id)}`, {
         method: 'PATCH', auth: true, headers: { Prefer: 'return=minimal' },
         body: JSON.stringify(patch),
+      }).then((res) => {
+        /* kender databasen ikke block_orders-kolonnen endnu (SQL ikke kørt),
+           gemmes resten af ændringen alligevel – intet må gå tabt */
+        if (!res.ok && 'block_orders' in patch) {
+          const { block_orders, ...rest } = patch;
+          if (Object.keys(rest).length) {
+            sbFetch(`/rest/v1/bookings?id=eq.${encodeURIComponent(id)}`, {
+              method: 'PATCH', auth: true, headers: { Prefer: 'return=minimal' },
+              body: JSON.stringify(rest),
+            }).catch(() => {});
+          }
+        }
       }).catch(() => {});
     }
     syncArrangementDates();
@@ -665,17 +680,22 @@ const SpiisStore = (() => {
   }
 
   /* Dage med et aftalt arrangement blokeres automatisk for nye
-     arrangement-forespørgsler på hjemmesiden. Listen genberegnes
-     ved hver ændring, så den også rydder op, når et arrangement
-     afvises, slettes eller flyttes til en anden dag. */
+     arrangement-forespørgsler på hjemmesiden – og som udgangspunkt
+     lukkes der også for madbestillinger, medmindre chefen har
+     fjernet fluebenet (små arrangementer, hvor Spiis holder åbent).
+     Listerne genberegnes ved hver ændring, så de også rydder op,
+     når et arrangement afvises, slettes eller flyttes. */
   function syncArrangementDates() {
-    const computed = [...new Set(
-      data.bookings
-        .filter((b) => b.kind === 'arrangement' && b.status === 'bekraeftet' && b.date && b.date >= todayISO())
-        .map((b) => b.date)
+    const confirmed = data.bookings.filter((b) =>
+      b.kind === 'arrangement' && b.status === 'bekraeftet' && b.date && b.date >= todayISO());
+    const arrDates = [...new Set(confirmed.map((b) => b.date))].sort();
+    const closedDates = [...new Set(
+      confirmed.filter((b) => b.block_orders !== false).map((b) => b.date)
     )].sort();
-    if (JSON.stringify(computed) !== JSON.stringify(data.arrangementDates || [])) {
-      data.arrangementDates = computed;
+    if (JSON.stringify(arrDates) !== JSON.stringify(data.arrangementDates || [])
+        || JSON.stringify(closedDates) !== JSON.stringify(data.orderClosedDates || [])) {
+      data.arrangementDates = arrDates;
+      data.orderClosedDates = closedDates;
       save();
       pushConfig();
     }
@@ -707,10 +727,10 @@ const SpiisStore = (() => {
   const getBlockedDates = () => data.blockedDates.slice();
   const getArrangementDates = () => (data.arrangementDates || []).slice();
 
-  /* dage med aftalt arrangement (eller manuelt lukkede dage) er
-     helt lukket for almindelige madbestillinger – køkkenet er optaget */
+  /* manuelt lukkede dage – og arrangement-dage hvor chefen har valgt
+     at lukke – tager ikke imod almindelige madbestillinger */
   const isOrderingClosed = (iso) =>
-    data.blockedDates.includes(iso) || (data.arrangementDates || []).includes(iso);
+    data.blockedDates.includes(iso) || (data.orderClosedDates || []).includes(iso);
   function blockDate(iso) {
     if (!data.blockedDates.includes(iso)) {
       data.blockedDates.push(iso);
