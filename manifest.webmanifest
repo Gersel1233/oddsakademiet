@@ -4,7 +4,7 @@
   "description": "Køkkenets overblik: bestillinger, arrangementer og dagens køreplan.",
   "id": "/admin.html",
   "start_url": "/admin.html",
-  "scope": "/",
+  "scope": "/admin.html",
   "display": "standalone",
   "orientation": "portrait",
   "background_color": "#1C1814",
