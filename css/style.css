@@ -885,6 +885,71 @@ main .section {
   margin-left: 8px;
   vertical-align: middle;
 }
+/* bekræft bestilling – kvittering inden afsendelse */
+.confirm {
+  position: fixed;
+  inset: 0;
+  z-index: 300;
+  display: grid;
+  place-items: center;
+  padding: 18px;
+  background: rgba(28, 24, 20, 0.45);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  animation: confirmFade 0.25s ease;
+}
+@keyframes confirmFade { from { opacity: 0; } }
+.confirm__card {
+  width: min(480px, 100%);
+  max-height: min(86vh, 86svh);
+  overflow-y: auto;
+  background: #fff;
+  border-radius: 24px;
+  padding: clamp(24px, 5vw, 36px);
+  box-shadow: 0 40px 90px -30px rgba(28, 24, 20, 0.55);
+  animation: confirmUp 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+}
+@keyframes confirmUp {
+  from { opacity: 0; transform: translateY(26px) scale(0.98); }
+}
+.confirm__kicker {
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--accent-deep);
+}
+.confirm__title {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 1.5rem;
+  margin: 4px 0 16px;
+}
+.confirm__lines {
+  border: 1.6px dashed rgba(28, 24, 20, 0.15);
+  border-radius: 16px;
+  padding: 14px 16px;
+  display: grid;
+  gap: 8px;
+}
+.confirm__line { display: flex; justify-content: space-between; gap: 14px; font-size: 0.98rem; }
+.confirm__line b { color: var(--accent-deep); }
+.confirm__line--total {
+  border-top: 1.6px dashed rgba(28, 24, 20, 0.15);
+  padding-top: 9px;
+  font-weight: 700;
+  font-family: var(--font-display);
+}
+.confirm__meta {
+  display: grid;
+  gap: 5px;
+  margin: 16px 2px 20px;
+  color: var(--ink-soft);
+  font-size: 0.94rem;
+}
+.confirm__btns { display: flex; gap: 10px; flex-wrap: wrap; }
+.confirm__btns .btn--accent { flex: 1; }
+
 .menuline__badge--out { background: #FBEAE7; color: #B3372B; }
 .menuline__badge--few { background: #FFF3E4; color: var(--accent-deep); }
 

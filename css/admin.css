@@ -770,6 +770,17 @@ button { font-family: var(--font-body); }
 .pwa > div { flex: 1; min-width: 0; }
 .pwa strong { display: block; font-size: 0.98rem; }
 .pwa small { color: var(--ink-soft); font-size: 0.85rem; }
+/* notifikations-banneret må ikke kunne overses */
+.pwa--push { border-color: var(--accent); background: var(--accent-soft); }
+.pwa--push > span { animation: bellring 2.4s ease-in-out infinite; transform-origin: top center; }
+@keyframes bellring {
+  0%, 60%, 100% { transform: rotate(0); }
+  65% { transform: rotate(12deg); }
+  71% { transform: rotate(-10deg); }
+  77% { transform: rotate(6deg); }
+  83% { transform: rotate(-4deg); }
+  89% { transform: rotate(0); }
+}
 
 /* toast */
 .toast {
@@ -819,65 +830,87 @@ button { font-family: var(--font-body); }
 @media (max-width: 760px) {
   .content { padding: 16px 14px calc(100px + env(safe-area-inset-bottom)); }
   .topbar {
-    padding: 12px 16px;
-    padding-top: calc(12px + env(safe-area-inset-top));
+    padding: 9px 14px;
+    padding-top: calc(9px + env(safe-area-inset-top));
     background: rgba(250, 246, 240, 0.78);
     backdrop-filter: blur(16px) saturate(1.5);
     -webkit-backdrop-filter: blur(16px) saturate(1.5);
   }
-  .topbar__title { font-size: 1.3rem; }
+  .topbar__title { font-size: 1.16rem; }
+  .topbar__date { font-size: 0.78rem; }
+  .bell { width: 38px; height: 38px; }
+  .bell svg { width: 17px; height: 17px; }
 
-  /* mørk bjælke øverst: kun logo + genveje – menuen bor i bunden */
+  /* mørk bjælke øverst: helt slank – kun logo + genveje, menuen bor i bunden */
   .sidebar {
     flex-direction: row;
     align-items: center;
     justify-content: space-between;
-    padding: 10px 16px;
-    padding-top: calc(10px + env(safe-area-inset-top));
+    padding: 6px 14px;
+    padding-top: calc(6px + env(safe-area-inset-top));
   }
-  .sidebar__logo svg { width: 26px; height: 26px; margin-top: -6px; }
-  .sidebar__logo span { font-size: 1.25rem; }
+  .sidebar__logo svg { width: 20px; height: 20px; margin-top: -4px; }
+  .sidebar__logo span { font-size: 1rem; }
+  .sidebar__logo em { font-size: 0.62rem; }
   .sidebar__foot {
     margin: 0;
     padding: 0;
     border: 0;
-    gap: 14px;
+    gap: 16px;
     align-items: center;
   }
-  .sidebar__foot a, .sidebar__foot button { white-space: nowrap; font-size: 0.82rem; }
+  .sidebar__foot a, .sidebar__foot button { white-space: nowrap; font-size: 0.76rem; opacity: 0.85; }
 
-  /* app-agtig bund-navigation i "flydende glas" */
+  /* app-agtig bund-navigation: minimal, flydende glas */
   .sidebar__nav {
     position: fixed;
     left: 0; right: 0; bottom: 0;
     z-index: 90;
     display: flex;
     flex-wrap: nowrap;
-    gap: 2px;
+    gap: 0;
     overflow-x: auto;
     scrollbar-width: none;
-    background: rgba(26, 20, 15, 0.86);
-    backdrop-filter: blur(18px) saturate(1.4);
-    -webkit-backdrop-filter: blur(18px) saturate(1.4);
-    border-top: 1px solid rgba(255, 255, 255, 0.09);
-    padding: 8px 10px calc(8px + env(safe-area-inset-bottom));
-    box-shadow: 0 -12px 32px -18px rgba(0, 0, 0, 0.55);
+    background: rgba(26, 20, 15, 0.82);
+    backdrop-filter: blur(20px) saturate(1.4);
+    -webkit-backdrop-filter: blur(20px) saturate(1.4);
+    border-top: 1px solid rgba(255, 255, 255, 0.07);
+    padding: 4px 6px calc(5px + env(safe-area-inset-bottom));
   }
   .sidebar__nav::-webkit-scrollbar { display: none; }
   .navitem {
+    position: relative;
     flex: 1 0 auto;
     flex-direction: column;
-    gap: 3px;
-    padding: 7px 12px;
-    font-size: 0.64rem;
-    font-weight: 600;
-    letter-spacing: 0.02em;
-    border-radius: 14px;
+    gap: 1px;
+    padding: 5px 9px;
+    font-size: 0.57rem;
+    font-weight: 500;
+    letter-spacing: 0.01em;
+    border-radius: 10px;
     text-align: center;
+    color: rgba(245, 239, 230, 0.62);
   }
-  .navitem span { font-size: 1.25rem; }
-  .navitem__badge { position: absolute; top: 2px; right: 6px; margin: 0; }
-  .navitem { position: relative; }
+  .navitem span { font-size: 1.02rem; }
+  .navitem.is-active { background: transparent; color: #fff; font-weight: 700; }
+  .navitem.is-active span { filter: drop-shadow(0 0 10px rgba(217, 108, 44, 0.9)); }
+  .navitem.is-active::after {
+    content: '';
+    position: absolute;
+    bottom: 0; left: 50%;
+    transform: translateX(-50%);
+    width: 18px; height: 3px;
+    border-radius: 999px;
+    background: var(--accent);
+  }
+  .navitem__badge {
+    position: absolute;
+    top: 0; right: 4px;
+    margin: 0;
+    min-width: 15px; height: 15px;
+    font-size: 0.58rem;
+    padding: 0 4px;
+  }
 
   /* toast og notifikationer skal ligge OVER bund-menuen */
   .toast { bottom: calc(92px + env(safe-area-inset-bottom)); max-width: 92vw; text-align: center; }

@@ -126,7 +126,14 @@ declare
   v_stock int;
   v_sold int;
   v_remaining int;
-  v_blocked text;
+  v_cfg jsonb;
+  v_ci int;
+  v_ii int;
+  v_item jsonb;
+  v_left int;
+  v_req int;
+  v_changed boolean := false;
+  r record;
   v_items jsonb := coalesce(p_items, '[]'::jsonb);
 begin
   if p_qty is null or p_qty < 0 or p_qty > 100 then
@@ -143,31 +150,46 @@ begin
     return jsonb_build_object('ok', false, 'remaining', 0);
   end if;
 
-  -- lås config-rækken, så lagertjek + indsættelse sker uden kapløb
-  perform 1 from config where id = 1 for update;
+  -- lås config-rækken, så lagertjek + nedtælling + indsættelse sker uden kapløb
+  select data into v_cfg from config where id = 1 for update;
 
-  -- afvis varer, chefen har markeret som udsolgt på menukortet
+  -- menukort-varer: afvis udsolgte, håndhæv "få tilbage"-antal og tæl ned.
+  -- Rammer antallet 0, markeres retten automatisk som udsolgt.
   -- (dagens ret har sit eget lagertjek nedenfor)
-  select it->>'name' into v_blocked
-  from jsonb_array_elements(v_items) it
-  where coalesce(it->>'kind', '') <> 'dagensret'
-    and exists (
-      select 1
-      from config cfg,
-           jsonb_array_elements(cfg.data->'menu'->'categories') c,
-           jsonb_array_elements(c->'items') i
-      where cfg.id = 1
-        and coalesce((i->>'soldout')::boolean, false)
-        and i->>'name' = it->>'name'
-    )
-  limit 1;
-  if v_blocked is not null then
-    return jsonb_build_object('ok', false, 'reason', 'udsolgt', 'item', v_blocked);
-  end if;
+  for r in select value as v from jsonb_array_elements(v_items)
+           where coalesce(value->>'kind', '') <> 'dagensret' loop
+    v_item := null;
+    select c.ord::int - 1, i.ord::int - 1, i.val
+      into v_ci, v_ii, v_item
+      from jsonb_array_elements(v_cfg->'menu'->'categories') with ordinality c(val, ord),
+           jsonb_array_elements(c.val->'items') with ordinality i(val, ord)
+     where i.val->>'name' = r.v->>'name'
+     limit 1;
+    if v_item is null then
+      continue; -- fx dagens ekstra retter, der ikke står i kategorierne
+    end if;
+    if coalesce((v_item->>'soldout')::boolean, false) then
+      return jsonb_build_object('ok', false, 'reason', 'udsolgt', 'item', r.v->>'name');
+    end if;
+    if v_item->>'left' is not null then
+      v_left := (v_item->>'left')::int;
+      v_req := coalesce((r.v->>'qty')::int, 0);
+      if v_req > v_left then
+        return jsonb_build_object('ok', false, 'reason', 'antal',
+                                  'item', r.v->>'name', 'remaining', greatest(v_left, 0));
+      end if;
+      if v_left - v_req <= 0 then
+        v_item := jsonb_set(jsonb_set(v_item, '{soldout}', 'true'::jsonb), '{left}', 'null'::jsonb);
+      else
+        v_item := jsonb_set(v_item, '{left}', to_jsonb(v_left - v_req));
+      end if;
+      v_cfg := jsonb_set(v_cfg, array['menu', 'categories', v_ci::text, 'items', v_ii::text], v_item);
+      v_changed := true;
+    end if;
+  end loop;
 
   if p_qty > 0 then
-    select nullif(data->'dagensRet'->to_char(p_date,'YYYY-MM-DD')->>'stock','')::int
-      into v_stock from config where id = 1;
+    v_stock := nullif(v_cfg->'dagensRet'->to_char(p_date,'YYYY-MM-DD')->>'stock','')::int;
     if v_stock is not null then
       select coalesce(sum(qty),0) into v_sold from orders where date = p_date;
       v_remaining := greatest(v_stock - v_sold, 0);
@@ -183,6 +205,11 @@ begin
           left(coalesce(p_note,''), 400), left(coalesce(p_dish,''), 200), p_price,
           v_items,
           case when p_persons between 1 and 500 then p_persons else null end);
+
+  -- gem de nedtalte "få tilbage"-antal (og evt. automatiske udsolgt-markeringer)
+  if v_changed then
+    update config set data = v_cfg, updated_at = now() where id = 1;
+  end if;
 
   return jsonb_build_object('ok', true);
 end $$;

@@ -194,10 +194,10 @@
     }
     if (pushSupported() && S.isCloud() && Notification.permission === 'default') {
       bits.push(`
-        <div class="pwa"><span>🔔</span>
-          <div><strong>Få besked ved nye bestillinger og bookinger</strong>
-          <small>Telefonen siger til – også når appen er lukket.</small></div>
-          <button class="abtn abtn--green" data-pwa="push">Slå til</button>
+        <div class="pwa pwa--push"><span>🔔</span>
+          <div><strong>Vigtigt: slå notifikationer til på denne telefon</strong>
+          <small>Så siger telefonen til ved nye bestillinger og bookinger – også når appen er lukket. Skal slås til igen, hvis appen har været slettet og installeret på ny.</small></div>
+          <button class="abtn abtn--accent" data-pwa="push">Slå til</button>
         </div>`);
     }
     el.innerHTML = bits.join('');

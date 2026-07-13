@@ -473,9 +473,15 @@
       };
     }));
 
-    /* ryd kurven for varer, der ikke findes på den valgte dag – eller er udsolgt */
+    /* ryd kurven for varer, der ikke findes på den valgte dag – eller er udsolgt.
+       Er der kun få tilbage, sættes antallet i kurven automatisk ned. */
     Object.keys(basket).forEach((key) => {
-      if (!builderIndex[key] || builderIndex[key].soldout) delete basket[key];
+      const inf = builderIndex[key];
+      if (!inf || inf.soldout) { delete basket[key]; return; }
+      if (key !== 'dagens' && inf.left != null && basket[key].qty > Number(inf.left)) {
+        basket[key].qty = Number(inf.left);
+        if (!basket[key].qty) delete basket[key];
+      }
     });
     if (basket.dagens && remaining !== null && basket.dagens.qty > remaining) {
       basket.dagens.qty = remaining;
@@ -516,7 +522,7 @@
               ${item.desc ? `<small>${esc(item.desc)}</small>` : ''}
               ${item.price ? `<em>${kr(item.price)}</em>` : ''}
             </div>
-            ${item.soldout ? '<span class="builder__soldout">Udsolgt</span>' : stepper('m::' + item.name, 50)}
+            ${item.soldout ? '<span class="builder__soldout">Udsolgt</span>' : stepper('m::' + item.name, item.left != null ? Number(item.left) : 50)}
           </div>`).join('')}
       </details>`;
     }).join('');
@@ -539,7 +545,9 @@
     if (!info || info.soldout) return;
     const cur = basket[key] ? basket[key].qty : 0;
     let next = cur + Number(btn.dataset.step);
-    const max = key === 'dagens' ? S.getRemaining(orderDate.value) : 50;
+    const max = key === 'dagens'
+      ? S.getRemaining(orderDate.value)
+      : (info.left != null ? Number(info.left) : 50);
     if (max !== null && next > max) next = max;
     if (next <= 0) delete basket[key];
     else basket[key] = { name: info.name, qty: next, price: info.price, kind: info.kind, cat: info.cat };
@@ -556,7 +564,11 @@
       <span class="basketbar__total">${totalItems} ret${totalItems === 1 ? '' : 'ter'}${total ? ` · i alt ${total} kr.` : ''}</span>`;
   }
 
-  $('#orderForm').addEventListener('submit', async (e) => {
+  /* Trin 1: tjek felterne og vis "bekræft bestilling" med kvittering */
+  let pendingOrder = null;
+  const confirmWrap = $('#orderConfirmWrap');
+
+  $('#orderForm').addEventListener('submit', (e) => {
     e.preventDefault();
     const error = $('#orderError');
     error.hidden = true;
@@ -584,26 +596,59 @@
       return;
     }
 
-    const dish = S.getDagensRet(iso);
+    pendingOrder = { iso, time, persons, type, name, phone, note, lines };
+    openConfirm();
+  });
+
+  function openConfirm() {
+    const o = pendingOrder;
+    const total = o.lines.reduce((s, l) => s + (l.price ? l.price * l.qty : 0), 0);
+    $('#confirmLines').innerHTML = o.lines.map((l) => `
+      <div class="confirm__line"><span><b>${l.qty} ×</b> ${esc(l.name)}</span><span>${l.price ? kr(l.price * l.qty) : ''}</span></div>`).join('')
+      + (total ? `<div class="confirm__line confirm__line--total"><span>I alt</span><span>${kr(total)}</span></div>` : '');
+    $('#confirmMeta').innerHTML = `
+      <div>📅 ${esc(S.formatDate(o.iso))} · kl. ${esc(o.time)}</div>
+      <div>${o.type === 'togo' ? '🥡 Takeaway' : '🍽️ Spiser her'} · 👥 ${o.persons} person${o.persons === 1 ? '' : 'er'}</div>
+      <div>🙋 ${esc(o.name)} · 📞 ${esc(o.phone)}</div>
+      ${o.note ? `<div>💬 ${esc(o.note)}</div>` : ''}`;
+    confirmWrap.hidden = false;
+    document.body.style.overflow = 'hidden';
+  }
+  function closeConfirm() {
+    confirmWrap.hidden = true;
+    document.body.style.overflow = '';
+  }
+  $('#confirmBack').addEventListener('click', closeConfirm);
+  confirmWrap.addEventListener('click', (e) => { if (e.target === confirmWrap) closeConfirm(); });
+
+  /* Trin 2: kunden har set kvitteringen og bekræfter – NU sendes den */
+  $('#confirmSend').addEventListener('click', async () => {
+    if (!pendingOrder) return;
+    const o = pendingOrder;
+    const btn = $('#confirmSend');
+    const error = $('#orderError');
+    error.hidden = true;
+    btn.disabled = true;
+    btn.textContent = 'Sender…';
+
+    const dish = S.getDagensRet(o.iso);
     const dagensQty = basket.dagens ? basket.dagens.qty : 0;
-    const submitBtn = e.target.querySelector('button[type="submit"]');
-    submitBtn.disabled = true;
-    submitBtn.textContent = 'Sender…';
     const result = await S.addOrder({
-      date: iso,
-      time,
+      date: o.iso,
+      time: o.time,
       qty: dagensQty,
-      type,
-      name,
-      phone,
-      note,
+      type: o.type,
+      name: o.name,
+      phone: o.phone,
+      note: o.note,
       dish: dagensQty > 0 && dish ? dish.title : '',
       price: dagensQty > 0 && dish ? dish.price : null,
-      items: lines,
-      persons,
+      items: o.lines,
+      persons: o.persons,
     });
-    submitBtn.disabled = false;
-    submitBtn.textContent = 'Send bestilling';
+    btn.disabled = false;
+    btn.textContent = '✓ Bekræft & send';
+    closeConfirm();
 
     if (!result.ok) {
       if (result.error === 'net') {
@@ -612,6 +657,14 @@
         error.textContent = `„${result.item}" er desværre lige blevet udsolgt i dag – den er fjernet fra jeres bestilling, så prøv bare igen.`;
         Object.keys(basket).forEach((k) => { if (basket[k].name === result.item) delete basket[k]; });
         if (S.isCloud()) S.refreshPublic();
+      } else if (result.reason === 'antal') {
+        error.textContent = `Der er kun ${result.remaining} × „${result.item}" tilbage i dag – antallet i jeres bestilling er sat ned, så tjek og send igen.`;
+        const k = 'm::' + result.item;
+        if (basket[k]) {
+          basket[k].qty = Math.max(0, Number(result.remaining));
+          if (!basket[k].qty) delete basket[k];
+        }
+        if (S.isCloud()) S.refreshPublic();
       } else {
         error.textContent = result.remaining > 0
           ? `Åh nej – der er kun ${result.remaining} portion${result.remaining === 1 ? '' : 'er'} dagens ret tilbage denne dag. Sæt antallet ned eller vælg en anden dag.`
@@ -619,6 +672,7 @@
       }
       error.hidden = false;
       onOrderDateChange();
+      error.scrollIntoView({ behavior: 'smooth', block: 'center' });
       return;
     }
 
@@ -626,8 +680,9 @@
     const success = $('#orderSuccess');
     success.hidden = false;
     $('#orderSuccessText').textContent =
-      `${lines.map((l) => `${l.qty} × ${l.name}`).join(', ')} — til ${persons} person${persons === 1 ? '' : 'er'} ${type === 'togo' ? 'til afhentning' : 'ved bordet'} ${S.formatDate(iso).toLowerCase()} kl. ${time}. Vi glæder os til at se jer, ${name}!`;
+      `${o.lines.map((l) => `${l.qty} × ${l.name}`).join(', ')} — til ${o.persons} person${o.persons === 1 ? '' : 'er'} ${o.type === 'togo' ? 'til afhentning' : 'ved bordet'} ${S.formatDate(o.iso).toLowerCase()} kl. ${o.time}. Vi glæder os til at se jer, ${o.name}!`;
     success.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    pendingOrder = null;
   });
 
   $('#orderAgainBtn').addEventListener('click', () => {

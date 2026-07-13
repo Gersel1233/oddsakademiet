@@ -396,7 +396,11 @@ const SpiisStore = (() => {
   let adminPollTimer = null;
   function startAdminPolling() {
     if (!cloud || adminPollTimer) return;
-    adminPollTimer = setInterval(() => { fetchAdminData().catch(() => {}); }, 25000);
+    adminPollTimer = setInterval(() => {
+      fetchAdminData().catch(() => {});
+      /* menukortet (fx "få tilbage"-antal, der tæller ned) skal også følge med */
+      refreshPublic();
+    }, 25000);
   }
 
   function initCloud() {
@@ -507,13 +511,27 @@ const SpiisStore = (() => {
       (c.items || []).forEach((i) => { if (i.soldout && i.name) set.add(i.name); }));
     return set;
   }
+  function findMenuItem(name) {
+    for (const c of ((data.menu && data.menu.categories) || [])) {
+      const hit = (c.items || []).find((i) => i.name === name);
+      if (hit) return hit;
+    }
+    return null;
+  }
 
   /* ---------- bestillinger (kurv med dagens ret + menukort) ---------- */
   async function addOrder(order) {
-    /* udsolgte varer stoppes før afsendelse – databasen tjekker også selv */
+    /* udsolgte varer og "få tilbage"-antal stoppes før afsendelse
+       – databasen tjekker og tæller også selv (kapløbs-sikkert) */
     const soldout = soldoutNames();
-    const blocked = (order.items || []).find((l) => l.kind !== 'dagensret' && soldout.has(l.name));
-    if (blocked) return { ok: false, reason: 'udsolgt', item: blocked.name };
+    for (const l of (order.items || [])) {
+      if (l.kind === 'dagensret') continue;
+      if (soldout.has(l.name)) return { ok: false, reason: 'udsolgt', item: l.name };
+      const mi = findMenuItem(l.name);
+      if (mi && mi.left != null && Number(l.qty) > Number(mi.left)) {
+        return { ok: false, reason: 'antal', item: l.name, remaining: Math.max(0, Number(mi.left)) };
+      }
+    }
     if (cloud) {
       /* lagertjekket (kun dagens ret) sker atomisk i databasen */
       try {
@@ -531,6 +549,9 @@ const SpiisStore = (() => {
         if (out.ok) {
           soldByDate[order.date] = (soldByDate[order.date] || 0) + Number(order.qty);
           emit();
+          /* databasen har talt "få tilbage" ned – hent det friske menukort */
+          lastPublicSnap = '';
+          refreshPublic();
         }
         return out;
       } catch {
@@ -541,6 +562,15 @@ const SpiisStore = (() => {
     if (remaining !== null && Number(order.qty) > remaining) {
       return { ok: false, remaining };
     }
+    /* tæl "få tilbage" ned – rammer den 0, bliver retten selv UDSOLGT */
+    (order.items || []).forEach((l) => {
+      if (l.kind === 'dagensret') return;
+      const mi = findMenuItem(l.name);
+      if (mi && mi.left != null) {
+        mi.left = Math.max(0, Number(mi.left) - Number(l.qty));
+        if (mi.left <= 0) { mi.soldout = true; mi.left = null; }
+      }
+    });
     const entry = {
       id: uid(),
       createdAt: new Date().toISOString(),
