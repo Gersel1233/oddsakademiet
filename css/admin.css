@@ -768,6 +768,70 @@ button { font-family: var(--font-body); }
   cursor: help;
 }
 
+/* booking-pipeline: i dag → venter → på plads → arkiv */
+.pipebar { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 18px; }
+.pipebar__chip {
+  background: #fff;
+  border: 1.6px solid var(--line);
+  border-radius: 999px;
+  padding: 7px 16px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--ink-soft);
+}
+.pipebar__chip.is-hot { border-color: var(--red); color: var(--red); background: var(--red-soft); }
+.pipebar__chip.is-today { border-color: var(--accent); color: var(--accent-deep); background: var(--accent-soft); }
+
+.acard--today { border: 2px solid var(--accent); }
+.acard--fold > summary { cursor: pointer; list-style: none; }
+.acard--fold > summary::-webkit-details-marker { display: none; }
+.acard--fold > summary .sub::after { content: ' · tryk for at åbne'; opacity: 0.7; }
+.acard--fold[open] > summary .sub::after { content: ' · tryk for at lukke'; }
+.acard__head--sum { margin-bottom: 0; }
+.kp__sub-hint { font-style: normal; font-weight: 500; color: var(--ink-soft); font-size: 0.85rem; }
+.tag--wait { background: #FFF3E4; color: var(--accent-deep); text-transform: none; letter-spacing: 0.02em; }
+.when-soon { color: var(--accent-deep); font-weight: 700; }
+
+/* overbliks-kortet: venter-alarm + de næste aftaler */
+.waitalert {
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: var(--red-soft);
+  border: 1.6px solid rgba(179, 55, 43, 0.35);
+  border-radius: 14px;
+  padding: 12px 16px;
+  font-size: 0.95rem;
+  font-family: var(--font-body);
+  color: var(--red);
+  cursor: pointer;
+  margin-bottom: 12px;
+  transition: transform 0.15s ease;
+}
+.waitalert:hover { transform: translateY(-1px); }
+.nextlist { display: grid; gap: 8px; }
+.nextb {
+  display: grid;
+  grid-template-columns: 92px 1fr;
+  grid-template-rows: auto auto;
+  column-gap: 14px;
+  align-items: baseline;
+  background: var(--cream);
+  border: 1.6px solid rgba(28, 24, 20, 0.07);
+  border-radius: 14px;
+  padding: 10px 14px;
+}
+.nextb__when {
+  grid-row: 1 / 3;
+  font-family: var(--font-display);
+  font-weight: 700;
+  color: var(--accent-deep);
+  font-size: 0.95rem;
+  align-self: center;
+}
+.nextb__what { font-weight: 600; font-size: 0.95rem; }
+.nextb__sub { color: var(--ink-soft); font-size: 0.84rem; }
+
 /* "installér som app" / "slå notifikationer til"-bannere */
 #pwaBanner { display: grid; gap: 10px; margin-bottom: 20px; }
 .pwa {

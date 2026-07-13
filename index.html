@@ -354,6 +354,20 @@
   <!-- fast bestil-knap i bunden på mobil -->
   <a href="#bestil" class="mobilecta" id="mobileCta">🍲 Bestil dagens ret</a>
 
+  <!-- bekræft booking/forespørgsel: kvittering inden afsendelse -->
+  <div class="confirm" id="bookingConfirmWrap" hidden>
+    <div class="confirm__card" role="dialog" aria-modal="true" aria-labelledby="bkConfirmTitle">
+      <p class="confirm__kicker">Ét sidste kig</p>
+      <h3 class="confirm__title" id="bkConfirmTitle">Tjek jeres forespørgsel</h3>
+      <div class="confirm__lines" id="bkConfirmLines"></div>
+      <div class="confirm__meta" id="bkConfirmMeta"></div>
+      <div class="confirm__btns">
+        <button type="button" class="btn btn--ghost-dark" id="bkConfirmBack">← Ret noget</button>
+        <button type="button" class="btn btn--accent" id="bkConfirmSend">✓ Bekræft &amp; send</button>
+      </div>
+    </div>
+  </div>
+
   <!-- bekræft bestilling: kvittering inden afsendelse -->
   <div class="confirm" id="orderConfirmWrap" hidden>
     <div class="confirm__card" role="dialog" aria-modal="true" aria-labelledby="confirmTitle">

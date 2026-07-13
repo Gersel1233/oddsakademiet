@@ -360,6 +360,25 @@
     return entries.sort((a, b) => (a.time || '00:00').localeCompare(b.time || '00:00'));
   }
 
+  /* hvor længe har en henvendelse ventet – og hvor tæt på er en aftale? */
+  function daysUntil(iso) {
+    return Math.round((new Date(iso + 'T12:00') - new Date(S.todayISO() + 'T12:00')) / 86400000);
+  }
+  function proximityLabel(iso) {
+    const d = daysUntil(iso);
+    if (d <= 0) return 'i dag';
+    if (d === 1) return 'i morgen';
+    if (d < 14) return `om ${d} dage`;
+    return `om ${Math.round(d / 7)} uger`;
+  }
+  function waitingLabel(createdAt) {
+    if (!createdAt) return '';
+    const days = Math.floor((Date.now() - new Date(createdAt)) / 86400000);
+    if (days <= 0) return 'kom i dag';
+    if (days === 1) return 'har ventet 1 dag';
+    return `har ventet ${days} dage`;
+  }
+
   /* navne på drikkevarer, så bestillinger kan deles i mad / drikke */
   function drinkNameSet() {
     const set = new Set();
@@ -406,12 +425,12 @@
   function bookingRow(b) {
     const isMoede = b.kind === 'moede';
     const statusTag = {
-      ny: `<span class="tag tag--red">${isMoede ? 'Ny' : 'Ny – skal kontaktes'}</span>`,
+      ny: `<span class="tag tag--red">Ny</span>${waitingLabel(b.createdAt) ? `<span class="tag tag--wait">⏳ ${waitingLabel(b.createdAt)}</span>` : ''}`,
       bekraeftet: `<span class="tag tag--green">${isMoede ? 'Bekræftet' : 'Aftalt'}</span>`,
       afvist: '<span class="tag">Afvist</span>',
     }[b.status] || '';
     const when = b.date
-      ? `${esc(S.formatDate(b.date))}${b.time ? ` kl. ${esc(b.time)}` : ''}`
+      ? `${esc(S.formatDate(b.date))}${b.time ? ` kl. ${esc(b.time)}` : ''}${b.status === 'bekraeftet' && daysUntil(b.date) > 0 ? ` <b class="when-soon">(${proximityLabel(b.date)})</b>` : ''}`
       : '📆 Dato ikke fastlagt endnu';
     return `
       <div class="row ${isMoede ? 'row--moede' : 'row--arr'} ${b.status === 'ny' ? 'row--new' : ''}">
@@ -464,10 +483,13 @@
     const timeline = dayTimeline(today);
     const todaysArrangements = S.getBookings().filter((b) =>
       b.date === today && b.kind === 'arrangement' && b.status !== 'afvist');
-    /* dagens bookinger står i køreplanen – her vises kun det kommende/ubesvarede */
-    const upcoming = S.getBookings().filter((b) =>
-      (b.status === 'ny' && b.date !== today) || (b.status === 'bekraeftet' && b.date && b.date > today));
-    const newBookings = S.getBookings().filter((b) => b.status === 'ny').length;
+    /* dagens bookinger står i køreplanen – her vises kun et kort overblik */
+    const waitingCount = S.getBookings().filter((b) => b.status === 'ny').length;
+    const nextUp = S.getBookings()
+      .filter((b) => b.status === 'bekraeftet' && b.date && b.date > today)
+      .sort((a, b) => a.date.localeCompare(b.date))
+      .slice(0, 3);
+    const newBookings = waitingCount;
 
     $('#view-overblik').innerHTML = `
       <div class="stats">
@@ -539,12 +561,20 @@
 
       <div class="acard">
         <div class="acard__head">
-          <h2>📅 Kommende & ubesvarede</h2>
-          <button class="abtn abtn--ghost" data-goto="bookinger">Se alle →</button>
+          <h2>📅 Bookinger</h2>
+          <button class="abtn abtn--ghost" data-goto="bookinger">Åbn overblikket →</button>
         </div>
-        <div class="rowlist">
-          ${upcoming.length ? upcoming.slice(0, 5).map(bookingRow).join('') : '<div class="empty">Ingen nye forespørgsler eller kommende aftaler.</div>'}
-        </div>
+        ${waitingCount ? `
+        <button class="waitalert" data-goto="bookinger">⏳ <strong>${waitingCount} venter på svar</strong> – ring og få dem på plads →</button>` : ''}
+        ${nextUp.length ? `
+        <div class="nextlist">
+          ${nextUp.map((b) => `
+            <div class="nextb">
+              <b class="nextb__when">${proximityLabel(b.date)}</b>
+              <span class="nextb__what">${b.kind === 'moede' ? '📅' : '🎉'} ${esc(b.subject)}</span>
+              <span class="nextb__sub">${esc(S.formatDate(b.date, false))}${b.time ? ` kl. ${esc(b.time)}` : ''} · ${esc(b.name)}</span>
+            </div>`).join('')}
+        </div>` : (waitingCount ? '' : '<div class="empty">Ingen nye forespørgsler eller kommende aftaler.</div>')}
       </div>`;
   }
 
@@ -679,14 +709,69 @@
   function renderBookinger() {
     const all = S.getBookings();
     const today = S.todayISO();
-    /* nye forespørgsler/bookinger skal kontaktes – også dem uden dato */
-    const needsContact = all.filter((b) => b.status === 'ny');
-    const upcoming = all.filter((b) => b.status === 'bekraeftet' && b.date && b.date >= today);
-    const past = all.filter((b) => b.status !== 'ny' && !upcoming.includes(b)).reverse();
+
+    /* pipelinen: i dag → venter på jer → på plads → arkiv */
+    const todays = all.filter((b) => b.status === 'bekraeftet' && b.date === today);
+    const waiting = all.filter((b) => b.status === 'ny')
+      .sort((a, b) => (a.createdAt || '').localeCompare(b.createdAt || ''));
+    const waitingArr = waiting.filter((b) => b.kind !== 'moede');
+    const waitingMoede = waiting.filter((b) => b.kind === 'moede');
+    const upcoming = all.filter((b) => b.status === 'bekraeftet' && b.date && b.date > today)
+      .sort((a, b) => a.date.localeCompare(b.date));
+    const past = all.filter((b) => b.status !== 'ny' && !upcoming.includes(b) && !todays.includes(b)).reverse();
     const blocked = S.getBlockedDates().filter((d) => d >= today);
     const autoBlocked = S.getArrangementDates().filter((d) => d >= today && !blocked.includes(d));
 
     $('#view-bookinger').innerHTML = `
+      <div class="pipebar">
+        <span class="pipebar__chip ${waiting.length ? 'is-hot' : ''}">⏳ ${waiting.length} venter på svar</span>
+        <span class="pipebar__chip">✅ ${upcoming.length} på plads</span>
+        <span class="pipebar__chip ${todays.length ? 'is-today' : ''}">🎉 ${todays.length} i dag</span>
+      </div>
+
+      ${todays.length ? `
+      <div class="acard acard--today">
+        <div class="acard__head">
+          <h2>🔴 I dag</h2>
+          <span class="sub">det her sker i dag – tjek noterne</span>
+        </div>
+        <div class="rowlist">${todays.map(bookingRow).join('')}</div>
+      </div>` : ''}
+
+      <div class="acard">
+        <div class="acard__head">
+          <h2>📞 Venter på jer</h2>
+          <span class="sub">ældste øverst – ring og få dem på plads</span>
+        </div>
+        ${waitingArr.length ? `
+        <h3 class="kp__sub">🎉 Arrangement-forespørgsler <em class="kp__sub-hint">· ring til kunden og aftal</em></h3>
+        <div class="rowlist">${waitingArr.map(bookingRow).join('')}</div>` : ''}
+        ${waitingMoede.length ? `
+        <h3 class="kp__sub">📅 Mødebookinger <em class="kp__sub-hint">· bekræft tiden</em></h3>
+        <div class="rowlist">${waitingMoede.map(bookingRow).join('')}</div>` : ''}
+        ${!waiting.length ? '<div class="empty">Ingen ubesvarede lige nu – flot! 🎉</div>' : ''}
+      </div>
+
+      <div class="acard">
+        <div class="acard__head">
+          <h2>✅ På plads</h2>
+          <span class="sub">${upcoming.length ? `${upcoming.length} kommende – nærmeste først` : 'aftalte arrangementer og møder lander her'}</span>
+        </div>
+        <div class="rowlist">
+          ${upcoming.length ? upcoming.map(bookingRow).join('') : '<div class="empty">Ingen kommende aftaler endnu.</div>'}
+        </div>
+      </div>
+
+      <details class="acard acard--fold">
+        <summary class="acard__head acard__head--sum">
+          <h2>🗂 Arkiv</h2>
+          <span class="sub">${past.length} tidligere & afviste</span>
+        </summary>
+        <div class="rowlist" style="margin-top:14px;">
+          ${past.length ? past.slice(0, 15).map(bookingRow).join('') : '<div class="empty">Ingen endnu.</div>'}
+        </div>
+      </details>
+
       <div class="acard">
         <div class="acard__head">
           <h2>🚫 Luk dage</h2>
@@ -701,33 +786,6 @@
             ? blocked.map((d) => `<span class="blocked__chip">${esc(S.formatDate(d))}<button data-unblock="${d}" aria-label="Fjern blokering">✕</button></span>`).join('')
               + autoBlocked.map((d) => `<span class="blocked__chip blocked__chip--auto" title="Blokeres automatisk, fordi der er et aftalt arrangement. Fjernes, hvis arrangementet flyttes, afvises eller slettes.">🎉 ${esc(S.formatDate(d))}</span>`).join('')
             : '<span class="sub" style="color:var(--ink-soft);">Ingen blokerede dage.</span>'}
-        </div>
-      </div>
-
-      <div class="acard">
-        <div class="acard__head">
-          <h2>📞 Nye – skal kontaktes</h2>
-          <span class="sub">forespørgsler og mødebookinger, der venter på svar fra jer</span>
-        </div>
-        <div class="rowlist">
-          ${needsContact.length ? needsContact.map(bookingRow).join('') : '<div class="empty">Ingen ubesvarede lige nu – flot! 🎉</div>'}
-        </div>
-      </div>
-
-      <div class="acard">
-        <div class="acard__head">
-          <h2>📅 Kommende aftaler</h2>
-          <span class="sub">${upcoming.length} i alt</span>
-        </div>
-        <div class="rowlist">
-          ${upcoming.length ? upcoming.map(bookingRow).join('') : '<div class="empty">Ingen kommende aftaler endnu.</div>'}
-        </div>
-      </div>
-
-      <div class="acard">
-        <div class="acard__head"><h2>🗂 Tidligere & afviste</h2></div>
-        <div class="rowlist">
-          ${past.length ? past.slice(0, 10).map(bookingRow).join('') : '<div class="empty">Ingen endnu.</div>'}
         </div>
       </div>`;
 

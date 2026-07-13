@@ -776,7 +776,11 @@
   bookingDate.addEventListener('input', onBookingDateChange);
   onBookingDateChange();
 
-  $('#bookingForm').addEventListener('submit', async (e) => {
+  /* Trin 1: tjek felterne og vis "ét sidste kig" med opsummering */
+  let pendingBooking = null;
+  const bkConfirmWrap = $('#bookingConfirmWrap');
+
+  $('#bookingForm').addEventListener('submit', (e) => {
     e.preventDefault();
     const error = $('#bookingError');
     error.hidden = true;
@@ -818,16 +822,56 @@
       return;
     }
 
-    const submitBtn = $('#bookingSubmit');
-    submitBtn.disabled = true;
-    submitBtn.textContent = 'Sender…';
-    const result = await S.addBooking({ kind, subject, desc, date: iso || null, time, name, phone, email });
-    submitBtn.disabled = false;
-    submitBtn.textContent = isMoede ? 'Book mødet' : 'Send forespørgsel';
+    pendingBooking = { kind, isMoede, subject, desc, iso, time, name, phone, email };
+    openBookingConfirm();
+  });
+
+  function openBookingConfirm() {
+    const b = pendingBooking;
+    $('#bkConfirmTitle').textContent = b.isMoede ? 'Tjek din mødebooking' : 'Tjek jeres forespørgsel';
+    $('#bkConfirmLines').innerHTML = `
+      <div class="confirm__line"><span>${b.isMoede ? '📅' : '🎉'} <b>${esc(b.subject)}</b></span></div>
+      ${b.desc ? `<div class="confirm__line"><span>💬 ${esc(b.desc)}</span></div>` : ''}
+      <div class="confirm__line confirm__line--total"><span>${b.iso
+        ? `📆 ${esc(S.formatDate(b.iso))}${b.time ? ` kl. ${esc(b.time)}` : ' – ønsket dato'}`
+        : '📆 Dato aftales sammen med jer'}</span></div>`;
+    $('#bkConfirmMeta').innerHTML = `
+      <div>🙋 ${esc(b.name)} · 📞 ${esc(b.phone)}</div>
+      ${b.email ? `<div>✉️ ${esc(b.email)}</div>` : ''}
+      <div>${b.isMoede
+        ? 'Vi ringer og bekræfter din booking hurtigst muligt.'
+        : 'Uforpligtende forespørgsel – vi vender tilbage på telefon eller mail.'}</div>`;
+    bkConfirmWrap.hidden = false;
+    document.body.style.overflow = 'hidden';
+  }
+  function closeBookingConfirm() {
+    bkConfirmWrap.hidden = true;
+    document.body.style.overflow = '';
+  }
+  $('#bkConfirmBack').addEventListener('click', closeBookingConfirm);
+  bkConfirmWrap.addEventListener('click', (e) => { if (e.target === bkConfirmWrap) closeBookingConfirm(); });
+
+  /* Trin 2: kunden har set opsummeringen og bekræfter – NU sendes den */
+  $('#bkConfirmSend').addEventListener('click', async () => {
+    if (!pendingBooking) return;
+    const b = pendingBooking;
+    const btn = $('#bkConfirmSend');
+    const error = $('#bookingError');
+    error.hidden = true;
+    btn.disabled = true;
+    btn.textContent = 'Sender…';
+    const result = await S.addBooking({
+      kind: b.kind, subject: b.subject, desc: b.desc,
+      date: b.iso || null, time: b.time, name: b.name, phone: b.phone, email: b.email,
+    });
+    btn.disabled = false;
+    btn.textContent = '✓ Bekræft & send';
+    closeBookingConfirm();
 
     if (!result.ok) {
-      error.textContent = `${isMoede ? 'Bookingen' : 'Forespørgslen'} kunne ikke sendes lige nu – prøv igen, eller ring til os.`;
+      error.textContent = `${b.isMoede ? 'Bookingen' : 'Forespørgslen'} kunne ikke sendes lige nu – prøv igen, eller ring til os.`;
       error.hidden = false;
+      error.scrollIntoView({ behavior: 'smooth', block: 'center' });
       return;
     }
 
@@ -836,11 +880,12 @@
     document.querySelector('.booking__choice').hidden = true;
     const success = $('#bookingSuccess');
     success.hidden = false;
-    $('#bookingSuccessTitle').textContent = isMoede ? 'Tak for din booking!' : 'Tak for jeres forespørgsel! 🎉';
-    $('#bookingSuccessText').textContent = isMoede
-      ? `Dit møde er booket ${S.formatDate(iso).toLowerCase()} kl. ${time}. Vi ringer til dig på ${phone} og bekræfter hurtigst muligt.`
-      : `Vi har modtaget jeres forespørgsel${iso ? ` med ønsket dato ${S.formatDate(iso).toLowerCase()}` : ''} og vender tilbage til jer på telefon eller mail hurtigst muligt – vi glæder os til at høre mere om jeres arrangement!`;
+    $('#bookingSuccessTitle').textContent = b.isMoede ? 'Tak for din booking!' : 'Tak for jeres forespørgsel! 🎉';
+    $('#bookingSuccessText').textContent = b.isMoede
+      ? `Dit møde er booket ${S.formatDate(b.iso).toLowerCase()} kl. ${b.time}. Vi ringer til dig på ${b.phone} og bekræfter hurtigst muligt.`
+      : `Vi har modtaget jeres forespørgsel${b.iso ? ` med ønsket dato ${S.formatDate(b.iso).toLowerCase()}` : ''} og vender tilbage til jer på telefon eller mail hurtigst muligt – vi glæder os til at høre mere om jeres arrangement!`;
     success.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    pendingBooking = null;
   });
 
   $('#bookAgainBtn').addEventListener('click', () => {
