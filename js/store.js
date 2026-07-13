@@ -208,7 +208,7 @@ const SpiisStore = (() => {
   let cloudReady = null;
   let soldByDate = {}; /* { 'YYYY-MM-DD': solgte kuverter } fra get_sold */
   let session = null;
-  try { session = JSON.parse(sessionStorage.getItem(SES_KEY) || 'null'); } catch { session = null; }
+  try { session = JSON.parse(localStorage.getItem(SES_KEY) || 'null'); } catch { session = null; }
 
   async function sbFetch(path, { method = 'GET', body, headers = {}, auth = false, retry = true } = {}) {
     const h = {
@@ -353,11 +353,11 @@ const SpiisStore = (() => {
       if (!res.ok) throw new Error();
       const out = await res.json();
       session = { access_token: out.access_token, refresh_token: out.refresh_token, email: out.user && out.user.email };
-      sessionStorage.setItem(SES_KEY, JSON.stringify(session));
+      localStorage.setItem(SES_KEY, JSON.stringify(session));
       return true;
     } catch {
       session = null;
-      sessionStorage.removeItem(SES_KEY);
+      localStorage.removeItem(SES_KEY);
       emit();
       return false;
     }
@@ -377,7 +377,7 @@ const SpiisStore = (() => {
         return { ok: false, msg: 'Forkert e-mail eller adgangskode.' };
       }
       session = { access_token: out.access_token, refresh_token: out.refresh_token, email: out.user && out.user.email };
-      sessionStorage.setItem(SES_KEY, JSON.stringify(session));
+      localStorage.setItem(SES_KEY, JSON.stringify(session));
       await fetchAdminData().catch(() => {});
       return { ok: true };
     } catch {
@@ -387,7 +387,7 @@ const SpiisStore = (() => {
 
   function logout() {
     session = null;
-    sessionStorage.removeItem(SES_KEY);
+    localStorage.removeItem(SES_KEY);
   }
 
   const isCloud = () => cloud;
@@ -397,13 +397,29 @@ const SpiisStore = (() => {
   const hasSession = () => !!(session && session.access_token);
 
   let adminPollTimer = null;
+  let lastWake = 0;
+  function wakeRefresh() {
+    /* hent ALT med det samme – men højst hvert 3. sekund */
+    if (Date.now() - lastWake < 3000) return;
+    lastWake = Date.now();
+    fetchAdminData().catch(() => {});
+    refreshPublic();
+  }
   function startAdminPolling() {
     if (!cloud || adminPollTimer) return;
     adminPollTimer = setInterval(() => {
       fetchAdminData().catch(() => {});
       /* menukortet (fx "få tilbage"-antal, der tæller ned) skal også følge med */
       refreshPublic();
-    }, 25000);
+    }, 10000);
+    /* telefonen fryser appen i baggrunden – hent friske data i SAMME
+       sekund den åbnes igen, i stedet for at vente på næste tjek */
+    document.addEventListener('visibilitychange', () => {
+      if (!document.hidden) wakeRefresh();
+    });
+    window.addEventListener('focus', wakeRefresh);
+    window.addEventListener('pageshow', wakeRefresh);
+    window.addEventListener('online', wakeRefresh);
   }
 
   function initCloud() {

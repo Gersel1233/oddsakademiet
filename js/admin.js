@@ -29,7 +29,7 @@
 
   function isAuthed() {
     /* sky: rigtigt login · lokalt: PIN-flag */
-    return S.hasSession() || sessionStorage.getItem(AUTH_KEY) === '1';
+    return S.hasSession() || localStorage.getItem(AUTH_KEY) === '1';
   }
   function showApp() {
     loginScreen.hidden = true;
@@ -38,6 +38,7 @@
     renderAll();
     renderPwaBanner();
     refreshPushSubscription();
+    liveAlerts(); /* sæt live-alarmens nulpunkt til det, der allerede er hentet */
   }
 
   /* skift login-formularen til e-mail/adgangskode, når skyen er aktiv */
@@ -81,7 +82,7 @@
     }
     const pin = $('#loginPin').value.trim();
     if (pin === S.getSettings().pin) {
-      sessionStorage.setItem(AUTH_KEY, '1');
+      localStorage.setItem(AUTH_KEY, '1');
       errorEl.hidden = true;
       showApp();
     } else {
@@ -92,7 +93,7 @@
   });
   $('#logoutBtn').addEventListener('click', () => {
     S.logout();
-    sessionStorage.removeItem(AUTH_KEY);
+    localStorage.removeItem(AUTH_KEY);
     location.reload();
   });
 
@@ -1323,6 +1324,50 @@
     renderView(activeView);
   }
 
+  /* ============================================================
+     LIVE-ALARM: når der tikker noget nyt ind, mens appen er åben,
+     siger den selv til – toast, lyd og vibration. Push-beskederne
+     dækker, når appen er lukket; det her dækker resten.
+     ============================================================ */
+  let liveSeen = null;
+
+  function ping() {
+    try {
+      const ac = new (window.AudioContext || window.webkitAudioContext)();
+      [[880, 0], [1318, 0.12]].forEach(([freq, delay]) => {
+        const o = ac.createOscillator();
+        const g = ac.createGain();
+        o.type = 'sine';
+        o.frequency.value = freq;
+        g.gain.setValueAtTime(0.001, ac.currentTime + delay);
+        g.gain.exponentialRampToValueAtTime(0.18, ac.currentTime + delay + 0.02);
+        g.gain.exponentialRampToValueAtTime(0.001, ac.currentTime + delay + 0.35);
+        o.connect(g).connect(ac.destination);
+        o.start(ac.currentTime + delay);
+        o.stop(ac.currentTime + delay + 0.4);
+      });
+      setTimeout(() => ac.close().catch(() => {}), 900);
+    } catch { /* lyd er ikke altid tilladt – alarmen vises stadig */ }
+    try { navigator.vibrate && navigator.vibrate([160, 60, 160]); } catch { /* ignorér */ }
+  }
+
+  function liveAlerts() {
+    const orders = S.getOrders();
+    const bookings = S.getBookings();
+    const ids = new Set([...orders.map((o) => 'o' + o.id), ...bookings.map((b) => 'b' + b.id)]);
+    if (liveSeen === null) { liveSeen = ids; return; } /* første indlæsning = ikke nyt */
+    const freshOrders = orders.filter((o) => !liveSeen.has('o' + o.id));
+    const freshBookings = bookings.filter((b) => !liveSeen.has('b' + b.id));
+    liveSeen = ids;
+    if (!freshOrders.length && !freshBookings.length) return;
+    const first = freshOrders.length
+      ? `🍲 Ny bestilling: ${freshOrders[0].name}${freshOrders[0].time ? ' · kl. ' + freshOrders[0].time : ''}`
+      : `${freshBookings[0].kind === 'moede' ? '📅 Ny mødebooking' : '🎉 Ny arrangement-forespørgsel'}: ${freshBookings[0].subject}`;
+    const extra = freshOrders.length + freshBookings.length - 1;
+    toast(extra > 0 ? `${first} (+${extra} mere)` : first);
+    ping();
+  }
+
   S.subscribe(() => {
     syncLoginMode();
     if (app.hidden) {
@@ -1333,6 +1378,7 @@
     if (S.isCloud()) S.startAdminPolling();
     renderBell();
     renderListViews();
+    liveAlerts();
   });
 
   /* ---------- start ---------- */
