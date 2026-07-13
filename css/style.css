@@ -133,8 +133,13 @@ main .section {
   transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.25s ease, background 0.25s ease, color 0.25s ease;
   will-change: transform;
 }
-.btn:hover { transform: translateY(-2px) scale(1.02); }
-.btn:active { transform: translateY(0) scale(0.98); }
+.btn:hover { transform: translateY(-1px); }
+.btn:active { transform: translateY(0) scale(0.985); }
+.btn:focus-visible,
+input:focus-visible, select:focus-visible, textarea:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(217, 108, 44, 0.28);
+}
 
 .btn--accent {
   background: var(--accent);
@@ -876,12 +881,11 @@ main .section {
   display: inline-block;
   background: var(--accent-soft);
   color: var(--accent-deep);
-  font-size: 0.72rem;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  border-radius: 999px;
-  padding: 3px 10px;
+  font-size: 0.74rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  border-radius: 8px;
+  padding: 3px 9px;
   margin-left: 8px;
   vertical-align: middle;
 }
@@ -949,6 +953,26 @@ main .section {
 }
 .confirm__btns { display: flex; gap: 10px; flex-wrap: wrap; }
 .confirm__btns .btn--accent { flex: 1; }
+
+/* genbrugs-flueben + emballage-linje i bestillingen */
+.reuse {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  margin-top: 10px;
+  background: #EDF6E9;
+  border: 1.5px solid rgba(63, 122, 59, 0.3);
+  border-radius: 14px;
+  padding: 12px 15px;
+  cursor: pointer;
+  font-size: 0.92rem;
+  line-height: 1.45;
+}
+.reuse input { width: 19px; height: 19px; margin-top: 2px; accent-color: #3F7A3B; flex-shrink: 0; }
+.reuse strong { color: #2E5B2B; }
+.reuse em { font-style: normal; color: var(--ink-soft); font-size: 0.85rem; }
+.basketbar__pack { display: inline-block; color: var(--ink-soft); font-size: 0.9rem; margin-left: 6px; }
+.basketbar__pack--free { color: #3F7A3B; font-weight: 600; }
 
 .menuline__badge--out { background: #FBEAE7; color: #B3372B; }
 .menuline__badge--few { background: #FFF3E4; color: var(--accent-deep); }

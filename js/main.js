@@ -409,6 +409,34 @@
 
   const basketLines = () => Object.values(basket).filter((l) => l.qty > 0);
 
+  /* ---------- emballage ved to-go ----------
+     10 kr. pr. ret (ikke drikkevarer og dip). Tager kunden sin
+     tidligere emballage med til dagens ret, er dén del gratis. */
+  const EMBALLAGE_PRIS = 10;
+  const currentType = () => ($('input[name="orderType"]:checked') || {}).value || 'togo';
+  const reuseChecked = () => !!($('#reuseBox') && $('#reuseBox').checked);
+  const needsPackaging = (l) =>
+    l.kind === 'dagensret' || (l.kind === 'menu' && !/drik/i.test(l.cat || '') && !/dip/i.test(l.name || ''));
+
+  function packagingCount(includeDagens) {
+    return basketLines().reduce((s, l) => {
+      if (!needsPackaging(l)) return s;
+      if (l.kind === 'dagensret' && !includeDagens) return s;
+      return s + l.qty;
+    }, 0);
+  }
+
+  /* varelinjerne der faktisk sendes: kurven + evt. emballage/genbrug */
+  function orderSendLines() {
+    const lines = basketLines().slice();
+    if (currentType() !== 'togo') return lines;
+    const reuse = reuseChecked() && basket.dagens;
+    const packs = packagingCount(!reuse);
+    if (packs > 0) lines.push({ name: 'Emballage (to-go)', qty: packs, price: EMBALLAGE_PRIS, kind: 'emballage', cat: 'Emballage' });
+    if (reuse) lines.push({ name: '♻️ Egen emballage til dagens ret', qty: basket.dagens.qty, price: 0, kind: 'genbrug', cat: 'Emballage' });
+    return lines;
+  }
+
   function renderOrderDates() {
     const plan = S.getPlan(14);
     const options = plan
@@ -566,13 +594,38 @@
 
   function renderBasketBar() {
     const lines = basketLines();
+    syncPackagingUi();
     if (!lines.length) { basketBar.hidden = true; return; }
     basketBar.hidden = false;
+    const sendLines = orderSendLines();
     const totalItems = lines.reduce((s, l) => s + l.qty, 0);
-    const total = lines.reduce((s, l) => s + (l.price ? l.price * l.qty : 0), 0);
+    const total = sendLines.reduce((s, l) => s + (l.price ? l.price * l.qty : 0), 0);
+    const packLine = sendLines.find((l) => l.kind === 'emballage');
+    const reuseLine = sendLines.find((l) => l.kind === 'genbrug');
     basketBar.innerHTML = `<strong>Jeres bestilling:</strong> ${lines.map((l) => `${l.qty} × ${esc(l.name)}`).join(' · ')}
+      ${packLine ? `<span class="basketbar__pack">+ emballage ${packLine.qty} × ${EMBALLAGE_PRIS} kr.</span>` : ''}
+      ${reuseLine ? '<span class="basketbar__pack basketbar__pack--free">♻️ egen emballage til dagens ret</span>' : ''}
       <span class="basketbar__total">${totalItems} ret${totalItems === 1 ? '' : 'ter'}${total ? ` · i alt ${total} kr.` : ''}</span>`;
   }
+
+  /* vis/skjul genbrugs-fluebenet og forklar emballage-tillægget */
+  function syncPackagingUi() {
+    const reuseWrap = $('#reuseWrap');
+    const packHint = $('#packHint');
+    if (!reuseWrap || !packHint) return;
+    const togo = currentType() === 'togo';
+    const packs = packagingCount(true);
+    reuseWrap.hidden = !(togo && basket.dagens);
+    if (reuseWrap.hidden && $('#reuseBox')) $('#reuseBox').checked = false;
+    packHint.hidden = !(togo && packs > 0);
+    packHint.textContent = togo && packs > 0
+      ? `Ved to-go lægges emballage til: ${EMBALLAGE_PRIS} kr. pr. ret (gælder ikke drikkevarer og dip).`
+      : '';
+  }
+
+  /* emballage-linjen følger med, når man skifter to-go/spis her */
+  $$('input[name="orderType"]').forEach((r) => r.addEventListener('change', renderBasketBar));
+  $('#reuseBox')?.addEventListener('change', renderBasketBar);
 
   /* Trin 1: tjek felterne og vis "bekræft bestilling" med kvittering */
   let pendingOrder = null;
@@ -590,7 +643,7 @@
     const name = $('#orderName').value.trim();
     const phone = $('#orderPhone').value.trim();
     const note = $('#orderNote').value.trim();
-    const lines = basketLines();
+    const lines = orderSendLines();
 
     const problems = [];
     if (!iso) problems.push('vælg en dato');

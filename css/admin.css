@@ -126,7 +126,13 @@ button { font-family: var(--font-body); }
   color: var(--ink);
 }
 .abtn:hover { transform: translateY(-1px); }
-.abtn:active { transform: scale(0.96); }
+.abtn:active { transform: scale(0.97); }
+.abtn:focus-visible,
+.inline-input:focus-visible,
+.afield input:focus-visible, .afield select:focus-visible, .afield textarea:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(217, 108, 44, 0.28);
+}
 .abtn--accent {
   background: linear-gradient(180deg, #E07A3A, var(--accent));
   color: #fff;
@@ -479,6 +485,22 @@ button { font-family: var(--font-body); }
 .olist--drinks li { color: var(--ink-soft); }
 .olist--drinks li::before { content: '🥤'; font-size: 0.7rem; left: 0; top: 2px; }
 
+/* emballage-linjer på to-go-bestillinger */
+.packline {
+  margin-top: 6px;
+  font-size: 0.86rem;
+  color: var(--ink-soft);
+  background: var(--cream-2);
+  border-radius: 10px;
+  padding: 6px 12px;
+  display: inline-block;
+}
+.packline--reuse {
+  background: var(--green-soft);
+  color: var(--green);
+  font-weight: 600;
+}
+
 /* intern personale-note på arrangementer/møder */
 .staffnote {
   margin-top: 8px;
@@ -494,12 +516,11 @@ button { font-family: var(--font-body); }
 
 .tag {
   display: inline-block;
-  font-size: 0.72rem;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
+  font-size: 0.74rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
   padding: 3px 10px;
-  border-radius: 999px;
+  border-radius: 8px;
   background: var(--cream-2);
   color: var(--ink-soft);
   vertical-align: middle;

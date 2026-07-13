@@ -238,7 +238,7 @@
 
     const items = [
       ...unread.orders.map((o) => {
-        const lines = orderLines(o);
+        const lines = foodLines(o);
         const summary = lines.slice(0, 3).map((l) => `${l.qty} × ${l.name}`).join(' · ') + (lines.length > 3 ? ' · …' : '');
         return {
           icon: '🥡',
@@ -324,13 +324,16 @@
     if (o.items && o.items.length) return o.items.filter((l) => Number(l.qty) > 0);
     return Number(o.qty) > 0 ? [{ name: o.dish || 'Dagens ret', qty: o.qty, price: o.price, kind: 'dagensret' }] : [];
   }
+  /* emballage-/genbrugslinjer er ikke mad – de tælles og produceres ikke */
+  const isExtraLine = (l) => l.kind === 'emballage' || l.kind === 'genbrug';
+  const foodLines = (o) => orderLines(o).filter((l) => !isExtraLine(l));
   const personsOf = (o) => (o.persons != null ? Number(o.persons) : Number(o.qty || 0));
-  const itemsOf = (o) => orderLines(o).reduce((s, l) => s + Number(l.qty), 0);
+  const itemsOf = (o) => foodLines(o).reduce((s, l) => s + Number(l.qty), 0);
 
   /* læg alle bestilte retter sammen pr. navn (til produktionslisten) */
   function dishTotals(orders) {
     const map = new Map();
-    orders.forEach((o) => orderLines(o).forEach((l) => {
+    orders.forEach((o) => foodLines(o).forEach((l) => {
       map.set(l.name, (map.get(l.name) || 0) + Number(l.qty));
     }));
     return [...map.entries()].sort((a, b) => b[1] - a[1]);
@@ -339,7 +342,7 @@
   /* samme, men delt op i to-go / spiser her pr. ret */
   function dishTotalsSplit(orders) {
     const map = new Map();
-    orders.forEach((o) => orderLines(o).forEach((l) => {
+    orders.forEach((o) => foodLines(o).forEach((l) => {
       const e = map.get(l.name) || { total: 0, togo: 0, spise: 0 };
       e.total += Number(l.qty);
       e[o.type === 'togo' ? 'togo' : 'spise'] += Number(l.qty);
@@ -392,7 +395,10 @@
   }
 
   function orderRow(o, showDate = false) {
-    const all = orderLines(o);
+    const all = orderLines(o).filter((l) => !isExtraLine(l));
+    const extras = orderLines(o).filter(isExtraLine);
+    const reuse = extras.find((l) => l.kind === 'genbrug');
+    const pack = extras.find((l) => l.kind === 'emballage');
     const drinks = drinkNameSet();
     const isDrink = (l) => (l.cat ? /drik/i.test(l.cat) : drinks.has(l.name));
     const food = all.filter((l) => !isDrink(l));
@@ -409,6 +415,8 @@
           </div>
           ${food.length ? `<ul class="olist">${food.map(li).join('')}</ul>` : ''}
           ${drink.length ? `<div class="olist__sep"></div><ul class="olist olist--drinks">${drink.map(li).join('')}</ul>` : ''}
+          ${reuse ? '<div class="packline packline--reuse">♻️ Tager selv emballage med til dagens ret – emballagen er gratis</div>' : ''}
+          ${pack ? `<div class="packline">📦 Emballage: ${pack.qty} stk. (${pack.qty * Number(pack.price || 0)} kr.)</div>` : ''}
           <div class="row__sub">
             ${showDate ? `${esc(S.formatDate(o.date))} · ` : ''}kl. ${esc(o.time)} · 📞 ${esc(o.phone)}
             ${o.note ? ` · 💬 ${esc(o.note)}` : ''}
