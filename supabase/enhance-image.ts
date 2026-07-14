@@ -76,6 +76,7 @@ Deno.serve(async (req) => {
     const upRes = await fetch(`${SB_URL}/storage/v1/object/nyheder/${path}`, {
       method: 'POST',
       headers: {
+        apikey: SB_KEY,
         Authorization: `Bearer ${SB_KEY}`,
         'Content-Type': type,
         'x-upsert': 'true',
