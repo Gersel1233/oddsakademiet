@@ -1030,10 +1030,10 @@
     if (r.error === 'config') return '❌ <b>FAL_KEY</b> mangler i Supabase.<br>Gå til Edge Functions → Secrets og tilføj <b>FAL_KEY</b> med din fal.ai-nøgle. Deploy funktionen igen bagefter.';
     if (r.error === 'config-sb') return '❌ Funktionen mangler adgang til databasen. Skriv til Mikkel.';
     if (r.error === 'fal') return `❌ fal.ai afviste kaldet (kode ${r.status || '?'}).<br><small style="opacity:.8;">${esc(r.detail || '')}</small><br>Tjek at din fal.ai-nøgle er rigtig og har penge/kredit på kontoen.`;
-    if (r.error === 'no-result') return '❌ fal.ai svarede uden et billede. Prøv igen om lidt – hjælper det ikke, så skriv til Mikkel.';
-    if (r.error === 'download') return '❌ Kunne ikke hente det forbedrede billede fra fal.ai. Prøv igen.';
-    if (r.error === 'upload') return '❌ Det forbedrede billede kunne ikke gemmes i arkivet.<br>Tjek at <b>database-opdatering 10</b> er kørt.';
-    return `❌ Uventet fejl: <b>${esc(r.error || 'ukendt')}</b> ${esc(r.detail || '')}`;
+    if (r.error === 'no-result') return `❌ fal.ai svarede uden et billede.<br><small style="opacity:.8;">${esc(r.detail || '')}</small>`;
+    if (r.error === 'download') return `❌ Kunne ikke hente det forbedrede billede fra fal.ai (kode ${r.status || '?'}). Prøv igen.`;
+    if (r.error === 'upload') return `❌ Det forbedrede billede kunne ikke gemmes i arkivet (kode ${r.status || '?'}).<br><small style="opacity:.8;">${esc(r.detail || '')}</small><br>Tjek at <b>database-opdatering 10</b> er kørt, og at billed-arkivet <b>nyheder</b> findes.`;
+    return `❌ Uventet fejl: <b>${esc(r.error || 'ukendt')}</b> (kode ${r.status || r.httpStatus || '?'})<br><small style="opacity:.8;">${esc(r.detail || '')}</small>`;
   }
 
   function newsRow(n) {
