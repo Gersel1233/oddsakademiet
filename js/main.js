@@ -144,6 +144,23 @@
   /* ---------- dagens ret ---------- */
   function renderToday() {
     const today = S.todayISO();
+    const orderBtn = $('#todayOrderBtn');
+
+    /* ferie: hele dagens ret-sektionen viser luk-beskeden i stedet for en ret */
+    if (S.isClosureNow()) {
+      const c = S.getClosure();
+      $('#todayLabel').textContent = '🌴 Ferielukket';
+      $('#todayDish').textContent = 'Vi holder lukket for bestillinger';
+      $('#todayDesc').textContent = (c.message ? c.message + ' ' : '')
+        + (c.reopen ? `Vi åbner for bestillinger igen ${S.formatDate(c.reopen)}.` : '');
+      $('#todayPrice').textContent = '';
+      $('#todayStock').textContent = '';
+      $('#todayStock').className = 'today__stock';
+      if (orderBtn) { orderBtn.textContent = 'Send forespørgsel'; orderBtn.setAttribute('href', '#booking'); }
+      return;
+    }
+    if (orderBtn) { orderBtn.textContent = 'Bestil dagens ret'; orderBtn.setAttribute('href', '#bestil'); }
+
     let iso = today;
     /* efter køkkenets lukketid er dagen slut – og dage med privat
        arrangement springes over, for dér kan man ikke bestille */
@@ -209,10 +226,11 @@
         </div>`;
       }
       if (S.isOrderingClosed(day.iso)) {
+        const ferie = S.isInClosure(day.iso);
         return `<div class="dayplan dayplan--closed">
           <div class="dayplan__day">${day.weekday}${isToday ? ' · i dag' : ''}</div>
           <div class="dayplan__date">${esc(S.formatDate(day.iso, false))}</div>
-          <div class="dayplan__dish">🎉 Privat arrangement</div>
+          <div class="dayplan__dish">${ferie ? '🌴 Ferielukket' : '🎉 Privat arrangement'}</div>
           <div class="dayplan__desc">Lukket for bestillinger denne dag.</div>
         </div>`;
       }
@@ -1002,7 +1020,9 @@
   function renderClosure() {
     const el = $('#closureBanner');
     if (!el) return;
-    if (!S.isClosureNow()) { el.hidden = true; el.innerHTML = ''; return; }
+    const closed = S.isClosureNow();
+    document.body.classList.toggle('site-closed', closed); /* skjuler "Bestil"-knapper */
+    if (!closed) { el.hidden = true; el.innerHTML = ''; return; }
     const c = S.getClosure();
     const reopenTxt = c.reopen ? S.formatDate(c.reopen) : '';
     el.innerHTML = `

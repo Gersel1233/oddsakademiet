@@ -296,6 +296,9 @@ input:focus-visible, select:focus-visible, textarea:focus-visible {
 .closurebanner__text strong { display: block; font-size: 1.05rem; color: var(--ink); }
 .closurebanner__text span { font-size: 0.92rem; color: var(--ink-soft); }
 .closurebanner__cta { display: flex; gap: 10px; flex-wrap: wrap; }
+/* under ferie skjules de "bestil"-knapper, der ellers inviterer til bestilling */
+.site-closed .mobilecta,
+.site-closed .nav__cta { display: none !important; }
 @media (max-width: 760px) {
   .news--big { flex-direction: column; align-items: stretch; }
   .news--big .news__media { flex: 0 0 auto; }
