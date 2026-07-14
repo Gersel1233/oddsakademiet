@@ -945,7 +945,7 @@ const SpiisStore = (() => {
      edge function – nøglen ligger som hemmelighed i Supabase, aldrig i koden.
      Fejler eller er den langsom, bruger vi bare originalen (returnerer ok:false). */
   async function enhanceNewsImage(imageUrl) {
-    if (!cloud || !session || !imageUrl) return { ok: false };
+    if (!cloud || !session || !imageUrl) return { ok: false, error: 'local' };
     try {
       const ctrl = new AbortController();
       const timer = setTimeout(() => ctrl.abort(), 60000);
@@ -960,11 +960,13 @@ const SpiisStore = (() => {
         signal: ctrl.signal,
       });
       clearTimeout(timer);
-      if (!res.ok) return { ok: false };
       const out = await res.json().catch(() => ({}));
-      return out && out.ok && out.url ? { ok: true, url: out.url } : { ok: false };
-    } catch {
-      return { ok: false };
+      if (!res.ok) return { ok: false, httpStatus: res.status, error: out.error || 'http', status: out.status, detail: out.detail };
+      return out && out.ok && out.url
+        ? { ok: true, url: out.url }
+        : { ok: false, error: out.error || 'unknown', status: out.status, detail: out.detail };
+    } catch (e) {
+      return { ok: false, error: 'network', detail: String(e) };
     }
   }
 

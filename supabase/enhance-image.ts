@@ -9,8 +9,8 @@
 // Secrets): FAL_KEY (din fal.ai-nøgle – kommer ALDRIG i koden).
 // SUPABASE_URL og SUPABASE_SERVICE_ROLE_KEY sætter Supabase selv.
 //
-// LAD "Verify JWT" være slået TIL for funktionen – så kan kun den
-// indloggede chef kalde den (i modsætning til send-push).
+// "Verify JWT" må gerne stå som standard (slået TIL) – så kan kun
+// den indloggede chef kalde funktionen.
 // ============================================================
 
 const CORS = {
@@ -39,12 +39,14 @@ Deno.serve(async (req) => {
     const FAL_KEY = Deno.env.get('FAL_KEY');
     const SB_URL = Deno.env.get('SUPABASE_URL');
     const SB_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
-    if (!FAL_KEY || !SB_URL || !SB_KEY) return json({ ok: false, error: 'config' });
+    if (!FAL_KEY) return json({ ok: false, error: 'config' });
+    if (!SB_URL || !SB_KEY) return json({ ok: false, error: 'config-sb' });
 
     const { imageUrl } = await req.json().catch(() => ({}));
     if (!imageUrl || typeof imageUrl !== 'string') return json({ ok: false, error: 'no-image' });
 
-    // 1) bed fal.ai om at finpudse billedet (synkront kald – venter på resultatet)
+    // 1) bed fal.ai om at finpudse billedet (synkront kald – venter på resultatet).
+    //    Kun de felter, der er bekræftet gyldige for nano-banana-pro/edit.
     const falRes = await fetch(`https://fal.run/${FAL_MODEL}`, {
       method: 'POST',
       headers: { Authorization: `Key ${FAL_KEY}`, 'Content-Type': 'application/json' },
@@ -52,35 +54,41 @@ Deno.serve(async (req) => {
         prompt: PROMPT,
         image_urls: [imageUrl],
         aspect_ratio: '3:2',
-        output_format: 'jpeg',
-        resolution: '1K',
-        num_images: 1,
       }),
     });
-    if (!falRes.ok) return json({ ok: false, error: 'fal', status: falRes.status });
+    if (!falRes.ok) {
+      const detail = (await falRes.text().catch(() => '')).slice(0, 400);
+      return json({ ok: false, error: 'fal', status: falRes.status, detail });
+    }
     const falOut = await falRes.json().catch(() => ({}));
-    const outUrl = falOut?.images?.[0]?.url;
-    if (!outUrl) return json({ ok: false, error: 'no-result' });
+    const img = falOut?.images?.[0] || falOut?.image;
+    const outUrl = img?.url;
+    if (!outUrl) return json({ ok: false, error: 'no-result', detail: JSON.stringify(falOut).slice(0, 300) });
 
     // 2) hent det forbedrede billede og læg det i vores eget arkiv,
     //    så det bliver liggende (fal's egne links er midlertidige)
     const imgRes = await fetch(outUrl);
-    if (!imgRes.ok) return json({ ok: false, error: 'download' });
+    if (!imgRes.ok) return json({ ok: false, error: 'download', status: imgRes.status });
+    const type = img?.content_type || imgRes.headers.get('content-type') || 'image/png';
+    const ext = type.includes('png') ? 'png' : (type.includes('webp') ? 'webp' : 'jpg');
     const bytes = new Uint8Array(await imgRes.arrayBuffer());
-    const path = `forbedret-${Date.now().toString(36)}.jpg`;
+    const path = `forbedret-${Date.now().toString(36)}.${ext}`;
     const upRes = await fetch(`${SB_URL}/storage/v1/object/nyheder/${path}`, {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${SB_KEY}`,
-        'Content-Type': 'image/jpeg',
+        'Content-Type': type,
         'x-upsert': 'true',
       },
       body: bytes,
     });
-    if (!upRes.ok) return json({ ok: false, error: 'upload', status: upRes.status });
+    if (!upRes.ok) {
+      const detail = (await upRes.text().catch(() => '')).slice(0, 300);
+      return json({ ok: false, error: 'upload', status: upRes.status, detail });
+    }
 
     return json({ ok: true, url: `${SB_URL}/storage/v1/object/public/nyheder/${path}` });
   } catch (e) {
-    return json({ ok: false, error: String(e) });
+    return json({ ok: false, error: 'exception', detail: String(e) });
   }
 });

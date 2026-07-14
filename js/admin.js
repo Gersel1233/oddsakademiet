@@ -1022,6 +1022,20 @@
     });
   }
 
+  /* oversætter en teknisk fejl fra billedforbedringen til klar tekst + hvad man gør */
+  function newsDiagMessage(r) {
+    if (r.error === 'network') return '❌ Kan ikke få fat i funktionen.<br>Tjek at edge function <b>enhance-image</b> er deployet i Supabase, og at du er på nettet.';
+    if (r.httpStatus === 404) return '❌ Funktionen <b>enhance-image</b> blev ikke fundet.<br>Tjek at den er deployet i Supabase med præcis det navn (små bogstaver).';
+    if (r.httpStatus === 401 || r.httpStatus === 403) return '❌ Adgang nægtet (login udløbet).<br>Log ud og ind igen, og prøv så igen.';
+    if (r.error === 'config') return '❌ <b>FAL_KEY</b> mangler i Supabase.<br>Gå til Edge Functions → Secrets og tilføj <b>FAL_KEY</b> med din fal.ai-nøgle. Deploy funktionen igen bagefter.';
+    if (r.error === 'config-sb') return '❌ Funktionen mangler adgang til databasen. Skriv til Mikkel.';
+    if (r.error === 'fal') return `❌ fal.ai afviste kaldet (kode ${r.status || '?'}).<br><small style="opacity:.8;">${esc(r.detail || '')}</small><br>Tjek at din fal.ai-nøgle er rigtig og har penge/kredit på kontoen.`;
+    if (r.error === 'no-result') return '❌ fal.ai svarede uden et billede. Prøv igen om lidt – hjælper det ikke, så skriv til Mikkel.';
+    if (r.error === 'download') return '❌ Kunne ikke hente det forbedrede billede fra fal.ai. Prøv igen.';
+    if (r.error === 'upload') return '❌ Det forbedrede billede kunne ikke gemmes i arkivet.<br>Tjek at <b>database-opdatering 10</b> er kørt.';
+    return `❌ Uventet fejl: <b>${esc(r.error || 'ukendt')}</b> ${esc(r.detail || '')}`;
+  }
+
   function newsRow(n) {
     const off = n.active === false;
     return `
@@ -1066,7 +1080,11 @@
           💡 Skal retten kunne bestilles, så læg den også ind under <strong>Menukort</strong>
           (evt. i sin egen kategori) – så gælder udsolgt- og antal-reglerne automatisk.
         </p>
-        <button class="abtn abtn--accent abtn--big" id="newsPublish" style="margin-top:14px;">📣 Læg på hjemmesiden</button>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:14px;">
+          <button class="abtn abtn--accent abtn--big" id="newsPublish">📣 Læg på hjemmesiden</button>
+          ${S.isCloud() ? '<button class="abtn abtn--ghost" id="newsDiag" title="Tjekker, at den automatiske billedforbedring (fal.ai) er sat rigtigt op">🧪 Tjek billedforbedringen</button>' : ''}
+        </div>
+        <div id="newsDiagOut" class="newsdiag" hidden></div>
       </div>
 
       <div class="acard">
@@ -1114,6 +1132,37 @@
       S.addNews({ title, text: $('#newsText').value.trim(), image, cta: $('#newsCta').checked });
       toast('Nyheden er på hjemmesiden ✓');
       renderNyheder();
+    });
+
+    /* testknap: fortæller i klar tekst, om billedforbedringen er sat rigtigt op */
+    $('#newsDiag')?.addEventListener('click', async () => {
+      const out = $('#newsDiagOut');
+      const btn = $('#newsDiag');
+      out.hidden = false;
+      if (!newsImageBlob) {
+        out.className = 'newsdiag newsdiag--warn';
+        out.textContent = '👆 Vælg først et billede ovenfor, som jeg kan teste med.';
+        return;
+      }
+      btn.disabled = true;
+      out.className = 'newsdiag';
+      out.textContent = 'Tester … (uploader og sender et testbillede gennem fal.ai – vent et øjeblik)';
+      const up = await S.uploadNewsImage(newsImageBlob, 'test.jpg');
+      if (!up.ok) {
+        out.className = 'newsdiag newsdiag--err';
+        out.innerHTML = '❌ Kunne ikke uploade testbilledet til billed-arkivet.<br>Har du kørt <b>database-opdatering 10</b> (billed-arkivet) i Supabase?';
+        btn.disabled = false;
+        return;
+      }
+      const r = await S.enhanceNewsImage(up.url);
+      if (r.ok) {
+        out.className = 'newsdiag newsdiag--ok';
+        out.innerHTML = '✅ Billedforbedringen virker! Læg bare nyheder op – billederne finpudses helt automatisk.';
+      } else {
+        out.className = 'newsdiag newsdiag--err';
+        out.innerHTML = newsDiagMessage(r);
+      }
+      btn.disabled = false;
     });
 
     /* eksisterende opslag retter sig selv, mens der skrives */

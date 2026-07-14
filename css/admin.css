@@ -577,6 +577,20 @@ button { font-family: var(--font-body); }
   border: 1.6px solid rgba(28, 24, 20, 0.1);
 }
 
+/* test-boks til billedforbedringen */
+.newsdiag {
+  margin-top: 12px;
+  padding: 12px 16px;
+  border-radius: 12px;
+  font-size: 0.92rem;
+  line-height: 1.5;
+  background: var(--cream-2);
+  border: 1.6px solid var(--line);
+}
+.newsdiag--ok { background: var(--green-soft); border-color: rgba(63, 122, 59, 0.4); color: #2c5a29; }
+.newsdiag--err { background: #FBEAE7; border-color: rgba(179, 55, 43, 0.4); color: #8a2b22; }
+.newsdiag--warn { background: #FDF3E0; border-color: rgba(217, 108, 44, 0.4); }
+
 /* arkiv med færdige bestillinger – foldet sammen til dagen er omme */
 .donefold {
   margin-top: 14px;
