@@ -327,3 +327,76 @@ drop policy if exists "nyheder slet kun chef" on storage.objects;
 create policy "nyheder slet kun chef"
   on storage.objects for delete to authenticated
   using (bucket_id = 'nyheder' and public.is_admin());
+
+-- ---------- bestil en special direkte fra en nyhed ----------
+create or replace function public.place_news_order(
+  p_news_id text, p_date date, p_qty int,
+  p_name text, p_phone text, p_note text
+) returns jsonb
+language plpgsql security definer set search_path = public as $$
+declare
+  v_cfg jsonb;
+  v_news jsonb;
+  v_max int;
+  v_sold int;
+  v_price numeric;
+  v_title text;
+  v_item jsonb;
+begin
+  if p_qty is null or p_qty < 1 or p_qty > 100 then
+    return jsonb_build_object('ok', false, 'reason', 'antal');
+  end if;
+  if coalesce(trim(p_name), '') = '' or coalesce(trim(p_phone), '') = '' then
+    return jsonb_build_object('ok', false, 'reason', 'mangler');
+  end if;
+  if p_date is null or p_date < current_date then
+    return jsonb_build_object('ok', false, 'reason', 'dato');
+  end if;
+
+  select data into v_cfg from config where id = 1 for update;
+
+  select value into v_news
+  from jsonb_array_elements(coalesce(v_cfg->'news', '[]'::jsonb))
+  where value->>'id' = p_news_id
+  limit 1;
+
+  if v_news is null then return jsonb_build_object('ok', false, 'reason', 'findes-ikke'); end if;
+  if coalesce((v_news->>'orderable')::boolean, false) = false then
+    return jsonb_build_object('ok', false, 'reason', 'ikke-bestilbar');
+  end if;
+  if coalesce(v_news->>'active', 'true') = 'false' then
+    return jsonb_build_object('ok', false, 'reason', 'ikke-aktiv');
+  end if;
+  if coalesce(v_news->>'orderBy', '') <> '' and current_date > (v_news->>'orderBy')::date then
+    return jsonb_build_object('ok', false, 'reason', 'deadline');
+  end if;
+
+  v_title := coalesce(v_news->>'title', 'Nyhed');
+  v_price := nullif(v_news->>'price', '')::numeric;
+
+  if coalesce(v_news->>'orderMax', '') <> '' then
+    v_max := (v_news->>'orderMax')::int;
+    select coalesce(sum((i->>'qty')::int), 0) into v_sold
+    from orders o, lateral jsonb_array_elements(coalesce(o.items, '[]'::jsonb)) i
+    where i->>'news_id' = p_news_id;
+    if v_sold + p_qty > v_max then
+      return jsonb_build_object('ok', false, 'reason', 'antal', 'remaining', greatest(v_max - v_sold, 0));
+    end if;
+  end if;
+
+  v_item := jsonb_build_object(
+    'name', v_title, 'qty', p_qty, 'kind', 'nyhed',
+    'price', v_price, 'news_id', p_news_id
+  );
+
+  insert into orders(date, "time", qty, type, name, phone, note, dish, price, items, persons)
+  values (p_date, '', 0, 'togo',
+          left(trim(p_name), 120), left(trim(p_phone), 40),
+          left(coalesce(p_note, ''), 400), '', null,
+          jsonb_build_array(v_item),
+          case when p_qty between 1 and 500 then p_qty else null end);
+
+  return jsonb_build_object('ok', true);
+end $$;
+
+grant execute on function public.place_news_order to anon, authenticated;

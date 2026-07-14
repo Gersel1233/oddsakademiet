@@ -242,6 +242,40 @@ input:focus-visible, select:focus-visible, textarea:focus-visible {
 }
 .news__text { color: var(--ink-soft); font-size: 0.98rem; line-height: 1.55; white-space: pre-line; }
 .news__cta { margin-top: 6px; }
+.news__deadline { font-size: 0.86rem; font-weight: 600; color: var(--accent-deep); }
+.news__closed { font-size: 0.9rem; font-weight: 600; color: var(--ink-soft); font-style: italic; }
+
+/* mini-bestilling fra en nyhed */
+.confirm__x {
+  position: absolute;
+  top: 16px; right: 16px;
+  width: 34px; height: 34px;
+  border: 0; border-radius: 50%;
+  background: rgba(28, 24, 20, 0.06);
+  color: var(--ink); font-size: 1rem; cursor: pointer;
+  line-height: 1;
+}
+.confirm__x:hover { background: rgba(28, 24, 20, 0.12); }
+.confirm__card { position: relative; }
+.confirm__sub { color: var(--ink-soft); font-size: 0.98rem; margin: -8px 0 16px; }
+.nof { display: block; font-size: 0.9rem; font-weight: 600; margin-bottom: 12px; }
+.nof input {
+  display: block; width: 100%; margin-top: 6px;
+  padding: 12px 14px; font: inherit; font-weight: 400;
+  border: 1.6px solid rgba(28, 24, 20, 0.15); border-radius: 12px;
+  background: var(--cream);
+}
+.nof input:focus-visible { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(217, 108, 44, 0.18); }
+.nof__total { font-weight: 700; font-size: 1.05rem; margin: 4px 0 14px; }
+.nof__done { text-align: center; padding: 10px 0; }
+.nof__check {
+  width: 60px; height: 60px; margin: 0 auto 14px;
+  display: grid; place-items: center;
+  background: var(--accent); color: #fff;
+  border-radius: 50%; font-size: 1.8rem; font-weight: 700;
+}
+.nof__done h3 { font-family: var(--font-display); font-weight: 600; font-size: 1.4rem; margin-bottom: 8px; }
+.nof__done p { color: var(--ink-soft); margin-bottom: 18px; }
 @media (max-width: 760px) {
   .news--big { flex-direction: column; }
   .news--big .news__media { min-height: 200px; flex: 0 0 auto; height: 200px; }

@@ -388,6 +388,39 @@
     </div>
   </div>
 
+  <!-- bestil en special direkte fra en nyhed (fx juleplatter) -->
+  <div class="confirm" id="newsOrderWrap" hidden>
+    <div class="confirm__card" role="dialog" aria-modal="true" aria-labelledby="newsOrderTitle">
+      <button type="button" class="confirm__x" id="newsOrderClose" aria-label="Luk">✕</button>
+      <p class="confirm__kicker">Bestil</p>
+      <h3 class="confirm__title" id="newsOrderTitle">Bestil</h3>
+      <p class="confirm__sub" id="newsOrderSub"></p>
+      <form id="newsOrderForm" novalidate>
+        <label class="nof">Hvornår vil du hente/modtage det?
+          <input type="date" id="newsOrderDate" required />
+        </label>
+        <label class="nof">Antal
+          <input type="number" id="newsOrderQty" min="1" max="100" value="1" required />
+        </label>
+        <label class="nof">Navn
+          <input type="text" id="newsOrderName" autocomplete="name" required />
+        </label>
+        <label class="nof">Telefon
+          <input type="tel" id="newsOrderPhone" inputmode="tel" autocomplete="tel" required />
+        </label>
+        <p class="nof__total" id="newsOrderTotal"></p>
+        <p class="form__error" id="newsOrderError" hidden></p>
+        <button type="submit" class="btn btn--accent btn--big" id="newsOrderSend">Send bestilling</button>
+      </form>
+      <div class="nof__done" id="newsOrderDone" hidden>
+        <div class="nof__check">✓</div>
+        <h3>Tak for din bestilling!</h3>
+        <p id="newsOrderDoneText">Vi har modtaget din bestilling og glæder os til at lave den til dig.</p>
+        <button type="button" class="btn btn--ghost-dark" id="newsOrderDoneClose">Luk</button>
+      </div>
+    </div>
+  </div>
+
   <!-- bekræft bestilling: kvittering inden afsendelse -->
   <div class="confirm" id="orderConfirmWrap" hidden>
     <div class="confirm__card" role="dialog" aria-modal="true" aria-labelledby="confirmTitle">

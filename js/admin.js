@@ -419,7 +419,7 @@
     const isDrink = (l) => (l.cat ? /drik/i.test(l.cat) : drinks.has(l.name));
     const food = all.filter((l) => !isDrink(l));
     const drink = all.filter(isDrink);
-    const li = (l) => `<li><b>${l.qty} ×</b> ${esc(l.name)}${l.kind === 'dagensret' ? '<span class="tag tag--accent">Dagens ret</span>' : ''}</li>`;
+    const li = (l) => `<li><b>${l.qty} ×</b> ${esc(l.name)}${l.kind === 'dagensret' ? '<span class="tag tag--accent">Dagens ret</span>' : ''}${l.kind === 'nyhed' ? '<span class="tag tag--ink">📣 Nyhed</span>' : ''}</li>`;
     const done = o.status !== 'ny';
     return `
       <div class="row ${done ? 'row--done' : 'row--new'}">
@@ -434,7 +434,7 @@
           ${reuse ? '<div class="packline packline--reuse">♻️ Tager selv emballage med til dagens ret – emballagen er gratis</div>' : ''}
           ${pack ? `<div class="packline">📦 Emballage: ${pack.qty} stk. (${pack.qty * Number(pack.price || 0)} kr.)</div>` : ''}
           <div class="row__sub">
-            ${showDate ? `${esc(S.formatDate(o.date))} · ` : ''}kl. ${esc(o.time)} · 📞 ${esc(o.phone)}
+            ${showDate ? `${esc(S.formatDate(o.date))} · ` : ''}${o.time ? `kl. ${esc(o.time)} · ` : ''}📞 ${esc(o.phone)}
             ${o.note ? ` · 💬 ${esc(o.note)}` : ''}
           </div>
         </div>
@@ -1046,7 +1046,15 @@
         <div class="row__main">
           <input class="inline-input" data-nf="title" maxlength="80" value="${esc(n.title)}" />
           <textarea class="inline-input" data-nf="text" rows="2" placeholder="Tekst (valgfrit)">${esc(n.text || '')}</textarea>
-          <label class="newsed__cta"><input type="checkbox" data-nf="cta" ${n.cta ? 'checked' : ''} /> Vis "Bestil her"-knap</label>
+          <div class="newsed__toggles">
+            <label class="newsed__cta"><input type="checkbox" data-nf="cta" ${n.cta ? 'checked' : ''} /> "Bestil her"-knap</label>
+            <label class="newsed__cta"><input type="checkbox" data-nf="orderable" ${n.orderable ? 'checked' : ''} /> Bestilbar</label>
+          </div>
+          <div class="newsed__order" ${n.orderable ? '' : 'hidden'}>
+            <input class="inline-input" data-nf="price" type="number" min="0" placeholder="Pris kr." value="${esc(n.price ?? '')}" title="Pris pr. stk." />
+            <input class="inline-input" data-nf="orderBy" type="date" value="${esc(n.orderBy || '')}" title="Bestil senest" />
+            <input class="inline-input" data-nf="orderMax" type="number" min="1" placeholder="Max antal" value="${esc(n.orderMax ?? '')}" title="Max antal i alt" />
+          </div>
         </div>
         <div class="row__actions">
           ${off ? '<span class="tag">Skjult</span>' : '<span class="tag tag--green">På siden</span>'}
@@ -1073,12 +1081,19 @@
           <label class="afield"><span>Billede (anbefales – et lækkert madfoto sælger)</span>
             <input id="newsImage" type="file" accept="image/*" /></label>
           <label class="afield newsed__cta" style="align-self:end;"><span></span>
-            <span><input type="checkbox" id="newsCta" checked /> Vis "Bestil her"-knap på opslaget</span></label>
+            <span><input type="checkbox" id="newsCta" checked /> Vis "Bestil her"-knap (sender til bestillingssiden)</span></label>
+          <label class="afield afield--full newsed__cta">
+            <span><input type="checkbox" id="newsOrderable" /> <strong>Gør bestilbar</strong> – kunden bestiller retten direkte fra nyheden (dato · antal · navn · tlf)</span></label>
+        </div>
+        <div id="newsOrderFields" class="newsorder-fields" hidden>
+          <label class="afield"><span>Pris pr. stk. (kr.)</span><input id="newsPrice" type="number" min="0" placeholder="fx 149" /></label>
+          <label class="afield"><span>Bestil senest (valgfrit)</span><input id="newsOrderBy" type="date" /></label>
+          <label class="afield"><span>Max antal i alt (valgfrit)</span><input id="newsOrderMax" type="number" min="1" placeholder="fx 40" /></label>
         </div>
         <div id="newsPreview" class="newsprev" hidden></div>
         <p class="sub" style="color:var(--ink-soft);margin-top:12px;">
-          💡 Skal retten kunne bestilles, så læg den også ind under <strong>Menukort</strong>
-          (evt. i sin egen kategori) – så gælder udsolgt- og antal-reglerne automatisk.
+          💡 "Gør bestilbar" kræver <strong>database-opdatering 11</strong>. Bestillingerne lander
+          automatisk i <strong>Køreplanen</strong> og tælles i <strong>Kalenderen</strong> – ingen huller.
         </p>
         <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:14px;">
           <button class="abtn abtn--accent abtn--big" id="newsPublish">📣 Læg på hjemmesiden</button>
@@ -1096,6 +1111,11 @@
           ${posts.length ? posts.map(newsRow).join('') : '<div class="empty">Ingen nyheder endnu. Den første kunne være juleplatter eller en halloween-aften … 🎃</div>'}
         </div>
       </div>`;
+
+    /* vis pris/deadline/max-felterne, når "Gør bestilbar" slås til */
+    $('#newsOrderable').addEventListener('change', (e) => {
+      $('#newsOrderFields').hidden = !e.target.checked;
+    });
 
     /* billede: komprimér med det samme og vis et eksempel */
     $('#newsImage').addEventListener('change', async (e) => {
@@ -1129,7 +1149,14 @@
         const enhanced = await S.enhanceNewsImage(up.url);
         if (enhanced.ok && enhanced.url) image = enhanced.url;
       }
-      S.addNews({ title, text: $('#newsText').value.trim(), image, cta: $('#newsCta').checked });
+      const orderable = $('#newsOrderable').checked;
+      S.addNews({
+        title, text: $('#newsText').value.trim(), image, cta: $('#newsCta').checked,
+        orderable,
+        price: orderable && $('#newsPrice').value ? Number($('#newsPrice').value) : null,
+        orderBy: orderable ? ($('#newsOrderBy').value || '') : '',
+        orderMax: orderable && $('#newsOrderMax').value ? Number($('#newsOrderMax').value) : null,
+      });
       toast('Nyheden er på hjemmesiden ✓');
       renderNyheder();
     });
@@ -1169,11 +1196,20 @@
     const newsTimers = {};
     const saveNewsRow = (rowEl) => {
       const id = rowEl.dataset.id;
+      const orderable = $('[data-nf="orderable"]', rowEl).checked;
+      const priceEl = $('[data-nf="price"]', rowEl);
+      const maxEl = $('[data-nf="orderMax"]', rowEl);
       S.updateNews(id, {
         title: $('[data-nf="title"]', rowEl).value.trim(),
         text: $('[data-nf="text"]', rowEl).value.trim(),
         cta: $('[data-nf="cta"]', rowEl).checked,
+        orderable,
+        price: priceEl.value ? Number(priceEl.value) : null,
+        orderBy: $('[data-nf="orderBy"]', rowEl).value || '',
+        orderMax: maxEl.value ? Number(maxEl.value) : null,
       });
+      const orderFields = rowEl.querySelector('.newsed__order');
+      if (orderFields) orderFields.hidden = !orderable;
       savedToast();
     };
     $('#newsList').oninput = (e) => {

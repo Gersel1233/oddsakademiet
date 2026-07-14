@@ -941,6 +941,55 @@ const SpiisStore = (() => {
     save();
     pushConfig();
   }
+
+  /* kunden bestiller en special direkte fra en nyhed (fx juleplatter).
+     Ordren lander i den ALMINDELIGE orders-tabel som en 'nyhed'-vare, så den
+     dukker op i køreplanen og tælles i kalenderen ligesom alt andet – ingen huller. */
+  async function placeNewsOrder(newsId, o) {
+    const news = (data.news || []).find((n) => n.id === newsId);
+    if (!news) return { ok: false, reason: 'findes-ikke' };
+    if (!news.orderable) return { ok: false, reason: 'ikke-bestilbar' };
+    if (news.active === false) return { ok: false, reason: 'ikke-aktiv' };
+    const qty = Number(o.qty);
+    if (!qty || qty < 1) return { ok: false, reason: 'antal' };
+    if (!o.name || !o.phone) return { ok: false, reason: 'mangler' };
+    if (!o.date || o.date < todayISO()) return { ok: false, reason: 'dato' };
+    if (news.orderBy && todayISO() > news.orderBy) return { ok: false, reason: 'deadline' };
+    if (cloud) {
+      try {
+        const res = await sbFetch('/rest/v1/rpc/place_news_order', {
+          method: 'POST',
+          body: JSON.stringify({
+            p_news_id: newsId, p_date: o.date, p_qty: qty,
+            p_name: o.name, p_phone: o.phone, p_note: o.note || '',
+          }),
+        });
+        if (!res.ok) throw new Error();
+        const out = await res.json();
+        if (out.ok) { emit(); lastPublicSnap = ''; refreshPublic(); }
+        return out;
+      } catch {
+        return { ok: false, error: 'net' };
+      }
+    }
+    /* lokal demo-tilstand */
+    if (news.orderMax != null && news.orderMax !== '') {
+      const sold = (data.orders || []).reduce((s, ord) =>
+        s + (ord.items || []).filter((i) => i.news_id === newsId).reduce((a, i) => a + Number(i.qty), 0), 0);
+      if (sold + qty > Number(news.orderMax)) {
+        return { ok: false, reason: 'antal', remaining: Math.max(0, Number(news.orderMax) - sold) };
+      }
+    }
+    const entry = {
+      id: uid(), createdAt: new Date().toISOString(), status: 'ny', read: false,
+      date: o.date, time: '', qty: 0, type: 'togo', name: o.name, phone: o.phone,
+      note: o.note || '', dish: '', price: null, persons: qty,
+      items: [{ name: news.title, qty, kind: 'nyhed', price: news.price ?? null, news_id: newsId }],
+    };
+    data.orders.push(entry);
+    save();
+    return { ok: true, order: entry };
+  }
   /* finpudser billedet automatisk med fal.ai (Nano Banana Pro) via vores
      edge function – nøglen ligger som hemmelighed i Supabase, aldrig i koden.
      Fejler eller er den langsom, bruger vi bare originalen (returnerer ok:false). */
@@ -1021,7 +1070,7 @@ const SpiisStore = (() => {
     addBooking, getBookings, updateBooking, deleteBooking,
     getBlockedDates, getArrangementDates, isOrderingClosed, blockDate, unblockDate, isDateAvailable,
     timeslotsFor,
-    getNews, addNews, updateNews, deleteNews, uploadNewsImage, enhanceNewsImage,
+    getNews, addNews, updateNews, deleteNews, uploadNewsImage, enhanceNewsImage, placeNewsOrder,
     getUnread, markAllRead,
     exportData, resetData,
     subscribe,

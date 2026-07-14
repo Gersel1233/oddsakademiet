@@ -1013,16 +1013,110 @@
     const posts = S.getNews().filter((n) => n.active !== false && n.title);
     wrap.hidden = posts.length === 0;
     if (!posts.length) { grid.innerHTML = ''; return; }
-    grid.innerHTML = posts.slice(0, 4).map((n, i) => `
+    const today = S.todayISO();
+    grid.innerHTML = posts.slice(0, 4).map((n, i) => {
+      const past = n.orderable && n.orderBy && today > n.orderBy;
+      let action = '';
+      if (n.orderable) {
+        action = past
+          ? '<p class="news__closed">Bestillingsfristen er udløbet</p>'
+          : `<button class="btn btn--accent btn--small news__cta" data-news-order="${esc(n.id)}">Bestil${n.price ? ` · ${esc(n.price)} kr.` : ''}</button>`;
+      } else if (n.cta) {
+        action = '<a href="#bestil" class="btn btn--accent btn--small news__cta">Bestil her</a>';
+      }
+      return `
       <article class="news ${i === 0 ? 'news--big' : ''}">
         ${n.image ? `<div class="news__media"><img src="${esc(n.image)}" alt="${esc(n.title)}" loading="lazy" /></div>` : ''}
         <div class="news__body">
           ${n.createdAt ? `<p class="news__date">${esc(S.formatDate(n.createdAt.slice(0, 10), false))}</p>` : ''}
           <h3 class="news__title">${esc(n.title)}</h3>
           ${n.text ? `<p class="news__text">${esc(n.text)}</p>` : ''}
-          ${n.cta ? '<a href="#bestil" class="btn btn--accent btn--small news__cta">Bestil her</a>' : ''}
+          ${n.orderable && n.orderBy && !past ? `<p class="news__deadline">🗓️ Bestil senest ${esc(S.formatDate(n.orderBy, false))}</p>` : ''}
+          ${action}
         </div>
-      </article>`).join('');
+      </article>`;
+    }).join('');
+  }
+
+  /* ---------- mini-bestilling direkte fra en nyhed ---------- */
+  let pendingNews = null;
+  const newsWrap = $('#newsOrderWrap');
+  function updateNewsTotal() {
+    const el = $('#newsOrderTotal');
+    if (!el) return;
+    if (!pendingNews || !pendingNews.price) { el.textContent = ''; return; }
+    const qty = Math.max(1, Number($('#newsOrderQty').value) || 1);
+    el.textContent = `I alt: ${qty * Number(pendingNews.price)} kr.`;
+  }
+  function openNewsOrder(newsId) {
+    const n = S.getNews().find((x) => x.id === newsId);
+    if (!n || !n.orderable || !newsWrap) return;
+    pendingNews = n;
+    $('#newsOrderTitle').textContent = 'Bestil: ' + n.title;
+    const sub = $('#newsOrderSub');
+    sub.textContent = n.price ? `${n.price} kr. pr. stk.` : '';
+    sub.hidden = !n.price;
+    const dateInp = $('#newsOrderDate');
+    dateInp.min = S.todayISO();
+    dateInp.value = '';
+    $('#newsOrderQty').value = 1;
+    $('#newsOrderName').value = '';
+    $('#newsOrderPhone').value = '';
+    $('#newsOrderError').hidden = true;
+    $('#newsOrderForm').hidden = false;
+    $('#newsOrderDone').hidden = true;
+    $('#newsOrderSend').disabled = false;
+    $('#newsOrderSend').textContent = 'Send bestilling';
+    updateNewsTotal();
+    newsWrap.hidden = false;
+    document.body.style.overflow = 'hidden';
+  }
+  function closeNewsOrder() {
+    if (!newsWrap) return;
+    newsWrap.hidden = true;
+    document.body.style.overflow = '';
+    pendingNews = null;
+  }
+  if (newsWrap) {
+    $('#newsGrid').addEventListener('click', (e) => {
+      const b = e.target.closest('[data-news-order]');
+      if (b) { e.preventDefault(); openNewsOrder(b.dataset.newsOrder); }
+    });
+    $('#newsOrderClose').addEventListener('click', closeNewsOrder);
+    $('#newsOrderDoneClose').addEventListener('click', closeNewsOrder);
+    newsWrap.addEventListener('click', (e) => { if (e.target === newsWrap) closeNewsOrder(); });
+    $('#newsOrderQty').addEventListener('input', updateNewsTotal);
+
+    $('#newsOrderForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      if (!pendingNews) return;
+      const error = $('#newsOrderError');
+      error.hidden = true;
+      const date = $('#newsOrderDate').value;
+      const qty = Number($('#newsOrderQty').value);
+      const name = $('#newsOrderName').value.trim();
+      const phone = $('#newsOrderPhone').value.trim();
+      const fail = (msg) => { error.textContent = msg; error.hidden = false; };
+      if (!date) return fail('Vælg en dato.');
+      if (!qty || qty < 1) return fail('Vælg et antal.');
+      if (!name || !phone) return fail('Udfyld navn og telefon.');
+      const btn = $('#newsOrderSend');
+      btn.disabled = true; btn.textContent = 'Sender …';
+      const res = await S.placeNewsOrder(pendingNews.id, { date, qty, name, phone });
+      btn.disabled = false; btn.textContent = 'Send bestilling';
+      if (res.ok) {
+        $('#newsOrderForm').hidden = true;
+        $('#newsOrderDoneText').textContent = `Vi har modtaget din bestilling af ${qty} × ${pendingNews.title} til ${S.formatDate(date, false)}. Vi glæder os!`;
+        $('#newsOrderDone').hidden = false;
+        return;
+      }
+      if (res.error === 'net') return fail('Kunne ikke sende lige nu – prøv igen, eller ring til os.');
+      if (res.reason === 'deadline') return fail('Bestillingsfristen for denne special er desværre udløbet.');
+      if (res.reason === 'antal') return fail(res.remaining > 0 ? `Der er desværre kun ${res.remaining} tilbage – sæt antallet ned og prøv igen.` : 'Denne special er desværre udsolgt.');
+      if (res.reason === 'dato') return fail('Vælg en gyldig dato (i dag eller senere).');
+      if (['ikke-bestilbar', 'ikke-aktiv', 'findes-ikke'].includes(res.reason)) return fail('Denne special kan desværre ikke bestilles længere.');
+      return fail('Noget gik galt – prøv igen, eller ring til os.');
+    });
   }
 
   /* ---------- render alt (og gen-render hvis admin ændrer data) ---------- */
