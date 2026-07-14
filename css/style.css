@@ -210,14 +210,16 @@ input:focus-visible, select:focus-visible, textarea:focus-visible {
   box-shadow: 0 14px 40px rgba(28, 24, 20, 0.09);
   border: 1px solid rgba(28, 24, 20, 0.05);
 }
-.news--big { grid-column: 1 / -1; flex-direction: row; }
-.news__media { position: relative; flex: 1 1 55%; min-height: 220px; }
+.news--big { grid-column: 1 / -1; flex-direction: row; align-items: center; }
+/* billederne er allerede beskåret til 3:2, så de vises helt uden at blive
+   skævt klippet – samme pæne vandrette format på desktop og telefon */
+.news__media { position: relative; aspect-ratio: 3 / 2; background: var(--cream-2); }
+.news--big .news__media { flex: 0 0 46%; }
 .news__media img {
   position: absolute; inset: 0;
   width: 100%; height: 100%;
   object-fit: cover; display: block;
 }
-.news:not(.news--big) .news__media { min-height: 190px; flex: 0 0 auto; height: 190px; }
 .news__body {
   flex: 1 1 45%;
   padding: 26px 28px;
@@ -277,8 +279,8 @@ input:focus-visible, select:focus-visible, textarea:focus-visible {
 .nof__done h3 { font-family: var(--font-display); font-weight: 600; font-size: 1.4rem; margin-bottom: 8px; }
 .nof__done p { color: var(--ink-soft); margin-bottom: 18px; }
 @media (max-width: 760px) {
-  .news--big { flex-direction: column; }
-  .news--big .news__media { min-height: 200px; flex: 0 0 auto; height: 200px; }
+  .news--big { flex-direction: column; align-items: stretch; }
+  .news--big .news__media { flex: 0 0 auto; }
   .news__body { padding: 20px 20px 24px; }
 }
 

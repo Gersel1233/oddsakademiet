@@ -1001,39 +1001,31 @@
      ============================================================ */
   let newsImageBlob = null; /* det komprimerede billede til det nye opslag */
 
-  /* telefonbilleder er ofte 3-8 MB – skaleres ned og pakkes som JPEG,
-     så hjemmesiden er hurtig og databasen ikke fyldes op */
-  function compressImage(file, maxW = 1400, quality = 0.82) {
+  /* telefonbilleder er ofte 3-8 MB og tit stående – vi beskærer midt-på til
+     et pænt VANDRET format (3:2) og pakker som JPEG. Så er billedet let,
+     ensartet og bliver aldrig skævt beskåret ved visning – på desktop som telefon. */
+  function compressImage(file, maxW = 1400, ratio = 3 / 2, quality = 0.85) {
     return new Promise((resolve) => {
       const img = new Image();
       const url = URL.createObjectURL(file);
       img.onload = () => {
-        const scale = Math.min(1, maxW / img.width);
-        const w = Math.round(img.width * scale);
-        const h = Math.round(img.height * scale);
+        const srcRatio = img.width / img.height;
+        let sw = img.width, sh = img.height, sx = 0, sy = 0;
+        if (srcRatio > ratio) { sw = Math.round(img.height * ratio); sx = Math.round((img.width - sw) / 2); }
+        else { sh = Math.round(img.width / ratio); sy = Math.round((img.height - sh) / 2); }
+        const w = Math.min(maxW, sw);
+        const h = Math.round(w / ratio);
         const c = document.createElement('canvas');
         c.width = w; c.height = h;
-        c.getContext('2d').drawImage(img, 0, 0, w, h);
+        const ctx = c.getContext('2d');
+        ctx.imageSmoothingQuality = 'high';
+        ctx.drawImage(img, sx, sy, sw, sh, 0, 0, w, h);
         URL.revokeObjectURL(url);
         c.toBlob((b) => resolve(b || file), 'image/jpeg', quality);
       };
       img.onerror = () => { URL.revokeObjectURL(url); resolve(file); };
       img.src = url;
     });
-  }
-
-  /* oversætter en teknisk fejl fra billedforbedringen til klar tekst + hvad man gør */
-  function newsDiagMessage(r) {
-    if (r.error === 'network') return '❌ Kan ikke få fat i funktionen.<br>Tjek at edge function <b>enhance-image</b> er deployet i Supabase, og at du er på nettet.';
-    if (r.httpStatus === 404) return '❌ Funktionen <b>enhance-image</b> blev ikke fundet.<br>Tjek at den er deployet i Supabase med præcis det navn (små bogstaver).';
-    if (r.httpStatus === 401 || r.httpStatus === 403) return '❌ Adgang nægtet (login udløbet).<br>Log ud og ind igen, og prøv så igen.';
-    if (r.error === 'config') return '❌ <b>FAL_KEY</b> mangler i Supabase.<br>Gå til Edge Functions → Secrets og tilføj <b>FAL_KEY</b> med din fal.ai-nøgle. Deploy funktionen igen bagefter.';
-    if (r.error === 'config-sb') return '❌ Funktionen mangler adgang til databasen. Skriv til Mikkel.';
-    if (r.error === 'fal') return `❌ fal.ai afviste kaldet (kode ${r.status || '?'}).<br><small style="opacity:.8;">${esc(r.detail || '')}</small><br>Tjek at din fal.ai-nøgle er rigtig og har penge/kredit på kontoen.`;
-    if (r.error === 'no-result') return `❌ fal.ai svarede uden et billede.<br><small style="opacity:.8;">${esc(r.detail || '')}</small>`;
-    if (r.error === 'download') return `❌ Kunne ikke hente det forbedrede billede fra fal.ai (kode ${r.status || '?'}). Prøv igen.`;
-    if (r.error === 'upload') return `❌ Det forbedrede billede kunne ikke gemmes i arkivet (kode ${r.status || '?'}).<br><small style="opacity:.8;">${esc(r.detail || '')}</small><br>Tjek at <b>database-opdatering 10</b> er kørt, og at billed-arkivet <b>nyheder</b> findes.`;
-    return `❌ Uventet fejl: <b>${esc(r.error || 'ukendt')}</b> (kode ${r.status || r.httpStatus || '?'})<br><small style="opacity:.8;">${esc(r.detail || '')}</small>`;
   }
 
   function newsRow(n) {
@@ -1095,11 +1087,7 @@
           💡 "Gør bestilbar" kræver <strong>database-opdatering 11</strong>. Bestillingerne lander
           automatisk i <strong>Køreplanen</strong> og tælles i <strong>Kalenderen</strong> – ingen huller.
         </p>
-        <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:14px;">
-          <button class="abtn abtn--accent abtn--big" id="newsPublish">📣 Læg på hjemmesiden</button>
-          ${S.isCloud() ? '<button class="abtn abtn--ghost" id="newsDiag" title="Tjekker, at den automatiske billedforbedring (fal.ai) er sat rigtigt op">🧪 Tjek billedforbedringen</button>' : ''}
-        </div>
-        <div id="newsDiagOut" class="newsdiag" hidden></div>
+        <button class="abtn abtn--accent abtn--big" id="newsPublish" style="margin-top:14px;">📣 Læg på hjemmesiden</button>
       </div>
 
       <div class="acard">
@@ -1143,11 +1131,6 @@
           return;
         }
         image = up.url;
-        /* helautomatisk finpudsning med AI – falder tilbage til originalen,
-           hvis den fejler eller er for langsom, så en nyhed aldrig blokeres */
-        btn.textContent = '✨ Forbedrer billedet …';
-        const enhanced = await S.enhanceNewsImage(up.url);
-        if (enhanced.ok && enhanced.url) image = enhanced.url;
       }
       const orderable = $('#newsOrderable').checked;
       S.addNews({
@@ -1159,37 +1142,6 @@
       });
       toast('Nyheden er på hjemmesiden ✓');
       renderNyheder();
-    });
-
-    /* testknap: fortæller i klar tekst, om billedforbedringen er sat rigtigt op */
-    $('#newsDiag')?.addEventListener('click', async () => {
-      const out = $('#newsDiagOut');
-      const btn = $('#newsDiag');
-      out.hidden = false;
-      if (!newsImageBlob) {
-        out.className = 'newsdiag newsdiag--warn';
-        out.textContent = '👆 Vælg først et billede ovenfor, som jeg kan teste med.';
-        return;
-      }
-      btn.disabled = true;
-      out.className = 'newsdiag';
-      out.textContent = 'Tester … (uploader og sender et testbillede gennem fal.ai – vent et øjeblik)';
-      const up = await S.uploadNewsImage(newsImageBlob, 'test.jpg');
-      if (!up.ok) {
-        out.className = 'newsdiag newsdiag--err';
-        out.innerHTML = '❌ Kunne ikke uploade testbilledet til billed-arkivet.<br>Har du kørt <b>database-opdatering 10</b> (billed-arkivet) i Supabase?';
-        btn.disabled = false;
-        return;
-      }
-      const r = await S.enhanceNewsImage(up.url);
-      if (r.ok) {
-        out.className = 'newsdiag newsdiag--ok';
-        out.innerHTML = '✅ Billedforbedringen virker! Læg bare nyheder op – billederne finpudses helt automatisk.';
-      } else {
-        out.className = 'newsdiag newsdiag--err';
-        out.innerHTML = newsDiagMessage(r);
-      }
-      btn.disabled = false;
     });
 
     /* eksisterende opslag retter sig selv, mens der skrives */

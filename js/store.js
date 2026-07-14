@@ -990,37 +990,6 @@ const SpiisStore = (() => {
     save();
     return { ok: true, order: entry };
   }
-  /* finpudser billedet automatisk med fal.ai (Nano Banana Pro) via vores
-     edge function – nøglen ligger som hemmelighed i Supabase, aldrig i koden.
-     Fejler eller er den langsom, bruger vi bare originalen (returnerer ok:false). */
-  /* skal matche navnet på edge-funktionen i Supabase (Edge Functions) */
-  const ENHANCE_FN = 'super-function';
-  async function enhanceNewsImage(imageUrl) {
-    if (!cloud || !session || !imageUrl) return { ok: false, error: 'local' };
-    try {
-      const ctrl = new AbortController();
-      const timer = setTimeout(() => ctrl.abort(), 60000);
-      const res = await fetch(`${CLOUD.url}/functions/v1/${ENHANCE_FN}`, {
-        method: 'POST',
-        headers: {
-          apikey: CLOUD.anonKey,
-          Authorization: `Bearer ${session.access_token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ imageUrl }),
-        signal: ctrl.signal,
-      });
-      clearTimeout(timer);
-      const out = await res.json().catch(() => ({}));
-      if (!res.ok) return { ok: false, httpStatus: res.status, error: out.error || 'http', status: out.status, detail: out.detail };
-      return out && out.ok && out.url
-        ? { ok: true, url: out.url }
-        : { ok: false, error: out.error || 'unknown', status: out.status, detail: out.detail };
-    } catch (e) {
-      return { ok: false, error: 'network', detail: String(e) };
-    }
-  }
-
   /* billedet lægges i Supabase Storage (bucket "nyheder"), så config-rækken
      forbliver lille – hjemmesiden henter den jo hele tiden */
   async function uploadNewsImage(blob, name) {
@@ -1070,7 +1039,7 @@ const SpiisStore = (() => {
     addBooking, getBookings, updateBooking, deleteBooking,
     getBlockedDates, getArrangementDates, isOrderingClosed, blockDate, unblockDate, isDateAvailable,
     timeslotsFor,
-    getNews, addNews, updateNews, deleteNews, uploadNewsImage, enhanceNewsImage, placeNewsOrder,
+    getNews, addNews, updateNews, deleteNews, uploadNewsImage, placeNewsOrder,
     getUnread, markAllRead,
     exportData, resetData,
     subscribe,
