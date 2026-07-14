@@ -941,6 +941,33 @@ const SpiisStore = (() => {
     save();
     pushConfig();
   }
+  /* finpudser billedet automatisk med fal.ai (Nano Banana Pro) via vores
+     edge function – nøglen ligger som hemmelighed i Supabase, aldrig i koden.
+     Fejler eller er den langsom, bruger vi bare originalen (returnerer ok:false). */
+  async function enhanceNewsImage(imageUrl) {
+    if (!cloud || !session || !imageUrl) return { ok: false };
+    try {
+      const ctrl = new AbortController();
+      const timer = setTimeout(() => ctrl.abort(), 60000);
+      const res = await fetch(`${CLOUD.url}/functions/v1/enhance-image`, {
+        method: 'POST',
+        headers: {
+          apikey: CLOUD.anonKey,
+          Authorization: `Bearer ${session.access_token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ imageUrl }),
+        signal: ctrl.signal,
+      });
+      clearTimeout(timer);
+      if (!res.ok) return { ok: false };
+      const out = await res.json().catch(() => ({}));
+      return out && out.ok && out.url ? { ok: true, url: out.url } : { ok: false };
+    } catch {
+      return { ok: false };
+    }
+  }
+
   /* billedet lægges i Supabase Storage (bucket "nyheder"), så config-rækken
      forbliver lille – hjemmesiden henter den jo hele tiden */
   async function uploadNewsImage(blob, name) {
@@ -990,7 +1017,7 @@ const SpiisStore = (() => {
     addBooking, getBookings, updateBooking, deleteBooking,
     getBlockedDates, getArrangementDates, isOrderingClosed, blockDate, unblockDate, isDateAvailable,
     timeslotsFor,
-    getNews, addNews, updateNews, deleteNews, uploadNewsImage,
+    getNews, addNews, updateNews, deleteNews, uploadNewsImage, enhanceNewsImage,
     getUnread, markAllRead,
     exportData, resetData,
     subscribe,

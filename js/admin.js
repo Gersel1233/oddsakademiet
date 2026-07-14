@@ -1105,6 +1105,11 @@
           return;
         }
         image = up.url;
+        /* helautomatisk finpudsning med AI – falder tilbage til originalen,
+           hvis den fejler eller er for langsom, så en nyhed aldrig blokeres */
+        btn.textContent = '✨ Forbedrer billedet …';
+        const enhanced = await S.enhanceNewsImage(up.url);
+        if (enhanced.ok && enhanced.url) image = enhanced.url;
       }
       S.addNews({ title, text: $('#newsText').value.trim(), image, cta: $('#newsCta').checked });
       toast('Nyheden er på hjemmesiden ✓');
