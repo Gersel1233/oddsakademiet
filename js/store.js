@@ -141,6 +141,7 @@ const SpiisStore = (() => {
       arrangementDates: [], /* dage med aftalt arrangement – blokeres automatisk for nye arrangement-forespørgsler */
       orderClosedDates: [], /* arrangement-dage hvor der OGSÅ er lukket for madbestillinger */
       notes: {},        /* chefens egne noter pr. dag { 'YYYY-MM-DD': tekst } */
+      news: [],         /* nyheder på forsiden { id, title, text, image, cta, active, createdAt } */
       log: [],
     };
 
@@ -170,6 +171,7 @@ const SpiisStore = (() => {
       if (!parsed.notes) parsed.notes = {};
       if (!parsed.arrangementDates) parsed.arrangementDates = [];
       if (!parsed.orderClosedDates) parsed.orderClosedDates = [];
+      if (!parsed.news) parsed.news = [];
       return parsed;
     } catch {
       return null;
@@ -233,7 +235,7 @@ const SpiisStore = (() => {
     return res;
   }
 
-  const CONFIG_KEYS = ['settings', 'hours', 'dagensRet', 'menu', 'blockedDates', 'arrangementDates', 'orderClosedDates'];
+  const CONFIG_KEYS = ['settings', 'hours', 'dagensRet', 'menu', 'blockedDates', 'arrangementDates', 'orderClosedDates', 'news'];
 
   function mergeConfig(remote) {
     if (!remote) return;
@@ -254,6 +256,7 @@ const SpiisStore = (() => {
       blockedDates: data.blockedDates,
       arrangementDates: data.arrangementDates || [],
       orderClosedDates: data.orderClosedDates || [],
+      news: data.news || [],
     };
   }
 
@@ -916,6 +919,52 @@ const SpiisStore = (() => {
     }
   }
 
+  /* ---------- nyheder på forsiden ---------- */
+  const getNews = () => (data.news || []).slice()
+    .sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || ''));
+  function addNews(post) {
+    const entry = { id: uid(), createdAt: new Date().toISOString(), active: true, ...post };
+    data.news = [entry, ...(data.news || [])];
+    save();
+    pushConfig();
+    return entry;
+  }
+  function updateNews(id, patch) {
+    const n = (data.news || []).find((x) => x.id === id);
+    if (!n) return;
+    Object.assign(n, patch);
+    save();
+    pushConfig();
+  }
+  function deleteNews(id) {
+    data.news = (data.news || []).filter((x) => x.id !== id);
+    save();
+    pushConfig();
+  }
+  /* billedet lægges i Supabase Storage (bucket "nyheder"), så config-rækken
+     forbliver lille – hjemmesiden henter den jo hele tiden */
+  async function uploadNewsImage(blob, name) {
+    if (!cloud || !session) return { ok: false };
+    const safe = (name || 'billede.jpg').toLowerCase().replace(/[^a-z0-9.]+/g, '-').slice(-60);
+    const path = `${Date.now().toString(36)}-${safe}`;
+    try {
+      const res = await fetch(`${CLOUD.url}/storage/v1/object/nyheder/${path}`, {
+        method: 'POST',
+        headers: {
+          apikey: CLOUD.anonKey,
+          Authorization: `Bearer ${session.access_token}`,
+          'Content-Type': blob.type || 'image/jpeg',
+          'x-upsert': 'true',
+        },
+        body: blob,
+      });
+      if (!res.ok) return { ok: false };
+      return { ok: true, url: `${CLOUD.url}/storage/v1/object/public/nyheder/${path}` };
+    } catch {
+      return { ok: false };
+    }
+  }
+
   /* ---------- eksport / nulstil ---------- */
   const exportData = () => JSON.stringify(data, null, 2);
   function resetData() {
@@ -941,6 +990,7 @@ const SpiisStore = (() => {
     addBooking, getBookings, updateBooking, deleteBooking,
     getBlockedDates, getArrangementDates, isOrderingClosed, blockDate, unblockDate, isDateAvailable,
     timeslotsFor,
+    getNews, addNews, updateNews, deleteNews, uploadNewsImage,
     getUnread, markAllRead,
     exportData, resetData,
     subscribe,

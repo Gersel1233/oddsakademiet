@@ -1005,8 +1005,29 @@
   /* ---------- footer ---------- */
   $('#year').textContent = new Date().getFullYear();
 
+  /* ---------- nyheder fra køkkenet (lige under forsiden) ---------- */
+  function renderNews() {
+    const wrap = $('#nyheder');
+    const grid = $('#newsGrid');
+    if (!wrap || !grid) return;
+    const posts = S.getNews().filter((n) => n.active !== false && n.title);
+    wrap.hidden = posts.length === 0;
+    if (!posts.length) { grid.innerHTML = ''; return; }
+    grid.innerHTML = posts.slice(0, 4).map((n, i) => `
+      <article class="news ${i === 0 ? 'news--big' : ''}">
+        ${n.image ? `<div class="news__media"><img src="${esc(n.image)}" alt="${esc(n.title)}" loading="lazy" /></div>` : ''}
+        <div class="news__body">
+          ${n.createdAt ? `<p class="news__date">${esc(S.formatDate(n.createdAt.slice(0, 10), false))}</p>` : ''}
+          <h3 class="news__title">${esc(n.title)}</h3>
+          ${n.text ? `<p class="news__text">${esc(n.text)}</p>` : ''}
+          ${n.cta ? '<a href="#bestil" class="btn btn--accent btn--small news__cta">Bestil her</a>' : ''}
+        </div>
+      </article>`).join('');
+  }
+
   /* ---------- render alt (og gen-render hvis admin ændrer data) ---------- */
   function renderAll() {
+    renderNews();
     renderToday();
     renderWeekPlan();
     renderDayTabs();
@@ -1020,6 +1041,7 @@
   renderAll();
 
   S.subscribe(() => {
+    renderNews();
     renderToday();
     renderWeekPlan();
     renderDayTabs();

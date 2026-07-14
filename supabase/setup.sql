@@ -302,3 +302,28 @@ insert into public.config (id, data) values (1, $json$
 }
 $json$::jsonb)
 on conflict (id) do nothing;
+
+-- ---------- nyhedsbilleder (offentligt billed-arkiv til forsiden) ----------
+insert into storage.buckets (id, name, public)
+values ('nyheder', 'nyheder', true)
+on conflict (id) do update set public = true;
+
+drop policy if exists "nyheder kan ses af alle" on storage.objects;
+create policy "nyheder kan ses af alle"
+  on storage.objects for select
+  using (bucket_id = 'nyheder');
+
+drop policy if exists "nyheder upload kun chef" on storage.objects;
+create policy "nyheder upload kun chef"
+  on storage.objects for insert to authenticated
+  with check (bucket_id = 'nyheder' and public.is_admin());
+
+drop policy if exists "nyheder opdater kun chef" on storage.objects;
+create policy "nyheder opdater kun chef"
+  on storage.objects for update to authenticated
+  using (bucket_id = 'nyheder' and public.is_admin());
+
+drop policy if exists "nyheder slet kun chef" on storage.objects;
+create policy "nyheder slet kun chef"
+  on storage.objects for delete to authenticated
+  using (bucket_id = 'nyheder' and public.is_admin());

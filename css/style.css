@@ -193,6 +193,61 @@ input:focus-visible, select:focus-visible, textarea:focus-visible {
 .btn--small { padding: 10px 20px; font-size: 0.92rem; }
 .btn--big { padding: 16px 40px; font-size: 1.08rem; }
 
+/* ---------- nyheder fra køkkenet ---------- */
+.section--news { padding-bottom: 30px; }
+.newsgrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 24px;
+  margin-top: 10px;
+}
+.news {
+  display: flex;
+  flex-direction: column;
+  background: #fff;
+  border-radius: var(--radius, 22px);
+  overflow: hidden;
+  box-shadow: 0 14px 40px rgba(28, 24, 20, 0.09);
+  border: 1px solid rgba(28, 24, 20, 0.05);
+}
+.news--big { grid-column: 1 / -1; flex-direction: row; }
+.news__media { position: relative; flex: 1 1 55%; min-height: 220px; }
+.news__media img {
+  position: absolute; inset: 0;
+  width: 100%; height: 100%;
+  object-fit: cover; display: block;
+}
+.news:not(.news--big) .news__media { min-height: 190px; flex: 0 0 auto; height: 190px; }
+.news__body {
+  flex: 1 1 45%;
+  padding: 26px 28px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+  justify-content: center;
+}
+.news__date {
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--accent-deep);
+}
+.news__title {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: clamp(1.35rem, 2.6vw, 1.9rem);
+  line-height: 1.15;
+}
+.news__text { color: var(--ink-soft); font-size: 0.98rem; line-height: 1.55; white-space: pre-line; }
+.news__cta { margin-top: 6px; }
+@media (max-width: 760px) {
+  .news--big { flex-direction: column; }
+  .news--big .news__media { min-height: 200px; flex: 0 0 auto; height: 200px; }
+  .news__body { padding: 20px 20px 24px; }
+}
+
 /* ---------- logo ---------- */
 .logo {
   display: inline-flex;

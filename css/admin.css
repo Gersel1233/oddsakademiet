@@ -540,6 +540,43 @@ button { font-family: var(--font-body); }
   font-size: 0.95rem;
 }
 
+/* nyheds-redaktøren */
+.newsed { align-items: flex-start; }
+.newsed__thumb {
+  width: 86px;
+  height: 86px;
+  flex: 0 0 86px;
+  border-radius: 12px;
+  object-fit: cover;
+  border: 1.6px solid rgba(28, 24, 20, 0.08);
+}
+.newsed__thumb--none {
+  display: grid;
+  place-items: center;
+  font-size: 1.6rem;
+  background: var(--accent-soft, #FBEBDD);
+}
+.newsed .row__main { display: grid; gap: 8px; }
+.newsed--off { opacity: 0.55; }
+.newsed__cta { display: flex; align-items: center; gap: 8px; font-size: 0.88rem; color: var(--ink-soft); }
+.newsed__cta input { width: 17px; height: 17px; accent-color: var(--accent); }
+.newsprev {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-top: 12px;
+  font-size: 0.9rem;
+  color: var(--green);
+  font-weight: 600;
+}
+.newsprev img {
+  width: 150px;
+  height: 96px;
+  object-fit: cover;
+  border-radius: 12px;
+  border: 1.6px solid rgba(28, 24, 20, 0.1);
+}
+
 /* arkiv med færdige bestillinger – foldet sammen til dagen er omme */
 .donefold {
   margin-top: 14px;
@@ -654,6 +691,114 @@ button { font-family: var(--font-body); }
   padding: 8px 12px;
 }
 .ugeday__note { min-height: 56px; resize: vertical; }
+
+/* måneds-kalenderen */
+.kalhead { align-items: center; }
+.kalhead__nav { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.kaltoggle {
+  display: inline-flex;
+  border: 1.6px solid var(--line);
+  border-radius: 999px;
+  overflow: hidden;
+  margin-right: 6px;
+  background: #fff;
+}
+.kaltoggle button {
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  padding: 9px 18px;
+  font: inherit;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--ink-soft);
+}
+.kaltoggle button.is-on { background: var(--ink); color: #fff; }
+.kalcard { padding: 18px; }
+.kalgrid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; }
+.kalgrid--head { margin-bottom: 6px; }
+.kalwd {
+  text-align: center;
+  font-size: 0.76rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--ink-soft);
+  padding: 4px 0;
+}
+.kalcell {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  min-height: 112px;
+  padding: 9px 10px;
+  border: 1.6px solid rgba(28, 24, 20, 0.07);
+  border-radius: 12px;
+  background: #fff;
+  cursor: pointer;
+  text-align: left;
+  font: inherit;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.kalcell:hover { border-color: var(--accent); }
+.kalcell--out { opacity: 0.4; }
+.kalcell--closed { background: rgba(28, 24, 20, 0.035); }
+.kalcell--today { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(217, 108, 44, 0.22); }
+.kalcell--sel { border-color: var(--ink); box-shadow: 0 0 0 2px rgba(28, 24, 20, 0.16); }
+.kalcell__num { font-weight: 800; font-size: 0.95rem; font-family: var(--font-display); }
+.kalcell__num i { font-style: normal; font-size: 0.8rem; }
+.kalcell__dish {
+  font-size: 0.78rem;
+  font-weight: 600;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.kalcell__count { font-size: 0.74rem; color: var(--ink-soft); }
+.kalcell__count b { color: var(--ink); }
+.kalcell__closed {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--ink-soft);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.kalcell__block { font-size: 0.72rem; color: var(--red); font-weight: 600; }
+.kalcell__bk {
+  font-size: 0.72rem;
+  font-weight: 600;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  background: var(--accent-soft);
+  border-radius: 6px;
+  padding: 2px 7px;
+}
+.kalcell__bk--moede { background: #E3EAF2; }
+.kalcell__more { font-size: 0.72rem; color: var(--ink-soft); }
+.kalpanel__grid { display: grid; grid-template-columns: 1.4fr 1fr; gap: 24px; }
+.kalpanel__dish { font-weight: 600; }
+.kalpanel__none { color: var(--ink-soft); font-size: 0.92rem; padding: 4px 0 2px; }
+.kalpanel__stats {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  font-size: 0.92rem;
+  color: var(--ink-soft);
+  margin-bottom: 8px;
+}
+.kalpanel__stats b { color: var(--ink); }
+.kalpanel__note { min-height: 130px; width: 100%; }
+@media (max-width: 900px) {
+  .kalpanel__grid { grid-template-columns: 1fr; gap: 12px; }
+  .kalcell { min-height: 88px; padding: 7px 8px; }
+  .kalhead__nav { width: 100%; justify-content: space-between; }
+  .kaltoggle { margin-right: 0; }
+  .kaltoggle button { padding: 8px 13px; }
+}
 
 /* produktionsliste – alle bestilte retter lagt sammen */
 .prodlist { display: flex; flex-wrap: wrap; gap: 10px; }

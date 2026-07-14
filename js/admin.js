@@ -294,9 +294,10 @@
   /* ---------- view-skift ---------- */
   const VIEW_TITLES = {
     overblik: 'Overblik',
-    uge: 'Ugeoverblik',
+    uge: 'Kalender',
     bestillinger: 'Bestillinger',
     bookinger: 'Bookinger',
+    nyheder: 'Nyheder',
     dagensret: 'Dagens ret',
     menukort: 'Menukort',
     tider: 'Åbningstider',
@@ -320,6 +321,7 @@
       uge: renderUge,
       bestillinger: renderBestillinger,
       bookinger: renderBookinger,
+      nyheder: renderNyheder,
       dagensret: renderDagensRetEditor,
       menukort: renderMenuEditor,
       tider: renderHoursEditor,
@@ -613,12 +615,135 @@
   }
 
   /* ============================================================
-     UGEOVERBLIK – dashboard pr. dag med noter
+     KALENDER – måned på desktop, uge på mobil, skriv direkte i dagene
      ============================================================ */
   let ugeStart = S.weekStart(S.todayISO());
+  let kalMode = (window.matchMedia && window.matchMedia('(min-width: 980px)').matches) ? 'maaned' : 'uge';
+  let kalMonth = S.todayISO().slice(0, 7);
+  let kalSelected = S.todayISO();
 
-  function renderUge() {
-    const today = S.todayISO();
+  function kalAddMonths(ym, delta) {
+    const [y, m] = ym.split('-').map(Number);
+    const d = new Date(y, m - 1 + delta, 1);
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+  }
+
+  /* 5-6 hele uger (man-søn), der dækker måneden */
+  function kalGridDays(ym) {
+    const start = S.weekStart(ym + '-01');
+    const days = [];
+    for (let i = 0; i < 42; i++) days.push(S.addDays(start, i));
+    if (days.slice(35).every((d) => d.slice(0, 7) !== ym)) days.length = 35;
+    return days;
+  }
+
+  function kalDayInfo(iso) {
+    const orders = S.getOrders(iso);
+    const persons = orders.reduce((s, o) => s + personsOf(o), 0);
+    const togo = orders.filter((o) => o.type === 'togo').reduce((s, o) => s + personsOf(o), 0);
+    return {
+      orders,
+      items: orders.reduce((s, o) => s + itemsOf(o), 0),
+      persons, togo, spise: persons - togo,
+      bookings: S.getBookings().filter((b) => b.date === iso && b.status !== 'afvist'),
+      dish: S.getDagensRet(iso), sold: S.getSold(iso), note: S.getNote(iso),
+      closed: !S.isOpenDay(iso), noOrders: S.isOrderingClosed(iso),
+    };
+  }
+
+  /* fælles top: uge/måned-skifter + pile, der VIRKER begge veje */
+  function kalHeader(title, sub) {
+    return `
+      <div class="acard">
+        <div class="acard__head kalhead">
+          <h2>📆 ${title}</h2>
+          <div class="kalhead__nav">
+            <div class="kaltoggle">
+              <button class="${kalMode === 'uge' ? 'is-on' : ''}" data-kal="mode-uge">Uge</button>
+              <button class="${kalMode === 'maaned' ? 'is-on' : ''}" data-kal="mode-maaned">Måned</button>
+            </div>
+            <button class="abtn abtn--ghost" data-kal="prev" title="${kalMode === 'maaned' ? 'Forrige måned' : 'Forrige uge'}">←</button>
+            <button class="abtn" data-kal="today">I dag</button>
+            <button class="abtn abtn--ghost" data-kal="next" title="${kalMode === 'maaned' ? 'Næste måned' : 'Næste uge'}">→</button>
+          </div>
+        </div>
+        <p class="sub" style="color:var(--ink-soft);">${sub}</p>
+      </div>`;
+  }
+
+  function kalCell(iso, today) {
+    const inMonth = iso.slice(0, 7) === kalMonth;
+    const d = kalDayInfo(iso);
+    const cls = ['kalcell',
+      inMonth ? '' : 'kalcell--out',
+      iso === today ? 'kalcell--today' : '',
+      iso === kalSelected ? 'kalcell--sel' : '',
+      d.closed ? 'kalcell--closed' : ''].filter(Boolean).join(' ');
+    return `
+      <button class="${cls}" data-kal="day" data-iso="${iso}">
+        <span class="kalcell__num">${Number(iso.slice(8))}${d.note ? ' <i title="Der er en note på dagen">📝</i>' : ''}</span>
+        ${d.closed ? '<span class="kalcell__closed">Lukket</span>' : `
+          ${d.dish ? `<span class="kalcell__dish">🍲 ${esc(d.dish.title)}</span>` : ''}
+          ${d.items ? `<span class="kalcell__count"><b>${d.items}</b> retter · 🥡 ${d.togo} · 🍽️ ${d.spise}</span>` : ''}
+          ${d.noOrders ? '<span class="kalcell__block">🚫 Lukket for bestillinger</span>' : ''}`}
+        ${d.bookings.slice(0, 2).map((b) => `<span class="kalcell__bk ${b.kind === 'moede' ? 'kalcell__bk--moede' : ''}">${b.kind === 'moede' ? '📅' : '🎉'} ${esc(b.subject)}</span>`).join('')}
+        ${d.bookings.length > 2 ? `<span class="kalcell__more">+ ${d.bookings.length - 2} mere</span>` : ''}
+      </button>`;
+  }
+
+  /* dagen man har valgt: alt om dagen + noten skrives direkte her */
+  function kalDayPanel(iso, today) {
+    const d = kalDayInfo(iso);
+    const totals = dishTotals(d.orders);
+    return `
+      <div class="acard kalpanel">
+        <div class="acard__head">
+          <h2>${iso === today ? '🔴 ' : ''}${esc(S.formatDate(iso))}${d.closed ? ' <span class="sub" style="font-family:var(--font-body);font-weight:500;">· køkkenet holder lukket</span>' : ''}</h2>
+          <button class="abtn abtn--ghost" data-act="goto-orders" data-iso="${iso}">Se bestillinger →</button>
+        </div>
+        <div class="kalpanel__grid">
+          <div>
+            <h3 class="kp__sub">🍲 Dagens ret</h3>
+            ${d.dish
+              ? `<div class="kalpanel__dish">${esc(d.dish.title)}${d.dish.stock != null && d.dish.stock !== '' ? ` <span class="tag ${d.sold >= d.dish.stock ? 'tag--red' : 'tag--accent'}">${d.sold}/${d.dish.stock} solgt</span>` : ''}</div>`
+              : '<div class="kalpanel__none">Ingen dagens ret sat endnu</div>'}
+            <h3 class="kp__sub">🧾 Bestillinger</h3>
+            ${d.orders.length ? `
+              <div class="kalpanel__stats"><span><b>${d.orders.length}</b> bestillinger</span><span><b>${d.items}</b> retter</span><span>🥡 <b>${d.togo}</b> · 🍽️ <b>${d.spise}</b></span></div>
+              ${totals.length ? `<div class="ugeday__top">${totals.slice(0, 4).map(([n, q]) => `${q} × ${esc(n)}`).join(' · ')}${totals.length > 4 ? ' · …' : ''}</div>` : ''}`
+              : `<div class="kalpanel__none">${d.noOrders ? '🚫 Dagen er lukket for madbestillinger' : 'Ingen bestillinger på dagen endnu'}</div>`}
+            ${d.bookings.length ? `
+              <h3 class="kp__sub">📅 Aftaler</h3>
+              <div class="ugeday__bookings">${d.bookings.map((b) => `<div>${b.kind === 'moede' ? '📅' : '🎉'} ${b.time ? `kl. ${esc(b.time)} · ` : ''}${esc(b.subject)} <em>(${esc(b.name)})</em>${b.status === 'ny' ? ' <span class="tag tag--red">Ny</span>' : ''}</div>`).join('')}</div>` : ''}
+          </div>
+          <div>
+            <h3 class="kp__sub">📝 Note til dagen</h3>
+            <textarea class="inline-input ugeday__note kalpanel__note" data-note="${iso}" rows="6" placeholder="Skriv direkte i dagen – gemmes automatisk…">${esc(d.note)}</textarea>
+          </div>
+        </div>
+      </div>`;
+  }
+
+  function renderKalMaaned(today) {
+    const days = kalGridDays(kalMonth);
+    const [y, m] = kalMonth.split('-').map(Number);
+    const name = S.MONTHS[m - 1];
+    const monthDays = days.filter((d) => d.slice(0, 7) === kalMonth);
+    const mOrders = monthDays.flatMap((iso) => S.getOrders(iso));
+    const mItems = mOrders.reduce((s, o) => s + itemsOf(o), 0);
+    const mBookings = S.getBookings().filter((b) => b.date && b.date.slice(0, 7) === kalMonth && b.status !== 'afvist');
+
+    $('#view-uge').innerHTML = `
+      ${kalHeader(`${name[0].toUpperCase()}${name.slice(1)} ${y}`,
+        `Hele måneden: <strong>${mOrders.length}</strong> bestillinger · <strong>${mItems}</strong> retter · <strong>${mBookings.length}</strong> booking${mBookings.length === 1 ? '' : 'er'} · tryk på en dag for detaljer og noter`)}
+      <div class="acard kalcard">
+        <div class="kalgrid kalgrid--head">${S.WEEKDAYS.map((w) => `<div class="kalwd">${w.slice(0, 3)}</div>`).join('')}</div>
+        <div class="kalgrid">${days.map((iso) => kalCell(iso, today)).join('')}</div>
+      </div>
+      ${kalDayPanel(kalSelected, today)}`;
+  }
+
+  function renderKalUge(today) {
     const allBookings = S.getBookings();
     const days = [];
     for (let i = 0; i < 7; i++) days.push(S.addDays(ugeStart, i));
@@ -631,19 +756,8 @@
     const weekBookings = allBookings.filter((b) => b.date >= ugeStart && b.date <= weekEnd && b.status !== 'afvist');
 
     $('#view-uge').innerHTML = `
-      <div class="acard">
-        <div class="acard__head">
-          <h2>📆 Uge ${S.weekNumber(ugeStart)} <span class="sub" style="font-family:var(--font-body);font-weight:500;">· ${esc(S.formatDate(ugeStart, false))} – ${esc(S.formatDate(weekEnd, false))}</span></h2>
-          <div style="display:flex;gap:10px;flex-wrap:wrap;">
-            <button class="abtn abtn--ghost" id="ugePrev">← Forrige uge</button>
-            <button class="abtn" id="ugeToday">Denne uge</button>
-            <button class="abtn abtn--ghost" id="ugeNext">Næste uge →</button>
-          </div>
-        </div>
-        <p class="sub" style="color:var(--ink-soft);">
-          Hele ugen: <strong>${weekOrders.length}</strong> bestillinger · <strong>${weekItems}</strong> retter · <strong>${weekPersons}</strong> personer · <strong>${weekBookings.length}</strong> booking${weekBookings.length === 1 ? '' : 'er'}
-        </p>
-      </div>
+      ${kalHeader(`Uge ${S.weekNumber(ugeStart)}`,
+        `${esc(S.formatDate(ugeStart, false))} – ${esc(S.formatDate(weekEnd, false))} · <strong>${weekOrders.length}</strong> bestillinger · <strong>${weekItems}</strong> retter · <strong>${weekPersons}</strong> personer · <strong>${weekBookings.length}</strong> booking${weekBookings.length === 1 ? '' : 'er'}`)}
 
       <div class="ugegrid">
         ${days.map((iso) => {
@@ -686,10 +800,36 @@
           </div>`;
         }).join('')}
       </div>`;
+  }
 
-    $('#ugePrev').addEventListener('click', () => { ugeStart = S.addDays(ugeStart, -7); renderUge(); });
-    $('#ugeNext').addEventListener('click', () => { ugeStart = S.addDays(ugeStart, 7); renderUge(); });
-    $('#ugeToday').addEventListener('click', () => { ugeStart = S.weekStart(S.todayISO()); renderUge(); });
+  function renderUge() {
+    const today = S.todayISO();
+    if (kalMode === 'maaned') renderKalMaaned(today);
+    else renderKalUge(today);
+
+    /* navigation + valg af dag (fælles for begge visninger) */
+    $('#view-uge').onclick = (e) => {
+      const el = e.target.closest && e.target.closest('[data-kal]');
+      if (!el) return;
+      const k = el.dataset.kal;
+      if (k === 'mode-uge') kalMode = 'uge';
+      else if (k === 'mode-maaned') kalMode = 'maaned';
+      else if (k === 'prev') {
+        if (kalMode === 'maaned') kalMonth = kalAddMonths(kalMonth, -1);
+        else ugeStart = S.addDays(ugeStart, -7);
+      }
+      else if (k === 'next') {
+        if (kalMode === 'maaned') kalMonth = kalAddMonths(kalMonth, 1);
+        else ugeStart = S.addDays(ugeStart, 7);
+      }
+      else if (k === 'today') {
+        kalMonth = S.todayISO().slice(0, 7);
+        ugeStart = S.weekStart(S.todayISO());
+        kalSelected = S.todayISO();
+      }
+      else if (k === 'day') kalSelected = el.dataset.iso;
+      renderUge();
+    };
 
     /* dagsnoter gemmer sig selv, mens der skrives */
     const noteTimers = {};
@@ -854,6 +994,146 @@
       renderBookinger();
       toast(`${S.formatDate(val)} er nu lukket for booking`);
     });
+  }
+
+  /* ============================================================
+     NYHEDER – opslag på forsiden (juleplatter, halloween …)
+     ============================================================ */
+  let newsImageBlob = null; /* det komprimerede billede til det nye opslag */
+
+  /* telefonbilleder er ofte 3-8 MB – skaleres ned og pakkes som JPEG,
+     så hjemmesiden er hurtig og databasen ikke fyldes op */
+  function compressImage(file, maxW = 1400, quality = 0.82) {
+    return new Promise((resolve) => {
+      const img = new Image();
+      const url = URL.createObjectURL(file);
+      img.onload = () => {
+        const scale = Math.min(1, maxW / img.width);
+        const w = Math.round(img.width * scale);
+        const h = Math.round(img.height * scale);
+        const c = document.createElement('canvas');
+        c.width = w; c.height = h;
+        c.getContext('2d').drawImage(img, 0, 0, w, h);
+        URL.revokeObjectURL(url);
+        c.toBlob((b) => resolve(b || file), 'image/jpeg', quality);
+      };
+      img.onerror = () => { URL.revokeObjectURL(url); resolve(file); };
+      img.src = url;
+    });
+  }
+
+  function newsRow(n) {
+    const off = n.active === false;
+    return `
+      <div class="row newsed ${off ? 'newsed--off' : ''}" data-id="${n.id}">
+        ${n.image
+          ? `<img class="newsed__thumb" src="${esc(n.image)}" alt="" loading="lazy" />`
+          : '<span class="newsed__thumb newsed__thumb--none">📣</span>'}
+        <div class="row__main">
+          <input class="inline-input" data-nf="title" maxlength="80" value="${esc(n.title)}" />
+          <textarea class="inline-input" data-nf="text" rows="2" placeholder="Tekst (valgfrit)">${esc(n.text || '')}</textarea>
+          <label class="newsed__cta"><input type="checkbox" data-nf="cta" ${n.cta ? 'checked' : ''} /> Vis "Bestil her"-knap</label>
+        </div>
+        <div class="row__actions">
+          ${off ? '<span class="tag">Skjult</span>' : '<span class="tag tag--green">På siden</span>'}
+          <button class="abtn ${off ? 'abtn--green' : 'abtn--ghost'}" data-act="news-toggle" data-id="${n.id}">${off ? 'Vis igen' : 'Skjul'}</button>
+          <button class="abtn abtn--danger abtn--icon" data-act="news-del" data-id="${n.id}" title="Slet nyheden">✕</button>
+        </div>
+      </div>`;
+  }
+
+  function renderNyheder() {
+    const posts = S.getNews();
+    newsImageBlob = null;
+    $('#view-nyheder').innerHTML = `
+      <div class="acard">
+        <div class="acard__head">
+          <h2>📣 Læg en nyhed på hjemmesiden</h2>
+          <span class="sub">vises som det første, kunderne møder – lige under forsiden</span>
+        </div>
+        <div class="formgrid">
+          <label class="afield afield--full"><span>Overskrift</span>
+            <input id="newsTitle" maxlength="80" placeholder="fx Juleplatter – bestil senest 18. december" /></label>
+          <label class="afield afield--full"><span>Tekst</span>
+            <textarea id="newsText" class="inline-input" rows="3" placeholder="Kort og lækkert – hvad, hvornår og pris."></textarea></label>
+          <label class="afield"><span>Billede (anbefales – et lækkert madfoto sælger)</span>
+            <input id="newsImage" type="file" accept="image/*" /></label>
+          <label class="afield newsed__cta" style="align-self:end;"><span></span>
+            <span><input type="checkbox" id="newsCta" checked /> Vis "Bestil her"-knap på opslaget</span></label>
+        </div>
+        <div id="newsPreview" class="newsprev" hidden></div>
+        <p class="sub" style="color:var(--ink-soft);margin-top:12px;">
+          💡 Skal retten kunne bestilles, så læg den også ind under <strong>Menukort</strong>
+          (evt. i sin egen kategori) – så gælder udsolgt- og antal-reglerne automatisk.
+        </p>
+        <button class="abtn abtn--accent abtn--big" id="newsPublish" style="margin-top:14px;">📣 Læg på hjemmesiden</button>
+      </div>
+
+      <div class="acard">
+        <div class="acard__head">
+          <h2>Nyheder på siden</h2>
+          <span class="sub">nyeste øverst · ret direkte i felterne – gemmes automatisk</span>
+        </div>
+        <div class="rowlist" id="newsList">
+          ${posts.length ? posts.map(newsRow).join('') : '<div class="empty">Ingen nyheder endnu. Den første kunne være juleplatter eller en halloween-aften … 🎃</div>'}
+        </div>
+      </div>`;
+
+    /* billede: komprimér med det samme og vis et eksempel */
+    $('#newsImage').addEventListener('change', async (e) => {
+      const file = e.target.files && e.target.files[0];
+      const prev = $('#newsPreview');
+      if (!file) { newsImageBlob = null; prev.hidden = true; return; }
+      newsImageBlob = await compressImage(file);
+      prev.innerHTML = `<img src="${URL.createObjectURL(newsImageBlob)}" alt="" /> <span>Billedet er klar (${Math.round(newsImageBlob.size / 1024)} kB) ✓</span>`;
+      prev.hidden = false;
+    });
+
+    $('#newsPublish').addEventListener('click', async () => {
+      const title = $('#newsTitle').value.trim();
+      if (!title) { toast('Skriv en overskrift til nyheden'); return; }
+      const btn = $('#newsPublish');
+      btn.disabled = true;
+      btn.textContent = 'Lægger op …';
+      let image = '';
+      if (newsImageBlob) {
+        const up = await S.uploadNewsImage(newsImageBlob, 'nyhed.jpg');
+        if (!up.ok) {
+          toast('Billedet kunne ikke lægges op – tjek internettet og prøv igen (kræver database-opdatering 10)');
+          btn.disabled = false;
+          btn.textContent = '📣 Læg på hjemmesiden';
+          return;
+        }
+        image = up.url;
+      }
+      S.addNews({ title, text: $('#newsText').value.trim(), image, cta: $('#newsCta').checked });
+      toast('Nyheden er på hjemmesiden ✓');
+      renderNyheder();
+    });
+
+    /* eksisterende opslag retter sig selv, mens der skrives */
+    const newsTimers = {};
+    const saveNewsRow = (rowEl) => {
+      const id = rowEl.dataset.id;
+      S.updateNews(id, {
+        title: $('[data-nf="title"]', rowEl).value.trim(),
+        text: $('[data-nf="text"]', rowEl).value.trim(),
+        cta: $('[data-nf="cta"]', rowEl).checked,
+      });
+      savedToast();
+    };
+    $('#newsList').oninput = (e) => {
+      const rowEl = e.target.closest && e.target.closest('.newsed');
+      if (!rowEl || !e.target.matches('[data-nf]')) return;
+      clearTimeout(newsTimers[rowEl.dataset.id]);
+      newsTimers[rowEl.dataset.id] = setTimeout(() => saveNewsRow(rowEl), 900);
+    };
+    $('#newsList').onchange = (e) => {
+      const rowEl = e.target.closest && e.target.closest('.newsed');
+      if (!rowEl || !e.target.matches('[data-nf]')) return;
+      clearTimeout(newsTimers[rowEl.dataset.id]);
+      saveNewsRow(rowEl);
+    };
   }
 
   /* ============================================================
@@ -1314,6 +1594,18 @@
     if (act === 'goto-orders') {
       ordersDate = btn.dataset.iso;
       $('.navitem[data-view="bestillinger"]')?.click();
+      return;
+    }
+
+    if (act === 'news-toggle') {
+      const n = S.getNews().find((x) => x.id === id);
+      if (n) { S.updateNews(id, { active: n.active === false }); renderNyheder(); }
+      return;
+    }
+    if (act === 'news-del') {
+      if (!confirm('Slet denne nyhed fra hjemmesiden?')) return;
+      S.deleteNews(id);
+      renderNyheder();
       return;
     }
 
