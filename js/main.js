@@ -22,27 +22,25 @@
     return n.getHours() * 60 + n.getMinutes();
   };
 
+  /* bestillingsvinduet (samme for to-go og spis her) */
+  const orderFrom = () => S.getSettings().orderFrom || '16:00';
+  const orderTo = () => S.getSettings().orderTo || '21:00';
+
   /* køkkenets tilstand lige nu: 'foer' (før åbning), 'aaben' eller 'lukket' */
   function kitchenStateToday() {
     const h = S.hoursFor(S.todayISO());
     if (h.closed) return 'lukket';
-    const kitchen = S.getSettings().kitchenClose || h.close;
     const now = nowMin();
-    if (now > toMin(kitchen)) return 'lukket';
-    if (now >= toMin(h.open)) return 'aaben';
+    if (now > toMin(orderTo())) return 'lukket';
+    if (now >= toMin(orderFrom())) return 'aaben';
     return 'foer';
   }
 
   /* afhentningstider for en dag – i dag vises kun fremtidige tider
-     (min. 20 min. varsel), så dagen "udløber" af sig selv */
-  /* sidste tidspunkt afhænger af, hvordan man spiser:
-     to-go senest kl. 19:30 · spis her senest kl. 20:30 (kan ændres i admin) */
-  function lastTimeFor(type) {
-    const s = S.getSettings();
-    return type === 'togo' ? (s.togoLast || '19:30') : (s.dineLast || '20:30');
-  }
-  function slotsFor(iso, type) {
-    let slots = S.timeslotsFor(iso, 30, true, type ? lastTimeFor(type) : null);
+     (min. 20 min. varsel), så dagen "udløber" af sig selv.
+     Bestillinger kan kun vælges i vinduet 16:00–21:00 (kan ændres i admin). */
+  function slotsFor(iso) {
+    let slots = S.orderSlots(iso, 30);
     if (iso === S.todayISO()) {
       const cutoff = nowMin() + 20;
       slots = slots.filter((t) => toMin(t) >= cutoff);
@@ -370,14 +368,13 @@
 
     const kitchenNote = $('#kitchenNote');
     if (kitchenNote) {
-      const kitchen = S.getSettings().kitchenClose;
-      kitchenNote.textContent = kitchen ? `🍳 Køkkenet lukker alle dage kl. ${kitchen}` : '';
+      kitchenNote.textContent = `🍽️ Bestillinger kan vælges kl. ${orderFrom()} – ${orderTo()}`;
     }
 
     const status = $('#openStatus');
     const h = hours[todayIdx];
     const now = nowMin();
-    const kitchen = S.getSettings().kitchenClose;
+    const oTo = toMin(orderTo());
     if (h.closed) {
       status.textContent = '● Vi holder lukket i dag';
       status.className = 'hours__status is-closed';
@@ -385,11 +382,11 @@
       status.textContent = `● Vi har lukket lige nu – vi åbner kl. ${h.open}`;
       status.className = 'hours__status is-closed';
     } else if (now <= toMin(h.close)) {
-      if (toMin(h.close) - now <= 60) {
-        status.textContent = `● Vi lukker snart – åbent til kl. ${h.close}`;
+      if (now > oTo) {
+        status.textContent = `● Køkkenet er lukket for bestillinger i dag – vi har åbent til kl. ${h.close}`;
         status.className = 'hours__status is-soon';
-      } else if (kitchen && now > toMin(kitchen)) {
-        status.textContent = `● Køkkenet er lukket for i dag – vi har åbent til kl. ${h.close}`;
+      } else if (toMin(h.close) - now <= 60) {
+        status.textContent = `● Vi lukker snart – åbent til kl. ${h.close}`;
         status.className = 'hours__status is-soon';
       } else {
         status.textContent = `● Vi har åbent nu – frem til kl. ${h.close}`;
@@ -456,7 +453,7 @@
       });
     orderDate.innerHTML = options.length
       ? options.join('')
-      : '<option value="">Ingen dage åbne for bestilling lige nu</option>';
+      : `<option value="">${S.isClosureNow() ? 'Lukket for bestillinger lige nu' : 'Ingen dage åbne for bestilling lige nu'}</option>`;
     onOrderDateChange();
   }
 
@@ -486,7 +483,7 @@
 
     /* kun fremtidige tider – to-go stopper kl. 19:30, spis her kl. 20:30 */
     const prev = orderTime.value;
-    const slots = slotsFor(iso, currentType());
+    const slots = slotsFor(iso);
     orderTime.innerHTML = slots.map((t) => `<option value="${t}">kl. ${t}</option>`).join('');
     if (slots.includes(prev)) orderTime.value = prev;
     else if (slots.includes('17:30')) orderTime.value = '17:30';
@@ -667,10 +664,8 @@
       return;
     }
 
-    if (time > lastTimeFor(type)) {
-      error.textContent = type === 'togo'
-        ? `To-go kan senest afhentes kl. ${lastTimeFor('togo')} – vælg et tidligere tidspunkt eller "Spis her".`
-        : `Spis her kan senest bestilles til kl. ${lastTimeFor('spise')} – vælg et tidligere tidspunkt.`;
+    if (time && (time < orderFrom() || time > orderTo())) {
+      error.textContent = `Bestillinger kan kun vælges mellem kl. ${orderFrom()} og ${orderTo()} – vælg et tidspunkt i det vindue.`;
       error.hidden = false;
       return;
     }
@@ -736,9 +731,7 @@
         error.textContent = 'Denne dag er netop blevet lukket for bestillinger (privat arrangement) – vælg venligst en anden dag.';
         if (S.isCloud()) S.refreshPublic();
       } else if (result.reason === 'tid') {
-        error.textContent = pendingOrder && pendingOrder.type === 'togo'
-          ? 'To-go kan senest afhentes kl. ' + lastTimeFor('togo') + ' – vælg et tidligere tidspunkt eller "Spis her".'
-          : 'Det valgte tidspunkt er efter sidste bestillingstid – vælg et tidligere tidspunkt.';
+        error.textContent = `Bestillinger kan kun vælges mellem kl. ${orderFrom()} og ${orderTo()} – vælg et tidspunkt i det vindue.`;
         onOrderDateChange();
       } else if (result.reason === 'udsolgt') {
         error.textContent = `„${result.item}" er desværre lige blevet udsolgt i dag – den er fjernet fra jeres bestilling, så prøv bare igen.`;
@@ -1005,6 +998,30 @@
   /* ---------- footer ---------- */
   $('#year').textContent = new Date().getFullYear();
 
+  /* ---------- ferie / luk-periode banner ---------- */
+  function renderClosure() {
+    const el = $('#closureBanner');
+    if (!el) return;
+    if (!S.isClosureNow()) { el.hidden = true; el.innerHTML = ''; return; }
+    const c = S.getClosure();
+    const reopenTxt = c.reopen ? S.formatDate(c.reopen) : '';
+    el.innerHTML = `
+      <div class="container">
+        <div class="closurebanner__inner">
+          <span class="closurebanner__icon" aria-hidden="true">🌴</span>
+          <div class="closurebanner__text">
+            <strong>${esc(c.message || 'Vi holder lukket for madbestillinger lige nu.')}</strong>
+            ${reopenTxt ? `<span>Vi åbner for bestillinger igen ${esc(reopenTxt)}. I er velkomne til at sende en forespørgsel eller kontakte os.</span>` : ''}
+          </div>
+          <div class="closurebanner__cta">
+            <a href="#booking" class="btn btn--small btn--accent">Send forespørgsel</a>
+            <a href="#kontakt" class="btn btn--small btn--ghost">Kontakt os</a>
+          </div>
+        </div>
+      </div>`;
+    el.hidden = false;
+  }
+
   /* ---------- nyheder fra køkkenet (lige under forsiden) ---------- */
   function renderNews() {
     const wrap = $('#nyheder');
@@ -1121,6 +1138,7 @@
 
   /* ---------- render alt (og gen-render hvis admin ændrer data) ---------- */
   function renderAll() {
+    renderClosure();
     renderNews();
     renderToday();
     renderWeekPlan();
@@ -1135,6 +1153,7 @@
   renderAll();
 
   S.subscribe(() => {
+    renderClosure();
     renderNews();
     renderToday();
     renderWeekPlan();

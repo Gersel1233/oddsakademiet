@@ -278,6 +278,24 @@ input:focus-visible, select:focus-visible, textarea:focus-visible {
 }
 .nof__done h3 { font-family: var(--font-display); font-weight: 600; font-size: 1.4rem; margin-bottom: 8px; }
 .nof__done p { color: var(--ink-soft); margin-bottom: 18px; }
+
+/* ferie / luk-banner på hjemmesiden */
+.closurebanner {
+  background: linear-gradient(180deg, #FBE9D8, #F7DFC8);
+  border-bottom: 1px solid rgba(217, 108, 44, 0.25);
+}
+.closurebanner__inner {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding: 16px 0;
+}
+.closurebanner__icon { font-size: 1.9rem; line-height: 1; }
+.closurebanner__text { flex: 1 1 300px; }
+.closurebanner__text strong { display: block; font-size: 1.05rem; color: var(--ink); }
+.closurebanner__text span { font-size: 0.92rem; color: var(--ink-soft); }
+.closurebanner__cta { display: flex; gap: 10px; flex-wrap: wrap; }
 @media (max-width: 760px) {
   .news--big { flex-direction: column; align-items: stretch; }
   .news--big .news__media { flex: 0 0 auto; }

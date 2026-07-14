@@ -161,10 +161,20 @@ begin
     return jsonb_build_object('ok', false, 'reason', 'lukket');
   end if;
 
-  -- sidste bestillingstid: to-go senest 19:30, spis her senest 20:30
-  if p_time > (case when p_type = 'togo'
-                    then coalesce(v_cfg->'settings'->>'togoLast', '19:30')
-                    else coalesce(v_cfg->'settings'->>'dineLast', '20:30') end) then
+  -- ferie/luk-periode (booking + kontakt er stadig åbne)
+  if coalesce((v_cfg->'closure'->>'active')::boolean, false)
+     and coalesce(v_cfg->'closure'->>'reopen', '') <> ''
+     and to_char(p_date, 'YYYY-MM-DD') < (v_cfg->'closure'->>'reopen')
+     and (coalesce(v_cfg->'closure'->>'from', '') = ''
+          or to_char(p_date, 'YYYY-MM-DD') >= (v_cfg->'closure'->>'from')) then
+    return jsonb_build_object('ok', false, 'reason', 'lukket');
+  end if;
+
+  -- bestillingsvindue (16:00–21:00, kan ændres i admin)
+  if coalesce(p_time, '') <> '' and (
+       p_time < coalesce(v_cfg->'settings'->>'orderFrom', '16:00')
+       or p_time > coalesce(v_cfg->'settings'->>'orderTo', '21:00')
+     ) then
     return jsonb_build_object('ok', false, 'reason', 'tid');
   end if;
 
@@ -369,6 +379,14 @@ begin
   end if;
   if coalesce(v_news->>'orderBy', '') <> '' and current_date > (v_news->>'orderBy')::date then
     return jsonb_build_object('ok', false, 'reason', 'deadline');
+  end if;
+  -- ferie/luk-periode: heller ikke special-bestillinger på lukkede dage
+  if coalesce((v_cfg->'closure'->>'active')::boolean, false)
+     and coalesce(v_cfg->'closure'->>'reopen', '') <> ''
+     and to_char(p_date, 'YYYY-MM-DD') < (v_cfg->'closure'->>'reopen')
+     and (coalesce(v_cfg->'closure'->>'from', '') = ''
+          or to_char(p_date, 'YYYY-MM-DD') >= (v_cfg->'closure'->>'from')) then
+    return jsonb_build_object('ok', false, 'reason', 'lukket');
   end if;
 
   v_title := coalesce(v_news->>'title', 'Nyhed');

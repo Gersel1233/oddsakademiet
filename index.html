@@ -77,6 +77,9 @@
   </div>
 
   <main>
+    <!-- ====== FERIE/LUK-BANNER (vises kun i en luk-periode) ====== -->
+    <div id="closureBanner" class="closurebanner" hidden></div>
+
     <!-- ====== NYHEDER (vises kun, når køkkenet har lagt noget op) ====== -->
     <section class="section section--news" id="nyheder" hidden>
       <div class="container">
@@ -466,6 +469,8 @@
     </div>
   </footer>
 
+  <!-- realtime: ændringer fra køkkenet slår igennem med det samme -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
   <script src="js/config.js?v=__V__"></script>
   <script src="js/store.js?v=__V__"></script>
   <script src="js/datepicker.js?v=__V__"></script>

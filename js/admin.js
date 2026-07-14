@@ -1433,30 +1433,40 @@
      ============================================================ */
   function renderHoursEditor() {
     const hours = S.getHours();
+    const c = S.getClosure();
     $('#view-tider').innerHTML = `
+      <div class="acard">
+        <div class="acard__head">
+          <h2>🌴 Ferie / luk for bestillinger</h2>
+          <span class="sub">luk madbestilling i en periode – forespørgsler, møder og kontakt er stadig åbne</span>
+        </div>
+        <label class="ferie__toggle"><input type="checkbox" id="closureActive" ${c.active ? 'checked' : ''} /> <strong>Luk for bestillinger i en periode</strong></label>
+        <div id="closureFields" class="closure-fields" ${c.active ? '' : 'hidden'}>
+          <label class="afield"><span>Fra dato (valgfrit – ellers fra i dag)</span><input id="closureFrom" type="date" value="${esc(c.from || '')}" /></label>
+          <label class="afield"><span>Åbner igen den</span><input id="closureReopen" type="date" value="${esc(c.reopen || '')}" /></label>
+          <label class="afield afield--full"><span>Besked til kunderne</span><textarea id="closureMessage" class="inline-input" rows="2" placeholder="fx Vi holder sommerferie og åbner igen mandag den 2. august. I er velkomne til at sende en forespørgsel.">${esc(c.message || '')}</textarea></label>
+          <div style="grid-column:1/-1;display:flex;gap:10px;flex-wrap:wrap;">
+            <button class="abtn" id="closureNews" type="button">📣 Læg også op som nyhed</button>
+          </div>
+        </div>
+        <p class="sub" style="color:var(--ink-soft);margin-top:10px;">Mens ferien er aktiv, kan kunderne ikke bestille mad, men de kan stadig sende forespørgsler, booke møder og kontakte jer. Man kan godt forudbestille til dage efter I åbner igen.</p>
+      </div>
+
       <div class="acard">
         <div class="acard__head">
           <h2>🕐 Åbningstider</h2>
           <span class="sub">alt gemmes automatisk, når du ændrer noget</span>
         </div>
         <p class="sub" style="color:var(--ink-soft);margin-bottom:16px;">Tiderne styrer også, hvilke afhentnings- og bookingtider kunderne kan vælge på hjemmesiden.</p>
-        <div class="hoursrow" style="margin-bottom:8px;">
-          <strong>🍳 Køkkenet lukker</strong>
-          <span class="sub" style="color:var(--ink-soft);font-size:0.85rem;">Gælder alle dage – madbestillinger kan kun vælges frem til dette tidspunkt.</span>
-          <input class="inline-input" id="kitchenClose" type="time" value="${esc(S.getSettings().kitchenClose || '20:30')}" />
-          <span></span><span></span><span></span>
-        </div>
-        <div class="hoursrow" style="margin-bottom:8px;">
-          <strong>🥡 Sidste to-go-tid</strong>
-          <span class="sub" style="color:var(--ink-soft);font-size:0.85rem;">To-go-bestillinger kan senest vælges til dette tidspunkt – alle dage.</span>
-          <input class="inline-input" id="togoLast" type="time" value="${esc(S.getSettings().togoLast || '19:30')}" />
-          <span></span><span></span><span></span>
-        </div>
         <div class="hoursrow" style="margin-bottom:14px;">
-          <strong>🍽️ Sidste spis her-tid</strong>
-          <span class="sub" style="color:var(--ink-soft);font-size:0.85rem;">Spis her-bestillinger kan senest vælges til dette tidspunkt – alle dage.</span>
-          <input class="inline-input" id="dineLast" type="time" value="${esc(S.getSettings().dineLast || '20:30')}" />
-          <span></span><span></span><span></span>
+          <strong>🍽️ Bestillinger kan vælges</strong>
+          <span class="sub" style="color:var(--ink-soft);font-size:0.85rem;">Gælder alle dage (to-go og spis her). Kunderne kan kun vælge tider i dette vindue.</span>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <input class="inline-input" id="orderFrom" type="time" value="${esc(S.getSettings().orderFrom || '16:00')}" />
+            <span class="dash">–</span>
+            <input class="inline-input" id="orderTo" type="time" value="${esc(S.getSettings().orderTo || '21:00')}" />
+          </div>
+          <span></span><span></span>
         </div>
         <div class="hoursgrid">
           ${hours.map((h, i) => `
@@ -1499,13 +1509,41 @@
       });
       S.setHours(newHours);
       S.updateSettings({
-        kitchenClose: $('#kitchenClose').value || '',
-        togoLast: $('#togoLast').value || '19:30',
-        dineLast: $('#dineLast').value || '20:30',
+        orderFrom: $('#orderFrom').value || '16:00',
+        orderTo: $('#orderTo').value || '21:00',
       });
       savedToast();
     }
     $('#view-tider').onchange = () => saveHours();
+
+    /* ferie / luk-periode – gemmer selv */
+    function saveClosure() {
+      S.setClosure({
+        active: $('#closureActive').checked,
+        from: $('#closureFrom').value || '',
+        reopen: $('#closureReopen').value || '',
+        message: $('#closureMessage').value.trim(),
+      });
+      savedToast();
+    }
+    $('#closureActive').addEventListener('change', () => {
+      $('#closureFields').hidden = !$('#closureActive').checked;
+      saveClosure();
+    });
+    $('#closureFrom').addEventListener('change', saveClosure);
+    $('#closureReopen').addEventListener('change', saveClosure);
+    $('#closureMessage').addEventListener('input', debounce(saveClosure, 800));
+    $('#closureNews').addEventListener('click', () => {
+      const msg = $('#closureMessage').value.trim();
+      const reopen = $('#closureReopen').value;
+      S.addNews({
+        title: 'Vi holder lukket',
+        text: (msg || 'Vi holder lukket for madbestillinger i en periode.')
+          + (reopen ? ` Vi åbner for bestillinger igen ${S.formatDate(reopen)}.` : ''),
+        image: '', cta: false, orderable: false,
+      });
+      toast('Ferie-beskeden er lagt op som nyhed ✓');
+    });
   }
 
   /* ============================================================

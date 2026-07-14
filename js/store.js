@@ -70,9 +70,8 @@ const SpiisStore = (() => {
         phone: '93 99 58 58',
         email: 'spiis.bestilling@gmail.com',
         pin: '9399',
-        kitchenClose: '20:30',
-        togoLast: '19:30', /* sidste tidspunkt for to-go-bestillinger */
-        dineLast: '20:30', /* sidste tidspunkt for spis her-bestillinger */
+        orderFrom: '16:00', /* bestillinger kan tidligst vælges kl. */
+        orderTo: '21:00',   /* bestillinger kan senest vælges kl. */
       },
       /* index 0 = mandag */
       hours: [
@@ -142,6 +141,7 @@ const SpiisStore = (() => {
       orderClosedDates: [], /* arrangement-dage hvor der OGSÅ er lukket for madbestillinger */
       notes: {},        /* chefens egne noter pr. dag { 'YYYY-MM-DD': tekst } */
       news: [],         /* nyheder på forsiden { id, title, text, image, cta, active, createdAt } */
+      closure: { active: false, from: '', reopen: '', message: '' }, /* ferie/luk-periode */
       log: [],
     };
 
@@ -172,6 +172,7 @@ const SpiisStore = (() => {
       if (!parsed.arrangementDates) parsed.arrangementDates = [];
       if (!parsed.orderClosedDates) parsed.orderClosedDates = [];
       if (!parsed.news) parsed.news = [];
+      if (!parsed.closure) parsed.closure = { active: false, from: '', reopen: '', message: '' };
       return parsed;
     } catch {
       return null;
@@ -235,7 +236,7 @@ const SpiisStore = (() => {
     return res;
   }
 
-  const CONFIG_KEYS = ['settings', 'hours', 'dagensRet', 'menu', 'blockedDates', 'arrangementDates', 'orderClosedDates', 'news'];
+  const CONFIG_KEYS = ['settings', 'hours', 'dagensRet', 'menu', 'blockedDates', 'arrangementDates', 'orderClosedDates', 'news', 'closure'];
 
   function mergeConfig(remote) {
     if (!remote) return;
@@ -257,6 +258,7 @@ const SpiisStore = (() => {
       arrangementDates: data.arrangementDates || [],
       orderClosedDates: data.orderClosedDates || [],
       news: data.news || [],
+      closure: data.closure || { active: false, from: '', reopen: '', message: '' },
     };
   }
 
@@ -435,6 +437,23 @@ const SpiisStore = (() => {
     } catch { rtClient = null; /* realtime er en bonus – polling dækker */ }
   }
 
+  /* kundesiden: ændringer fra admin (menu, dagens ret, nyheder, ferie, lukkede
+     dage) slår igennem ØJEBLIKKELIGT. Anonym forbindelse – ingen login. */
+  let rtPublic = null;
+  function startPublicRealtime() {
+    /* admin har allerede sin egen live-forbindelse (session) */
+    if (rtPublic || !cloud || session || typeof window === 'undefined' || !window.supabase) return;
+    try {
+      rtPublic = window.supabase.createClient(CLOUD.url, CLOUD.anonKey);
+      let t = null;
+      const kick = () => { clearTimeout(t); t = setTimeout(() => { lastPublicSnap = ''; refreshPublic(); }, 300); };
+      rtPublic.channel('spiis-public')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'config' }, kick)
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, kick)
+        .subscribe();
+    } catch { rtPublic = null; }
+  }
+
   function startAdminPolling() {
     if (!cloud || adminPollTimer) return;
     startRealtime();
@@ -470,6 +489,7 @@ const SpiisStore = (() => {
         if (hasSession()) await fetchAdminData().catch(() => {});
         save(false);
         emit();
+        startPublicRealtime();
         setInterval(refreshPublic, 60000);
         document.addEventListener('visibilitychange', () => {
           if (document.visibilityState === 'visible') {
@@ -573,11 +593,10 @@ const SpiisStore = (() => {
   async function addOrder(order) {
     /* dage med privat arrangement (eller lukkede dage) tager ikke imod bestillinger */
     if (isOrderingClosed(order.date)) return { ok: false, reason: 'lukket' };
-    /* to-go senest kl. 19:30, spis her senest kl. 20:30 (kan ændres i admin) */
-    const lastTime = order.type === 'togo'
-      ? (data.settings.togoLast || '19:30')
-      : (data.settings.dineLast || '20:30');
-    if (order.time && order.time > lastTime) return { ok: false, reason: 'tid' };
+    /* bestillinger kan kun vælges i vinduet 16:00–21:00 (kan ændres i admin) */
+    const oFrom = data.settings.orderFrom || '16:00';
+    const oTo = data.settings.orderTo || '21:00';
+    if (order.time && (order.time < oFrom || order.time > oTo)) return { ok: false, reason: 'tid' };
     /* udsolgte varer og "få tilbage"-antal stoppes før afsendelse
        – databasen tjekker og tæller også selv (kapløbs-sikkert) */
     const soldout = soldoutNames();
@@ -816,8 +835,26 @@ const SpiisStore = (() => {
 
   /* manuelt lukkede dage – og arrangement-dage hvor chefen har valgt
      at lukke – tager ikke imod almindelige madbestillinger */
+  /* ferie/luk-periode: lukker for madbestillinger (booking + kontakt er stadig åbne) */
+  const getClosure = () => data.closure || { active: false, from: '', reopen: '', message: '' };
+  /* er en given dato inde i ferie-perioden? (fra ≤ dato < åbner-igen) */
+  function isInClosure(iso) {
+    const c = getClosure();
+    if (!c.active || !c.reopen) return false;
+    if (iso >= c.reopen) return false;
+    if (c.from && iso < c.from) return false;
+    return true;
+  }
+  /* er ferien i gang lige nu? (til banneret på hjemmesiden) */
+  const isClosureNow = () => isInClosure(todayISO());
+  function setClosure(patch) {
+    data.closure = { ...getClosure(), ...patch };
+    save();
+    pushConfig();
+  }
+
   const isOrderingClosed = (iso) =>
-    data.blockedDates.includes(iso) || (data.orderClosedDates || []).includes(iso);
+    data.blockedDates.includes(iso) || (data.orderClosedDates || []).includes(iso) || isInClosure(iso);
   function blockDate(iso) {
     if (!data.blockedDates.includes(iso)) {
       data.blockedDates.push(iso);
@@ -845,22 +882,38 @@ const SpiisStore = (() => {
   /* ---------- tidsintervaller ud fra åbningstider ----------
      useKitchenClose: true for madbestillinger, så tiderne stopper
      ved køkkenets lukketid i stedet for stedets lukketid. */
-  function timeslotsFor(iso, stepMinutes = 30, useKitchenClose = false, maxTime = null) {
+  /* bruges til booking-tider (møder/arrangementer) – hele åbningstiden */
+  function timeslotsFor(iso, stepMinutes = 30) {
     const h = hoursFor(iso);
     if (h.closed || !h.open || !h.close) return [];
     const toMin = (hhmm) => {
       const [hh, mm] = hhmm.split(':').map(Number);
       return hh * 60 + mm;
     };
-    let end = toMin(h.close);
-    const kitchen = data.settings.kitchenClose;
-    if (useKitchenClose && kitchen) end = Math.min(end, toMin(kitchen));
-    if (maxTime) end = Math.min(end, toMin(maxTime));
+    const end = toMin(h.close);
     const slots = [];
     let t = toMin(h.open);
     while (t <= end) {
       slots.push(`${pad(Math.floor(t / 60))}:${pad(t % 60)}`);
       t += stepMinutes;
+    }
+    return slots;
+  }
+
+  /* bestillingstider: ét fast vindue (16:00–21:00) på åbne dage.
+     Vinduet lægges oven på dagens åbningstider, så vi aldrig tilbyder
+     tider før køkkenet åbner eller efter det lukker. */
+  function orderSlots(iso, stepMinutes = 30) {
+    const h = hoursFor(iso);
+    if (h.closed || !h.open || !h.close) return [];
+    const toMin = (hhmm) => { const [a, b] = hhmm.split(':').map(Number); return a * 60 + b; };
+    const from = data.settings.orderFrom || '16:00';
+    const to = data.settings.orderTo || '21:00';
+    const start = Math.max(toMin(from), toMin(h.open));
+    const end = Math.min(toMin(to), toMin(h.close));
+    const slots = [];
+    for (let t = start; t <= end; t += stepMinutes) {
+      slots.push(`${pad(Math.floor(t / 60))}:${pad(t % 60)}`);
     }
     return slots;
   }
@@ -1038,7 +1091,8 @@ const SpiisStore = (() => {
     addOrder, getOrders, updateOrder, deleteOrder,
     addBooking, getBookings, updateBooking, deleteBooking,
     getBlockedDates, getArrangementDates, isOrderingClosed, blockDate, unblockDate, isDateAvailable,
-    timeslotsFor,
+    getClosure, setClosure, isClosureNow, isInClosure,
+    timeslotsFor, orderSlots,
     getNews, addNews, updateNews, deleteNews, uploadNewsImage, placeNewsOrder,
     getUnread, markAllRead,
     exportData, resetData,
