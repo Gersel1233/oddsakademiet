@@ -944,12 +944,14 @@ const SpiisStore = (() => {
   /* finpudser billedet automatisk med fal.ai (Nano Banana Pro) via vores
      edge function – nøglen ligger som hemmelighed i Supabase, aldrig i koden.
      Fejler eller er den langsom, bruger vi bare originalen (returnerer ok:false). */
+  /* skal matche navnet på edge-funktionen i Supabase (Edge Functions) */
+  const ENHANCE_FN = 'super-function';
   async function enhanceNewsImage(imageUrl) {
     if (!cloud || !session || !imageUrl) return { ok: false, error: 'local' };
     try {
       const ctrl = new AbortController();
       const timer = setTimeout(() => ctrl.abort(), 60000);
-      const res = await fetch(`${CLOUD.url}/functions/v1/enhance-image`, {
+      const res = await fetch(`${CLOUD.url}/functions/v1/${ENHANCE_FN}`, {
         method: 'POST',
         headers: {
           apikey: CLOUD.anonKey,
