@@ -22,6 +22,19 @@
     toastTimer = setTimeout(() => { el.hidden = true; }, 2600);
   }
 
+  /* alt gemmes automatisk – den lille kvittering vises højst hvert 2,5 sek. */
+  function debounce(fn, ms) {
+    let t;
+    return (...a) => { clearTimeout(t); t = setTimeout(() => fn(...a), ms); };
+  }
+  let lastSavedToastAt = 0;
+  function savedToast() {
+    if (Date.now() - lastSavedToastAt > 2500) {
+      lastSavedToastAt = Date.now();
+      toast('Gemt ✓');
+    }
+  }
+
   /* ---------- login ---------- */
   const AUTH_KEY = 'spiis-admin-auth';
   const loginScreen = $('#loginScreen');
@@ -355,7 +368,8 @@
      (arrangementer har deres egen sektion i køreplanen) */
   function dayTimeline(iso) {
     const entries = [
-      ...S.getOrders(iso).map((o) => ({ time: o.time || '', kind: 'order', o })),
+      /* færdige bestillinger er lagt i arkivet – forløbet viser kun de aktive */
+      ...S.getOrders(iso).filter((o) => o.status === 'ny').map((o) => ({ time: o.time || '', kind: 'order', o })),
       ...S.getBookings()
         .filter((b) => b.date === iso && b.status !== 'afvist' && b.kind !== 'arrangement')
         .map((b) => ({ time: b.time || '', kind: 'booking', b })),
@@ -424,11 +438,21 @@
         </div>
         <div class="row__actions">
           ${done
-            ? `<button class="checkbtn is-done" data-act="order-toggle" data-id="${o.id}" title="Færdig – tryk igen for at fjerne fluebenet" aria-label="Færdig">✓</button>`
+            ? `<button class="abtn abtn--ghost" data-act="order-toggle" data-id="${o.id}" title="Fortryd – læg bestillingen tilbage på listen">↩ Gendan</button>`
             : `<button class="abtn abtn--green" data-act="order-toggle" data-id="${o.id}">✓ Færdig</button>`}
           <button class="abtn abtn--danger abtn--icon" data-act="order-del" data-id="${o.id}" aria-label="Slet">🗑</button>
         </div>
       </div>`;
+  }
+
+  /* færdige bestillinger ligger i et foldet arkiv til dagen er omme */
+  function doneFold(doneOrders) {
+    if (!doneOrders.length) return '';
+    return `
+      <details class="donefold">
+        <summary>✓ Færdige (${doneOrders.length}) <em>· tryk for at se – gendan hvis noget var en fejl</em></summary>
+        <div class="rowlist" style="margin-top:10px;">${doneOrders.map((o) => orderRow(o)).join('')}</div>
+      </details>`;
   }
 
   function bookingRow(b) {
@@ -550,6 +574,7 @@
               ${e.kind === 'order' ? orderRow(e.o) : bookingRow(e.b)}
             </div>`).join('')}
         </div>` : '<div class="empty">Ingen bestillinger eller aftaler endnu i dag.</div>'}
+        ${doneFold(orders.filter((o) => o.status !== 'ny'))}
       </div>
 
       <div class="acard">
@@ -654,9 +679,8 @@
               <div class="ugeday__bookings">
                 ${bookings.map((b) => `<div>${b.kind === 'moede' ? '📅' : '🎉'} ${b.time ? `kl. ${esc(b.time)} · ` : ''}${esc(b.subject)} <em>(${esc(b.name)})</em></div>`).join('')}
               </div>` : ''}
-            <textarea class="inline-input ugeday__note" data-note="${iso}" rows="2" placeholder="Noter til dagen – fx 'Husk ekstra pommes'…">${esc(S.getNote(iso))}</textarea>
+            <textarea class="inline-input ugeday__note" data-note="${iso}" rows="2" placeholder="Noter til dagen – gemmes automatisk…">${esc(S.getNote(iso))}</textarea>
             <div class="ugeday__actions">
-              <button class="abtn abtn--accent" data-act="save-note" data-iso="${iso}">Gem note</button>
               <button class="abtn abtn--ghost" data-act="goto-orders" data-iso="${iso}">Se bestillinger →</button>
             </div>
           </div>`;
@@ -666,6 +690,16 @@
     $('#ugePrev').addEventListener('click', () => { ugeStart = S.addDays(ugeStart, -7); renderUge(); });
     $('#ugeNext').addEventListener('click', () => { ugeStart = S.addDays(ugeStart, 7); renderUge(); });
     $('#ugeToday').addEventListener('click', () => { ugeStart = S.weekStart(S.todayISO()); renderUge(); });
+
+    /* dagsnoter gemmer sig selv, mens der skrives */
+    const noteTimers = {};
+    $('#view-uge').oninput = (e) => {
+      const ta = e.target.closest && e.target.closest('.ugeday__note');
+      if (!ta) return;
+      const iso = ta.dataset.note;
+      clearTimeout(noteTimers[iso]);
+      noteTimers[iso] = setTimeout(() => { S.setNote(iso, ta.value); savedToast(); }, 900);
+    };
   }
 
   /* ============================================================
@@ -695,8 +729,11 @@
         </p>
         ${orders.length ? `<div class="prodlist" style="margin-bottom:16px;">${dishTotals(orders).map(([n, q]) => `<span class="prod"><b>${q}</b>${esc(n)}</span>`).join('')}</div>` : ''}
         <div class="rowlist">
-          ${orders.length ? orders.map((o) => orderRow(o)).join('') : '<div class="empty">Ingen bestillinger på denne dato.</div>'}
+          ${orders.filter((o) => o.status === 'ny').length
+            ? orders.filter((o) => o.status === 'ny').map((o) => orderRow(o)).join('')
+            : `<div class="empty">${orders.length ? 'Alle bestillinger er lavet – flot! 🎉' : 'Ingen bestillinger på denne dato.'}</div>`}
         </div>
+        ${doneFold(orders.filter((o) => o.status !== 'ny'))}
       </div>`;
 
     /* Spiis-kalender med prik på dage, der har bestillinger */
@@ -828,7 +865,7 @@
       <div class="acard">
         <div class="acard__head">
           <h2>🍲 Planlæg dagens ret</h2>
-          <span class="sub">Udfyld ret, beskrivelse og pris – og tryk Gem. Hjemmesiden opdateres med det samme.</span>
+          <span class="sub">alt gemmes automatisk, mens du skriver – hjemmesiden opdateres med det samme</span>
         </div>
         <div class="planner">
           ${plan.map((day) => {
@@ -845,14 +882,23 @@
               <input class="inline-input" data-f="desc" placeholder="Kort beskrivelse (valgfrit)" value="${esc(d.desc || '')}" ${day.open ? '' : 'disabled'} />
               <input class="inline-input" data-f="price" type="number" min="0" placeholder="Pris" value="${esc(d.price ?? '')}" ${day.open ? '' : 'disabled'} />
               <input class="inline-input" data-f="stock" type="number" min="0" placeholder="Antal" title="Antal portioner – lad stå tomt for ubegrænset" value="${esc(d.stock ?? '')}" ${day.open ? '' : 'disabled'} />
-              <button class="abtn abtn--accent" data-act="save-day" ${day.open ? '' : 'disabled'}>Gem</button>
             </div>`;
           }).join('')}
         </div>
       </div>`;
+
+    /* auto-gem: hver dags felter gemmer selv, mens der skrives (pr. dag) */
+    const dayTimers = {};
+    $('#view-dagensret').oninput = (e) => {
+      const row = e.target.closest && e.target.closest('.planday');
+      if (!row) return;
+      const iso = row.dataset.iso;
+      clearTimeout(dayTimers[iso]);
+      dayTimers[iso] = setTimeout(() => saveDay(row, true), 900);
+    };
   }
 
-  function saveDay(rowEl) {
+  function saveDay(rowEl, silent = false) {
     const iso = rowEl.dataset.iso;
     const title = $('[data-f="title"]', rowEl).value.trim();
     const desc = $('[data-f="desc"]', rowEl).value.trim();
@@ -862,10 +908,10 @@
     const stock = stockRaw === '' ? null : Number(stockRaw);
     if (!title) {
       S.setDagensRet(iso, null);
-      toast(`${S.formatDate(iso)}: dagens ret fjernet`);
+      if (silent) savedToast(); else toast(`${S.formatDate(iso)}: dagens ret fjernet`);
     } else {
       S.setDagensRet(iso, { title, desc, price, stock });
-      toast(`${S.formatDate(iso)}: "${title}" gemt ✓`);
+      if (silent) savedToast(); else toast(`${S.formatDate(iso)}: "${title}" gemt ✓`);
     }
     renderBell();
   }
@@ -879,9 +925,9 @@
       <div class="acard">
         <div class="acard__head">
           <h2>📖 Fast sortiment</h2>
-          <button class="abtn abtn--accent" id="menuSave">Gem menukort</button>
+          <span class="sub">alt gemmes automatisk, mens du skriver</span>
         </div>
-        <p class="sub" style="color:var(--ink-soft);margin-bottom:16px;">Redigér kategorier og retter. Tomme retter fjernes automatisk, når du gemmer.</p>
+        <p class="sub" style="color:var(--ink-soft);margin-bottom:16px;">Redigér kategorier og retter – ændringer er på hjemmesiden med det samme.</p>
         <div id="menuCats">
           ${menu.categories.map((cat, ci) => `
             <div class="menued__cat" data-ci="${ci}">
@@ -931,10 +977,9 @@
               <button class="abtn abtn--ghost" data-act="add-witem">+ Tilføj ret til ${day.toLowerCase()}</button>
             </div>`).join('')}
         </div>
-        <button class="abtn abtn--accent" id="menuSave2">Gem menukort</button>
       </div>`;
 
-    function collectAndSave() {
+    function collectMenu() {
       const categories = $$('#menuCats .menued__cat').map((catEl) => ({
         id: `cat-${Math.random().toString(36).slice(2, 8)}`,
         name: $('[data-f="catname"]', catEl).value.trim() || 'Uden navn',
@@ -954,12 +999,29 @@
           price: $('[data-f="price"]', itemEl).value ? Number($('[data-f="price"]', itemEl).value) : null,
         })).filter((i) => i.name)
       );
-      S.setMenu({ categories, weekly });
-      toast('Menukortet er gemt ✓');
+      return { categories, weekly };
+    }
+    /* gemmer og gen-tegner (bruges ved knap-tryk som udsolgt/tilføj/slet) */
+    function collectAndSave() {
+      S.setMenu(collectMenu());
+      savedToast();
       renderMenuEditor();
     }
-    $('#menuSave').addEventListener('click', collectAndSave);
-    $('#menuSave2').addEventListener('click', collectAndSave);
+    /* gemmer STILLE mens man skriver – uden at gen-tegne, så markøren bliver stående */
+    const autosaveMenu = debounce(() => {
+      S.setMenu(collectMenu());
+      savedToast();
+    }, 900);
+    $('#view-menukort').oninput = (e) => {
+      if (e.target.matches && e.target.matches('input, select')) autosaveMenu();
+    };
+    /* når man forlader et felt (eller vælger i en liste), gemmes straks */
+    $('#view-menukort').onchange = (e) => {
+      if (e.target.matches && e.target.matches('input, select')) {
+        S.setMenu(collectMenu());
+        savedToast();
+      }
+    };
     $('#menuAddCat').addEventListener('click', () => {
       const menu2 = collectCurrent();
       menu2.categories.push({ id: 'ny', name: '', items: [{ name: '', desc: '', price: null }] });
@@ -992,9 +1054,9 @@
       };
     }
 
-    /* "få tilbage"-feltet gemmer selv, når man har skrevet tallet */
+    /* selects og talfelter gemmer også selv ved ændring */
     $('#view-menukort').onchange = (e) => {
-      if (e.target.matches && e.target.matches('[data-f="left"]')) collectAndSave();
+      if (e.target.matches && e.target.matches('input, select')) autosaveMenu();
     };
 
     /* onclick (ikke addEventListener) så vi ikke stabler lyttere ved gen-render */
@@ -1053,13 +1115,25 @@
       <div class="acard">
         <div class="acard__head">
           <h2>🕐 Åbningstider</h2>
-          <button class="abtn abtn--accent" id="hoursSave">Gem åbningstider</button>
+          <span class="sub">alt gemmes automatisk, når du ændrer noget</span>
         </div>
         <p class="sub" style="color:var(--ink-soft);margin-bottom:16px;">Tiderne styrer også, hvilke afhentnings- og bookingtider kunderne kan vælge på hjemmesiden.</p>
-        <div class="hoursrow" style="margin-bottom:14px;">
+        <div class="hoursrow" style="margin-bottom:8px;">
           <strong>🍳 Køkkenet lukker</strong>
           <span class="sub" style="color:var(--ink-soft);font-size:0.85rem;">Gælder alle dage – madbestillinger kan kun vælges frem til dette tidspunkt.</span>
           <input class="inline-input" id="kitchenClose" type="time" value="${esc(S.getSettings().kitchenClose || '20:30')}" />
+          <span></span><span></span><span></span>
+        </div>
+        <div class="hoursrow" style="margin-bottom:8px;">
+          <strong>🥡 Sidste to-go-tid</strong>
+          <span class="sub" style="color:var(--ink-soft);font-size:0.85rem;">To-go-bestillinger kan senest vælges til dette tidspunkt – alle dage.</span>
+          <input class="inline-input" id="togoLast" type="time" value="${esc(S.getSettings().togoLast || '19:30')}" />
+          <span></span><span></span><span></span>
+        </div>
+        <div class="hoursrow" style="margin-bottom:14px;">
+          <strong>🍽️ Sidste spis her-tid</strong>
+          <span class="sub" style="color:var(--ink-soft);font-size:0.85rem;">Spis her-bestillinger kan senest vælges til dette tidspunkt – alle dage.</span>
+          <input class="inline-input" id="dineLast" type="time" value="${esc(S.getSettings().dineLast || '20:30')}" />
           <span></span><span></span><span></span>
         </div>
         <div class="hoursgrid">
@@ -1090,8 +1164,9 @@
       });
     });
 
-    $('#hoursSave').addEventListener('click', () => {
-      /* kun dag-rækkerne i .hoursgrid – køkken-rækken ovenfor har ingen kontakt */
+    /* auto-gem: enhver ændring (tider, kontakter, sidste bestillingstider) gemmes straks */
+    function saveHours() {
+      /* kun dag-rækkerne i .hoursgrid – de faste rækker ovenfor har ingen kontakt */
       const newHours = $$('#view-tider .hoursgrid .hoursrow').map((row) => {
         const closed = !$('[data-f="open-toggle"]', row).checked;
         return {
@@ -1101,9 +1176,14 @@
         };
       });
       S.setHours(newHours);
-      S.updateSettings({ kitchenClose: $('#kitchenClose').value || '' });
-      toast('Åbningstiderne er gemt ✓');
-    });
+      S.updateSettings({
+        kitchenClose: $('#kitchenClose').value || '',
+        togoLast: $('#togoLast').value || '19:30',
+        dineLast: $('#dineLast').value || '20:30',
+      });
+      savedToast();
+    }
+    $('#view-tider').onchange = () => saveHours();
   }
 
   /* ============================================================
@@ -1113,14 +1193,13 @@
     const s = S.getSettings();
     $('#view-indstillinger').innerHTML = `
       <div class="acard">
-        <div class="acard__head"><h2>⚙️ Kontaktoplysninger</h2></div>
-        <div class="formgrid">
+        <div class="acard__head"><h2>⚙️ Kontaktoplysninger</h2><span class="sub">gemmes automatisk</span></div>
+        <div class="formgrid" id="setGrid">
           <label class="afield"><span>Telefon</span><input id="setPhone" value="${esc(s.phone)}" /></label>
           <label class="afield"><span>E-mail</span><input id="setEmail" value="${esc(s.email)}" /></label>
           <label class="afield afield--full"><span>Adresse</span><input id="setAddress" value="${esc(s.address)}" /></label>
           <label class="afield afield--full"><span>Slogan</span><input id="setTagline" value="${esc(s.tagline)}" /></label>
         </div>
-        <button class="abtn abtn--accent" id="setSave" style="margin-top:16px;">Gem oplysninger</button>
       </div>
 
       ${S.isCloud() ? `
@@ -1162,15 +1241,17 @@
         </div>
       </div>`;
 
-    $('#setSave').addEventListener('click', () => {
+    /* auto-gem kontaktoplysninger, mens der skrives */
+    const autosaveSettings = debounce(() => {
       S.updateSettings({
         phone: $('#setPhone').value.trim(),
         email: $('#setEmail').value.trim(),
         address: $('#setAddress').value.trim(),
         tagline: $('#setTagline').value.trim(),
       });
-      toast('Oplysninger gemt ✓');
-    });
+      savedToast();
+    }, 900);
+    $('#setGrid').addEventListener('input', autosaveSettings);
 
     $('#pinSave')?.addEventListener('click', () => {
       const pin = $('#setPin').value.trim();
@@ -1230,15 +1311,6 @@
     if (!btn) return;
     const { act, id } = btn.dataset;
 
-    if (act === 'save-day') { saveDay(btn.closest('.planday')); return; }
-
-    if (act === 'save-note') {
-      const iso = btn.dataset.iso;
-      const ta = $(`textarea[data-note="${iso}"]`);
-      S.setNote(iso, ta ? ta.value : '');
-      toast(`Note gemt for ${S.formatDate(iso)} ✓`);
-      return;
-    }
     if (act === 'goto-orders') {
       ordersDate = btn.dataset.iso;
       $('.navitem[data-view="bestillinger"]')?.click();
@@ -1324,6 +1396,11 @@
     if (activeView === 'overblik') renderOverblik();
     if (activeView === 'bestillinger') renderBestillinger();
     if (activeView === 'bookinger') renderBookinger();
+    /* ugeoverblikket følger også med live – men aldrig midt i, at der skrives en note */
+    if (activeView === 'uge') {
+      const el = document.activeElement;
+      if (!el || !el.closest || !el.closest('#view-uge textarea, #view-uge input')) renderUge();
+    }
   }
 
   function renderAll() {

@@ -173,6 +173,7 @@
           <p class="form__error" id="orderOffline" hidden></p>
           <button type="submit" class="btn btn--accent btn--big form__submit">Send bestilling</button>
           <p class="form__note">Din bestilling ryger direkte ind i vores køkken-overblik – ingen mails, ingen ventetid.</p>
+          <p class="form__note form__note--allergi">Allergi? Spørg personalet ift. allergener.</p>
         </form>
 
         <div class="card success" id="orderSuccess" hidden>
@@ -194,6 +195,7 @@
           <h2>Menukort</h2>
           <span class="dotline" aria-hidden="true"></span>
           <p class="section__lead">Menuen skifter løbende, så du altid får varieret og frisk mad – lavet med kærlighed.</p>
+          <p class="allerginote" data-reveal>🥜 Allergi? Spørg personalet ift. allergener – vi hjælper gerne.</p>
         </div>
 
         <div class="daytabs" id="dayTabs" role="tablist" aria-label="Ugedage" data-reveal><!-- js --></div>
@@ -409,6 +411,10 @@
         <a href="#kontakt">Kontakt</a>
       </nav>
       <div class="footer__meta">
+        <a class="smileybadge" href="https://www.findsmiley.dk" target="_blank" rel="noopener" aria-label="Se vores smiley-rapport hos Fødevarestyrelsen">
+          <span class="smileybadge__face" aria-hidden="true">😊</span>
+          <span class="smileybadge__text">Kontrolleret af Fødevarestyrelsen<em>Se vores smiley-rapport</em></span>
+        </a>
         <p>© <span id="year"></span> Spiis · Karlslunde</p>
         <a href="admin.html" class="footer__admin">Personale-login</a>
       </div>

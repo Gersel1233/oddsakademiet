@@ -35,8 +35,14 @@
 
   /* afhentningstider for en dag – i dag vises kun fremtidige tider
      (min. 20 min. varsel), så dagen "udløber" af sig selv */
-  function slotsFor(iso) {
-    let slots = S.timeslotsFor(iso, 30, true);
+  /* sidste tidspunkt afhænger af, hvordan man spiser:
+     to-go senest kl. 19:30 · spis her senest kl. 20:30 (kan ændres i admin) */
+  function lastTimeFor(type) {
+    const s = S.getSettings();
+    return type === 'togo' ? (s.togoLast || '19:30') : (s.dineLast || '20:30');
+  }
+  function slotsFor(iso, type) {
+    let slots = S.timeslotsFor(iso, 30, true, type ? lastTimeFor(type) : null);
     if (iso === S.todayISO()) {
       const cutoff = nowMin() + 20;
       slots = slots.filter((t) => toMin(t) >= cutoff);
@@ -478,11 +484,12 @@
 
     renderBuilder();
 
-    /* kun fremtidige afhentningstider – og aldrig efter køkkenets lukketid */
-    const slots = slotsFor(iso);
+    /* kun fremtidige tider – to-go stopper kl. 19:30, spis her kl. 20:30 */
+    const prev = orderTime.value;
+    const slots = slotsFor(iso, currentType());
     orderTime.innerHTML = slots.map((t) => `<option value="${t}">kl. ${t}</option>`).join('');
-    /* fornuftigt standardvalg: 17:30 hvis muligt */
-    if (slots.includes('17:30')) orderTime.value = '17:30';
+    if (slots.includes(prev)) orderTime.value = prev;
+    else if (slots.includes('17:30')) orderTime.value = '17:30';
   }
   orderDate.addEventListener('change', onOrderDateChange);
 
@@ -623,8 +630,9 @@
       : '';
   }
 
-  /* emballage-linjen følger med, når man skifter to-go/spis her */
-  $$('input[name="orderType"]').forEach((r) => r.addEventListener('change', renderBasketBar));
+  /* skift af to-go/spis her: emballagen OG tiderne følger med
+     (to-go kan senest vælges kl. 19:30, spis her kl. 20:30) */
+  $$('input[name="orderType"]').forEach((r) => r.addEventListener('change', onOrderDateChange));
   $('#reuseBox')?.addEventListener('change', renderBasketBar);
 
   /* Trin 1: tjek felterne og vis "bekræft bestilling" med kvittering */
@@ -655,6 +663,14 @@
 
     if (problems.length) {
       error.textContent = `Hov! I mangler at: ${problems.join(', ')}.`;
+      error.hidden = false;
+      return;
+    }
+
+    if (time > lastTimeFor(type)) {
+      error.textContent = type === 'togo'
+        ? `To-go kan senest afhentes kl. ${lastTimeFor('togo')} – vælg et tidligere tidspunkt eller "Spis her".`
+        : `Spis her kan senest bestilles til kl. ${lastTimeFor('spise')} – vælg et tidligere tidspunkt.`;
       error.hidden = false;
       return;
     }
@@ -719,6 +735,11 @@
       } else if (result.reason === 'lukket') {
         error.textContent = 'Denne dag er netop blevet lukket for bestillinger (privat arrangement) – vælg venligst en anden dag.';
         if (S.isCloud()) S.refreshPublic();
+      } else if (result.reason === 'tid') {
+        error.textContent = pendingOrder && pendingOrder.type === 'togo'
+          ? 'To-go kan senest afhentes kl. ' + lastTimeFor('togo') + ' – vælg et tidligere tidspunkt eller "Spis her".'
+          : 'Det valgte tidspunkt er efter sidste bestillingstid – vælg et tidligere tidspunkt.';
+        onOrderDateChange();
       } else if (result.reason === 'udsolgt') {
         error.textContent = `„${result.item}" er desværre lige blevet udsolgt i dag – den er fjernet fra jeres bestilling, så prøv bare igen.`;
         Object.keys(basket).forEach((k) => { if (basket[k].name === result.item) delete basket[k]; });

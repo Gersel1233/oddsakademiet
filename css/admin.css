@@ -540,6 +540,34 @@ button { font-family: var(--font-body); }
   font-size: 0.95rem;
 }
 
+/* arkiv med færdige bestillinger – foldet sammen til dagen er omme */
+.donefold {
+  margin-top: 14px;
+  border: 1.6px dashed rgba(46, 125, 90, 0.35);
+  border-radius: 14px;
+  background: rgba(46, 125, 90, 0.05);
+  padding: 10px 14px;
+}
+.donefold summary {
+  cursor: pointer;
+  font-weight: 700;
+  font-size: 0.92rem;
+  color: var(--green, #2E7D5A);
+  list-style: none;
+  user-select: none;
+}
+.donefold summary::-webkit-details-marker { display: none; }
+.donefold summary::before { content: '▸ '; }
+.donefold[open] summary::before { content: '▾ '; }
+.donefold summary em {
+  font-style: normal;
+  font-weight: 500;
+  font-size: 0.82rem;
+  color: var(--ink-soft);
+}
+.donefold .row { opacity: 0.72; }
+.donefold .row:hover { opacity: 1; }
+
 /* formularer i admin */
 .afield { display: grid; gap: 6px; }
 .afield > span { font-weight: 600; font-size: 0.88rem; }

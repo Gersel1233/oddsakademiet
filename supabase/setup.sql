@@ -161,6 +161,13 @@ begin
     return jsonb_build_object('ok', false, 'reason', 'lukket');
   end if;
 
+  -- sidste bestillingstid: to-go senest 19:30, spis her senest 20:30
+  if p_time > (case when p_type = 'togo'
+                    then coalesce(v_cfg->'settings'->>'togoLast', '19:30')
+                    else coalesce(v_cfg->'settings'->>'dineLast', '20:30') end) then
+    return jsonb_build_object('ok', false, 'reason', 'tid');
+  end if;
+
   -- menukort-varer: afvis udsolgte, håndhæv "få tilbage"-antal og tæl ned.
   -- Rammer antallet 0, markeres retten automatisk som udsolgt.
   -- (dagens ret har sit eget lagertjek nedenfor)

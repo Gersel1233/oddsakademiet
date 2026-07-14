@@ -71,6 +71,8 @@ const SpiisStore = (() => {
         email: 'spiis.bestilling@gmail.com',
         pin: '9399',
         kitchenClose: '20:30',
+        togoLast: '19:30', /* sidste tidspunkt for to-go-bestillinger */
+        dineLast: '20:30', /* sidste tidspunkt for spis her-bestillinger */
       },
       /* index 0 = mandag */
       hours: [
@@ -339,6 +341,8 @@ const SpiisStore = (() => {
     data.bookings = bookings.map(rowToBooking);
     data.notes = {};
     notes.forEach((r) => { data.notes[r.date] = r.text; });
+    /* ubekræftede lokale ændringer vinder over den hentede øjebliksstatus */
+    applyPending();
     save(false);
     emit();
   }
@@ -354,6 +358,7 @@ const SpiisStore = (() => {
       const out = await res.json();
       session = { access_token: out.access_token, refresh_token: out.refresh_token, email: out.user && out.user.email };
       localStorage.setItem(SES_KEY, JSON.stringify(session));
+      if (rtClient) { try { rtClient.realtime.setAuth(session.access_token); } catch { /* ignorér */ } }
       return true;
     } catch {
       session = null;
@@ -405,8 +410,31 @@ const SpiisStore = (() => {
     fetchAdminData().catch(() => {});
     refreshPublic();
   }
+  /* ---------- realtime: nye bestillinger/bookinger lander ØJEBLIKKELIGT ----------
+     Kræver supabase-js (indlæses kun i admin) og at tabellerne er meldt
+     til i databasen (update-9). Polling kører altid som sikkerhedsnet. */
+  let rtClient = null;
+  function startRealtime() {
+    if (rtClient || !cloud || !session || typeof window === 'undefined' || !window.supabase) return;
+    try {
+      rtClient = window.supabase.createClient(CLOUD.url, CLOUD.anonKey);
+      rtClient.realtime.setAuth(session.access_token);
+      let t = null;
+      const kick = () => {
+        clearTimeout(t);
+        t = setTimeout(() => { fetchAdminData().catch(() => {}); refreshPublic(); }, 350);
+      };
+      rtClient.channel('spiis-live')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, kick)
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'bookings' }, kick)
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'config' }, kick)
+        .subscribe();
+    } catch { rtClient = null; /* realtime er en bonus – polling dækker */ }
+  }
+
   function startAdminPolling() {
     if (!cloud || adminPollTimer) return;
+    startRealtime();
     adminPollTimer = setInterval(() => {
       fetchAdminData().catch(() => {});
       /* menukortet (fx "få tilbage"-antal, der tæller ned) skal også følge med */
@@ -542,6 +570,11 @@ const SpiisStore = (() => {
   async function addOrder(order) {
     /* dage med privat arrangement (eller lukkede dage) tager ikke imod bestillinger */
     if (isOrderingClosed(order.date)) return { ok: false, reason: 'lukket' };
+    /* to-go senest kl. 19:30, spis her senest kl. 20:30 (kan ændres i admin) */
+    const lastTime = order.type === 'togo'
+      ? (data.settings.togoLast || '19:30')
+      : (data.settings.dineLast || '20:30');
+    if (order.time && order.time > lastTime) return { ok: false, reason: 'tid' };
     /* udsolgte varer og "få tilbage"-antal stoppes før afsendelse
        – databasen tjekker og tæller også selv (kapløbs-sikkert) */
     const soldout = soldoutNames();
@@ -608,23 +641,54 @@ const SpiisStore = (() => {
     if (dateIso) list = list.filter((o) => o.date === dateIso);
     return list.sort((a, b) => (a.time || '').localeCompare(b.time || ''));
   }
+  /* Lokale ændringer (fx "✓ Færdig") må ikke overskrives af en
+     samtidig hentning, før databasen har bekræftet dem – ellers
+     kan rækken "blinke" frem og tilbage. */
+  const pendingOps = [];
+  function notePending(table, id, patch) {
+    const op = { table, id, patch, until: Date.now() + 15000 };
+    pendingOps.push(op);
+    return op;
+  }
+  function donePending(op) {
+    /* Bekræftet i databasen: hold ændringen i et lille nådevindue,
+       så en hentning, der allerede var i gang, ikke ruller den tilbage. */
+    op.until = Date.now() + 5000;
+  }
+  function applyPending() {
+    const now = Date.now();
+    for (let i = pendingOps.length - 1; i >= 0; i--) {
+      const op = pendingOps[i];
+      if (op.until < now) { pendingOps.splice(i, 1); continue; }
+      if (op.patch === null) {
+        data[op.table] = data[op.table].filter((x) => x.id !== op.id);
+      } else {
+        const row = data[op.table].find((x) => x.id === op.id);
+        if (row) Object.assign(row, op.patch);
+      }
+    }
+  }
+
   function updateOrder(id, patch) {
     const o = data.orders.find((x) => x.id === id);
     if (!o) return;
     Object.assign(o, patch);
     save();
     if (cloud) {
+      const op = notePending('orders', id, patch);
       sbFetch(`/rest/v1/orders?id=eq.${encodeURIComponent(id)}`, {
         method: 'PATCH', auth: true, headers: { Prefer: 'return=minimal' },
         body: JSON.stringify(patch),
-      }).catch(() => {});
+      }).then((res) => { if (res.ok) donePending(op); }).catch(() => {});
     }
   }
   function deleteOrder(id) {
     data.orders = data.orders.filter((x) => x.id !== id);
     save();
     if (cloud) {
-      sbFetch(`/rest/v1/orders?id=eq.${encodeURIComponent(id)}`, { method: 'DELETE', auth: true }).catch(() => {});
+      const op = notePending('orders', id, null);
+      sbFetch(`/rest/v1/orders?id=eq.${encodeURIComponent(id)}`, { method: 'DELETE', auth: true })
+        .then((res) => { if (res.ok) donePending(op); }).catch(() => {});
     }
   }
 
@@ -667,19 +731,21 @@ const SpiisStore = (() => {
     Object.assign(b, patch);
     save();
     if (cloud) {
+      const op = notePending('bookings', id, patch);
       sbFetch(`/rest/v1/bookings?id=eq.${encodeURIComponent(id)}`, {
         method: 'PATCH', auth: true, headers: { Prefer: 'return=minimal' },
         body: JSON.stringify(patch),
       }).then((res) => {
+        if (res.ok) { donePending(op); return; }
         /* kender databasen ikke block_orders-kolonnen endnu (SQL ikke kørt),
            gemmes resten af ændringen alligevel – intet må gå tabt */
-        if (!res.ok && 'block_orders' in patch) {
+        if ('block_orders' in patch) {
           const { block_orders, ...rest } = patch;
           if (Object.keys(rest).length) {
             sbFetch(`/rest/v1/bookings?id=eq.${encodeURIComponent(id)}`, {
               method: 'PATCH', auth: true, headers: { Prefer: 'return=minimal' },
               body: JSON.stringify(rest),
-            }).catch(() => {});
+            }).then((r2) => { if (r2.ok) donePending(op); }).catch(() => {});
           }
         }
       }).catch(() => {});
@@ -690,7 +756,9 @@ const SpiisStore = (() => {
     data.bookings = data.bookings.filter((x) => x.id !== id);
     save();
     if (cloud) {
-      sbFetch(`/rest/v1/bookings?id=eq.${encodeURIComponent(id)}`, { method: 'DELETE', auth: true }).catch(() => {});
+      const op = notePending('bookings', id, null);
+      sbFetch(`/rest/v1/bookings?id=eq.${encodeURIComponent(id)}`, { method: 'DELETE', auth: true })
+        .then((res) => { if (res.ok) donePending(op); }).catch(() => {});
     }
     syncArrangementDates();
   }
@@ -774,7 +842,7 @@ const SpiisStore = (() => {
   /* ---------- tidsintervaller ud fra åbningstider ----------
      useKitchenClose: true for madbestillinger, så tiderne stopper
      ved køkkenets lukketid i stedet for stedets lukketid. */
-  function timeslotsFor(iso, stepMinutes = 30, useKitchenClose = false) {
+  function timeslotsFor(iso, stepMinutes = 30, useKitchenClose = false, maxTime = null) {
     const h = hoursFor(iso);
     if (h.closed || !h.open || !h.close) return [];
     const toMin = (hhmm) => {
@@ -784,6 +852,7 @@ const SpiisStore = (() => {
     let end = toMin(h.close);
     const kitchen = data.settings.kitchenClose;
     if (useKitchenClose && kitchen) end = Math.min(end, toMin(kitchen));
+    if (maxTime) end = Math.min(end, toMin(maxTime));
     const slots = [];
     let t = toMin(h.open);
     while (t <= end) {

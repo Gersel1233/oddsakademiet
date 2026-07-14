@@ -92,6 +92,19 @@ main .section {
 .section__lead { color: var(--ink-soft); margin-top: 18px; font-size: 1.05rem; }
 .section--dark .section__lead { color: rgba(245, 239, 230, 0.7); }
 
+/* allergi-note: diskret men tydelig */
+.allerginote {
+  display: inline-block;
+  margin-top: 14px;
+  padding: 8px 16px;
+  background: rgba(217, 108, 44, 0.08);
+  border: 1px dashed rgba(217, 108, 44, 0.35);
+  border-radius: 999px;
+  color: var(--ink-soft);
+  font-size: 0.92rem;
+  font-weight: 500;
+}
+
 .eyebrow {
   display: inline-block;
   font-size: 0.8rem;
@@ -784,6 +797,7 @@ input:focus-visible, select:focus-visible, textarea:focus-visible {
   font-size: 0.88rem;
   margin-top: 14px;
 }
+.form__note--allergi { margin-top: 4px; opacity: 0.85; }
 .form__error {
   margin-top: 18px;
   background: #FBEAE7;
@@ -1205,6 +1219,34 @@ input:focus-visible, select:focus-visible, textarea:focus-visible {
 }
 .footer__links a:hover { color: var(--accent); }
 .footer__meta { text-align: right; font-size: 0.9rem; color: rgba(250, 246, 240, 0.6); }
+
+/* smiley: Fødevarestyrelsens kontrol */
+.smileybadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 14px;
+  padding: 9px 16px 9px 12px;
+  background: rgba(250, 246, 240, 0.07);
+  border: 1px solid rgba(250, 246, 240, 0.14);
+  border-radius: 14px;
+  text-align: left;
+  color: rgba(250, 246, 240, 0.85);
+  text-decoration: none;
+  transition: background 0.2s ease, border-color 0.2s ease;
+}
+.smileybadge:hover { background: rgba(250, 246, 240, 0.12); border-color: rgba(250, 246, 240, 0.3); }
+.smileybadge__face { font-size: 1.6rem; line-height: 1; }
+.smileybadge__text { font-size: 0.82rem; font-weight: 600; line-height: 1.35; }
+.smileybadge__text em {
+  display: block;
+  font-style: normal;
+  font-weight: 400;
+  font-size: 0.78rem;
+  color: rgba(250, 246, 240, 0.55);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
 .footer__admin {
   display: inline-block;
   margin-top: 10px;
