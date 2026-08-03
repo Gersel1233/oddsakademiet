@@ -575,6 +575,7 @@
           <h2>📋 Dagens køreplan</h2>
           <span class="sub">${esc(S.formatDate(today))} · det ene sted, der skal tjekkes, når I møder ind</span>
         </div>
+        <div class="kalpanel__status ${dayStatus(today).cls}">${dayStatus(today).full}</div>
 
         ${todaysArrangements.length ? `
         <h3 class="kp__sub">🎉 Dagens arrangementer</h3>
@@ -671,6 +672,43 @@
     };
   }
 
+  /* ÉN fælles "hvad sker der på dagen"-beregning, så kalender, dagspanel,
+     uge-visning og køreplan altid siger præcis det samme.
+       grøn  = åbent for madbestillinger (evt. med arrangement ved siden af)
+       gul   = kun arrangement – lukket for andre bestillinger
+       rød   = helt lukket ·  blå = ferie ·  grå = køkkenet holder lukket */
+  function dayStatus(iso) {
+    if (!S.isOpenDay(iso))
+      return { key: 'kitchen', cls: 'ds--kitchen', short: 'Køkken lukket', full: '🌙 Køkkenet holder lukket denne dag' };
+    if (S.isInClosure(iso))
+      return { key: 'ferie', cls: 'ds--ferie', short: '🌴 Ferie', full: '🌴 Ferielukket – ingen madbestillinger (booking & kontakt er åben)' };
+    if (S.getBlockedDates().includes(iso))
+      return { key: 'blocked', cls: 'ds--blocked', short: '🚫 Lukket', full: '🚫 Lukket dag – hverken booking eller madbestilling' };
+    const hasArr = S.getBookings().some((b) =>
+      b.date === iso && b.kind === 'arrangement' && b.status === 'bekraeftet');
+    const noOrders = S.isOrderingClosed(iso);
+    if (hasArr && noOrders)
+      return { key: 'arr-closed', cls: 'ds--arr-closed', short: '🎉 Kun arrangement', full: '🎉 Arrangement · lukket for andre madbestillinger' };
+    if (hasArr)
+      return { key: 'arr-open', cls: 'ds--arr-open', short: '🎉 Åbent + fest', full: '🎉 Arrangement · Spiis holder ÅBENT for bestillinger ved siden af' };
+    if (noOrders)
+      return { key: 'closed', cls: 'ds--blocked', short: '🚫 Lukket for mad', full: '🚫 Lukket for madbestillinger denne dag' };
+    return { key: 'open', cls: 'ds--open', short: '✅ Åbent', full: '✅ Åbent for madbestillinger' };
+  }
+
+  /* lille forklaring, så farverne taler for sig selv */
+  function kalLegend() {
+    const items = [
+      ['ds--open', '✅ Åbent'],
+      ['ds--arr-open', '🎉 Arrangement · åbent'],
+      ['ds--arr-closed', '🎉 Kun arrangement'],
+      ['ds--blocked', '🚫 Lukket'],
+      ['ds--ferie', '🌴 Ferie'],
+    ];
+    return `<div class="kallegend">${items.map(([c, t]) =>
+      `<span class="kallegend__item"><i class="ds-dot ${c}"></i>${t}</span>`).join('')}</div>`;
+  }
+
   /* fælles top: uge/måned-skifter + pile, der VIRKER begge veje */
   function kalHeader(title, sub) {
     return `
@@ -688,24 +726,28 @@
           </div>
         </div>
         <p class="sub" style="color:var(--ink-soft);">${sub}</p>
+        ${kalLegend()}
       </div>`;
   }
 
   function kalCell(iso, today) {
     const inMonth = iso.slice(0, 7) === kalMonth;
     const d = kalDayInfo(iso);
-    const cls = ['kalcell',
+    const st = dayStatus(iso);
+    const cls = ['kalcell', `kalcell--st-${st.key}`,
       inMonth ? '' : 'kalcell--out',
       iso === today ? 'kalcell--today' : '',
       iso === kalSelected ? 'kalcell--sel' : '',
       d.closed ? 'kalcell--closed' : ''].filter(Boolean).join(' ');
+    /* almindelige åbne dage holdes rene – kun de særlige dage får et statusmærke */
+    const showPill = st.key !== 'open' && st.key !== 'kitchen';
     return `
       <button class="${cls}" data-kal="day" data-iso="${iso}">
         <span class="kalcell__num">${Number(iso.slice(8))}${d.note ? ' <i title="Der er en note på dagen">📝</i>' : ''}</span>
-        ${d.closed ? '<span class="kalcell__closed">Lukket</span>' : `
+        ${d.closed ? '<span class="kalcell__closed">Køkken lukket</span>' : `
+          ${showPill ? `<span class="kalcell__status ${st.cls}">${st.short}</span>` : ''}
           ${d.dish ? `<span class="kalcell__dish">🍲 ${esc(d.dish.title)}</span>` : ''}
-          ${d.items ? `<span class="kalcell__count"><b>${d.items}</b> retter · 🥡 ${d.togo} · 🍽️ ${d.spise}</span>` : ''}
-          ${d.noOrders ? '<span class="kalcell__block">🚫 Lukket for bestillinger</span>' : ''}`}
+          ${d.items ? `<span class="kalcell__count"><b>${d.items}</b> retter · 🥡 ${d.togo} · 🍽️ ${d.spise}</span>` : ''}`}
         ${d.bookings.slice(0, 2).map((b) => `<span class="kalcell__bk ${b.kind === 'moede' ? 'kalcell__bk--moede' : ''}">${b.kind === 'moede' ? '📅' : '🎉'} ${esc(b.subject)}</span>`).join('')}
         ${d.bookings.length > 2 ? `<span class="kalcell__more">+ ${d.bookings.length - 2} mere</span>` : ''}
       </button>`;
@@ -714,13 +756,15 @@
   /* dagen man har valgt: alt om dagen + noten skrives direkte her */
   function kalDayPanel(iso, today) {
     const d = kalDayInfo(iso);
+    const st = dayStatus(iso);
     const totals = dishTotals(d.orders);
     return `
       <div class="acard kalpanel">
         <div class="acard__head">
-          <h2>${iso === today ? '🔴 ' : ''}${esc(S.formatDate(iso))}${d.closed ? ' <span class="sub" style="font-family:var(--font-body);font-weight:500;">· køkkenet holder lukket</span>' : ''}</h2>
+          <h2>${iso === today ? '🔴 ' : ''}${esc(S.formatDate(iso))}</h2>
           <button class="abtn abtn--ghost" data-act="goto-orders" data-iso="${iso}">Se bestillinger →</button>
         </div>
+        <div class="kalpanel__status ${st.cls}">${st.full}</div>
         <div class="kalpanel__grid">
           <div>
             <h3 class="kp__sub">🍲 Dagens ret</h3>
@@ -791,12 +835,14 @@
           const bookings = allBookings.filter((b) => b.date === iso && b.status !== 'afvist');
           const isToday = iso === today;
           const closed = !S.isOpenDay(iso);
+          const st = dayStatus(iso);
           return `
-          <div class="acard ugeday ${isToday ? 'ugeday--today' : ''} ${closed ? 'ugeday--closed' : ''}">
+          <div class="acard ugeday ugeday--st-${st.key} ${isToday ? 'ugeday--today' : ''} ${closed ? 'ugeday--closed' : ''}">
             <div class="ugeday__head">
               <strong>${S.WEEKDAYS[S.weekdayIndex(iso)]}${isToday ? ' · i dag' : ''}</strong>
-              <span>${esc(S.formatDate(iso, false))}${closed ? ' · lukket' : ''}</span>
+              <span>${esc(S.formatDate(iso, false))}</span>
             </div>
+            <div class="ugeday__status ${st.cls}">${st.full}</div>
             <div class="ugeday__dish">
               ${dish
                 ? `🍲 ${esc(dish.title)}${dish.stock != null && dish.stock !== '' ? ` <span class="tag ${sold >= dish.stock ? 'tag--red' : 'tag--accent'}">${sold}/${dish.stock} solgt</span>` : ''}`
