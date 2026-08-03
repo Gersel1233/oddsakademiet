@@ -577,6 +577,11 @@
         </div>
         <div class="kalpanel__status ${dayStatus(today).cls}">${dayStatus(today).full}</div>
 
+        <div class="kpnote">
+          <label class="kpnote__lbl" for="kpNote">📝 Note til i dag <em>fx "Henning kommer og spiser med sin kone kl. 18"</em></label>
+          <textarea id="kpNote" class="inline-input kpnote__input" data-note="${today}" rows="2" placeholder="Skriv en hurtig besked til dagen – gemmes automatisk og står også i kalenderen">${esc(S.getNote(today))}</textarea>
+        </div>
+
         ${todaysArrangements.length ? `
         <h3 class="kp__sub">🎉 Dagens arrangementer</h3>
         <div class="rowlist rowlist--arr">
@@ -633,6 +638,17 @@
             </div>`).join('')}
         </div>` : (waitingCount ? '' : '<div class="empty">Ingen nye forespørgsler eller kommende aftaler.</div>')}
       </div>`;
+
+    /* dagsnoten gemmer sig selv, mens der skrives – præcis samme note som i
+       kalenderen, så en hurtig besked ("Henning kommer kl. 18") altid ses her */
+    const kpNote = $('#kpNote');
+    if (kpNote) {
+      let noteTimer;
+      kpNote.addEventListener('input', () => {
+        clearTimeout(noteTimer);
+        noteTimer = setTimeout(() => { S.setNote(today, kpNote.value); savedToast(); }, 900);
+      });
+    }
   }
 
   /* ============================================================
@@ -709,6 +725,16 @@
       `<span class="kallegend__item"><i class="ds-dot ${c}"></i>${t}</span>`).join('')}</div>`;
   }
 
+  /* knap til at lukke/åbne EN enkelt dag direkte fra kalenderen.
+     Tom for fortidige dage, ugedage der er lukket, og ferie-dage
+     (de styres i Åbningstider). Blokerer/åbner både bestilling OG booking. */
+  function dayCloseBtn(iso, today) {
+    if (iso < today || !S.isOpenDay(iso) || S.isInClosure(iso)) return '';
+    return S.getBlockedDates().includes(iso)
+      ? `<button class="abtn abtn--green" data-act="kal-unblock" data-iso="${iso}">✅ Åbn dagen igen</button>`
+      : `<button class="abtn abtn--ghost" data-act="kal-block" data-iso="${iso}">🚫 Luk dagen for bestilling &amp; booking</button>`;
+  }
+
   /* fælles top: uge/måned-skifter + pile, der VIRKER begge veje */
   function kalHeader(title, sub) {
     return `
@@ -758,6 +784,13 @@
     const d = kalDayInfo(iso);
     const st = dayStatus(iso);
     const totals = dishTotals(d.orders);
+    /* handling til dagen: luk/åbn selv – eller hop hen hvor det styres */
+    let act = '';
+    if (iso >= today) {
+      if (!S.isOpenDay(iso)) act = `<span class="kalpanel__hint">🌙 Køkkenet er lukket på denne ugedag.</span><button class="abtn abtn--ghost" data-goto="tider">Redigér åbningstider →</button>`;
+      else if (S.isInClosure(iso)) act = `<span class="kalpanel__hint">🌴 Dagen er en del af en ferieperiode.</span><button class="abtn abtn--ghost" data-goto="tider">Redigér ferie →</button>`;
+      else act = dayCloseBtn(iso, today);
+    }
     return `
       <div class="acard kalpanel">
         <div class="acard__head">
@@ -765,6 +798,7 @@
           <button class="abtn abtn--ghost" data-act="goto-orders" data-iso="${iso}">Se bestillinger →</button>
         </div>
         <div class="kalpanel__status ${st.cls}">${st.full}</div>
+        ${act ? `<div class="kalpanel__act">${act}</div>` : ''}
         <div class="kalpanel__grid">
           <div>
             <h3 class="kp__sub">🍲 Dagens ret</h3>
@@ -862,6 +896,7 @@
             <textarea class="inline-input ugeday__note" data-note="${iso}" rows="2" placeholder="Noter til dagen – gemmes automatisk…">${esc(S.getNote(iso))}</textarea>
             <div class="ugeday__actions">
               <button class="abtn abtn--ghost" data-act="goto-orders" data-iso="${iso}">Se bestillinger →</button>
+              ${dayCloseBtn(iso, today)}
             </div>
           </div>`;
         }).join('')}
@@ -1836,6 +1871,19 @@
       return;
     }
 
+    if (act === 'kal-block') {
+      S.blockDate(btn.dataset.iso);
+      renderUge();
+      toast(`${S.formatDate(btn.dataset.iso)} er nu lukket for bestilling og booking 🚫`);
+      return;
+    }
+    if (act === 'kal-unblock') {
+      S.unblockDate(btn.dataset.iso);
+      renderUge();
+      toast(`${S.formatDate(btn.dataset.iso)} er åben igen ✅`);
+      return;
+    }
+
     if (act === 'news-toggle') {
       const n = S.getNews().find((x) => x.id === id);
       if (n) { S.updateNews(id, { active: n.active === false }); renderNyheder(); }
@@ -1928,7 +1976,11 @@
   /* Gen-render kun liste-views automatisk – aldrig editor-views,
      så chefen ikke mister det, hun er i gang med at skrive. */
   function renderListViews() {
-    if (activeView === 'overblik') renderOverblik();
+    /* Overblik følger med live – men aldrig midt i, at dagsnoten skrives */
+    if (activeView === 'overblik') {
+      const el = document.activeElement;
+      if (!el || !el.closest || !el.closest('#view-overblik textarea, #view-overblik input')) renderOverblik();
+    }
     if (activeView === 'bestillinger') renderBestillinger();
     /* bookinger følger også med live – men aldrig midt i, at der skrives
        en note eller udfyldes en "Opret booking"/rediger-formular */

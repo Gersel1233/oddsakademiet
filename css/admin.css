@@ -898,6 +898,16 @@ button { font-family: var(--font-body); }
 .kallegend { display: flex; flex-wrap: wrap; gap: 8px 14px; margin-top: 12px; }
 .kallegend__item { display: inline-flex; align-items: center; gap: 6px; font-size: 0.8rem; color: var(--ink-soft); font-weight: 600; }
 .ds-dot { width: 12px; height: 12px; border-radius: 50%; background: var(--dc); border: 1.5px solid var(--dbd); flex-shrink: 0; }
+
+/* handling-linje i dagspanelet: luk/åbn dagen eller hop til indstilling */
+.kalpanel__act { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin: 0 0 16px; }
+.kalpanel__hint { font-size: 0.9rem; color: var(--ink-soft); font-weight: 600; }
+
+/* hurtig dagsnote i Overblik – samme note som i kalenderen */
+.kpnote { margin: 2px 0 18px; }
+.kpnote__lbl { display: block; font-weight: 700; font-size: 0.92rem; margin-bottom: 6px; }
+.kpnote__lbl em { font-style: normal; font-weight: 500; color: var(--ink-soft); }
+.kpnote__input { width: 100%; min-height: 52px; resize: vertical; }
 .kalpanel__grid { display: grid; grid-template-columns: 1.4fr 1fr; gap: 24px; }
 .kalpanel__dish { font-weight: 600; }
 .kalpanel__none { color: var(--ink-soft); font-size: 0.92rem; padding: 4px 0 2px; }
