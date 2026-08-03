@@ -733,12 +733,23 @@ const SpiisStore = (() => {
            den med det samme, i stedet for at vente på realtime/polling.
            Anonyme kunder må ikke læse bookinger (RLS), så der bruges minimal. */
         const wantRow = !!session;
-        const res = await sbFetch('/rest/v1/bookings', {
+        let res = await sbFetch('/rest/v1/bookings', {
           method: 'POST',
           auth: !!session,
           headers: { Prefer: wantRow ? 'return=representation' : 'return=minimal' },
           body: JSON.stringify([row]),
         });
+        /* kender databasen endnu ikke block_orders-kolonnen (SQL ikke kørt),
+           så oprettes bookingen alligevel – intet må gå tabt */
+        if (!res.ok && 'block_orders' in row) {
+          delete row.block_orders;
+          res = await sbFetch('/rest/v1/bookings', {
+            method: 'POST',
+            auth: !!session,
+            headers: { Prefer: wantRow ? 'return=representation' : 'return=minimal' },
+            body: JSON.stringify([row]),
+          });
+        }
         if (!res.ok) throw new Error();
         if (wantRow) {
           try {
