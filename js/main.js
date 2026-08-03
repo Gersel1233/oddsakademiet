@@ -763,6 +763,8 @@
           if (!basket[k].qty) delete basket[k];
         }
         if (S.isCloud()) S.refreshPublic();
+      } else if (result.reason === 'tom' || result.reason === 'mangler' || result.reason === 'ugyldig') {
+        error.textContent = 'Tjek lige bestillingen: vælg mindst én ret og udfyld navn og telefon.';
       } else {
         error.textContent = result.remaining > 0
           ? `Åh nej – der er kun ${result.remaining} portion${result.remaining === 1 ? '' : 'er'} dagens ret tilbage denne dag. Sæt antallet ned eller vælg en anden dag.`

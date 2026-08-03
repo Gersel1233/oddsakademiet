@@ -591,6 +591,13 @@ const SpiisStore = (() => {
 
   /* ---------- bestillinger (kurv med dagens ret + menukort) ---------- */
   async function addOrder(order) {
+    /* input-validering – spejler databasen 1:1, så tomme eller ugyldige
+       ordrer aldrig sendes af sted (ekstra sikkerhedsnet ud over formularen) */
+    const q = Number(order.qty);
+    const nItems = (order.items || []).length;
+    if (!Number.isFinite(q) || q < 0 || q > 100) return { ok: false, reason: 'ugyldig' };
+    if (q === 0 && nItems === 0) return { ok: false, reason: 'tom' };
+    if (!String(order.name || '').trim() || !String(order.phone || '').trim()) return { ok: false, reason: 'mangler' };
     /* dage med privat arrangement (eller lukkede dage) tager ikke imod bestillinger */
     if (isOrderingClosed(order.date)) return { ok: false, reason: 'lukket' };
     /* bestillinger kan kun vælges i vinduet 16:00–21:00 (kan ændres i admin) */
