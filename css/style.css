@@ -260,6 +260,17 @@ input:focus-visible, select:focus-visible, textarea:focus-visible {
 .confirm__x:hover { background: rgba(28, 24, 20, 0.12); }
 .confirm__card { position: relative; }
 .confirm__sub { color: var(--ink-soft); font-size: 0.98rem; margin: -8px 0 16px; }
+.confirm__policy {
+  margin: 16px 0 4px;
+  padding: 12px 14px;
+  background: rgba(217, 108, 44, 0.08);
+  border: 1px solid rgba(217, 108, 44, 0.28);
+  border-radius: 12px;
+  font-size: 0.88rem;
+  line-height: 1.5;
+  color: var(--ink-soft);
+}
+.confirm__policy b { color: var(--ink); }
 .nof { display: block; font-size: 0.9rem; font-weight: 600; margin-bottom: 12px; }
 .nof input {
   display: block; width: 100%; margin-top: 6px;
