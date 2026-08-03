@@ -582,6 +582,7 @@ button { font-family: var(--font-body); }
   background: #FBE9D8;
   border-radius: 14px;
 }
+.closure-fields textarea { min-height: 92px; resize: vertical; line-height: 1.45; }
 .newsed--off { opacity: 0.55; }
 .newsed__cta { display: flex; align-items: center; gap: 8px; font-size: 0.88rem; color: var(--ink-soft); }
 .newsed__cta input { width: 17px; height: 17px; accent-color: var(--accent); }

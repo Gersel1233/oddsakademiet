@@ -165,7 +165,7 @@
       const saved = await S.savePushSubscription(sub);
       toast(saved.ok
         ? '🔔 Notifikationer er slået til på denne telefon ✓'
-        : 'Næsten! Databasen mangler notifikations-opdateringen (SQL)');
+        : 'Kunne ikke slå notifikationer til lige nu – prøv igen om lidt.');
       renderPwaBanner();
       return saved.ok;
     } catch {
@@ -1084,8 +1084,8 @@
         </div>
         <div id="newsPreview" class="newsprev" hidden></div>
         <p class="sub" style="color:var(--ink-soft);margin-top:12px;">
-          💡 "Gør bestilbar" kræver <strong>database-opdatering 11</strong>. Bestillingerne lander
-          automatisk i <strong>Køreplanen</strong> og tælles i <strong>Kalenderen</strong> – ingen huller.
+          💡 En bestilbar nyhed lander automatisk i <strong>Køreplanen</strong> og tælles i
+          <strong>Kalenderen</strong> – ligesom alle andre bestillinger.
         </p>
         <button class="abtn abtn--accent abtn--big" id="newsPublish" style="margin-top:14px;">📣 Læg på hjemmesiden</button>
       </div>
@@ -1125,7 +1125,7 @@
       if (newsImageBlob) {
         const up = await S.uploadNewsImage(newsImageBlob, 'nyhed.jpg');
         if (!up.ok) {
-          toast('Billedet kunne ikke lægges op – tjek internettet og prøv igen (kræver database-opdatering 10)');
+          toast('Billedet kunne ikke lægges op – tjek internettet og prøv igen.');
           btn.disabled = false;
           btn.textContent = '📣 Læg på hjemmesiden';
           return;
@@ -1444,7 +1444,7 @@
         <div id="closureFields" class="closure-fields" ${c.active ? '' : 'hidden'}>
           <label class="afield"><span>Fra dato (valgfrit – ellers fra i dag)</span><input id="closureFrom" type="date" value="${esc(c.from || '')}" /></label>
           <label class="afield"><span>Åbner igen den</span><input id="closureReopen" type="date" value="${esc(c.reopen || '')}" /></label>
-          <label class="afield afield--full"><span>Besked til kunderne</span><textarea id="closureMessage" class="inline-input" rows="2" placeholder="fx Vi holder sommerferie og åbner igen mandag den 2. august. I er velkomne til at sende en forespørgsel.">${esc(c.message || '')}</textarea></label>
+          <label class="afield afield--full"><span>Besked til kunderne</span><textarea id="closureMessage" class="inline-input" rows="4" placeholder="fx Vi holder sommerferie og åbner igen mandag den 2. august. I er velkomne til at sende en forespørgsel.">${esc(c.message || '')}</textarea></label>
           <div style="grid-column:1/-1;display:flex;gap:10px;flex-wrap:wrap;">
             <button class="abtn" id="closureNews" type="button">📣 Læg også op som nyhed</button>
           </div>
