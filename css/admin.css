@@ -223,6 +223,35 @@ button { font-family: var(--font-body); }
   padding: 0 6px;
 }
 .navitem:not(.is-active) .navitem__badge { background: var(--accent); color: #fff; }
+
+/* "Mere"-knap + panel – vises kun på telefon */
+.navitem--more { display: none; }
+.moresheet { display: none; position: fixed; inset: 0; z-index: 200; background: rgba(26, 20, 15, 0.5); }
+.moresheet.is-open { display: block; animation: moreFade 0.2s ease; }
+@keyframes moreFade { from { opacity: 0; } }
+.moresheet__panel {
+  position: absolute;
+  left: 0; right: 0; bottom: 0;
+  background: var(--cream);
+  border-radius: 22px 22px 0 0;
+  padding: 10px 16px calc(22px + env(safe-area-inset-bottom));
+  box-shadow: 0 -22px 55px -20px rgba(0, 0, 0, 0.45);
+  animation: moreUp 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+}
+@keyframes moreUp { from { transform: translateY(100%); } }
+.moresheet__grab { width: 42px; height: 4px; border-radius: 99px; background: rgba(28, 24, 20, 0.18); margin: 4px auto 12px; }
+.moresheet__head { font-family: var(--font-display); font-weight: 700; font-size: 1.2rem; margin: 0 4px 14px; color: var(--ink); }
+.moresheet__grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.moreitem {
+  display: flex; align-items: center; gap: 12px;
+  padding: 16px 14px; border-radius: 14px;
+  border: 1.6px solid var(--line); background: #fff;
+  font: inherit; font-weight: 600; font-size: 0.98rem; color: var(--ink);
+  cursor: pointer; text-align: left;
+}
+.moreitem span { font-size: 1.3rem; line-height: 1; }
+.moreitem:active { background: var(--cream-2); }
+
 .sidebar__foot {
   display: grid;
   gap: 8px;
@@ -1159,6 +1188,10 @@ button { font-family: var(--font-body); }
   }
   .sidebar__foot a, .sidebar__foot button { white-space: nowrap; font-size: 0.76rem; opacity: 0.85; }
 
+  /* telefon: kun de daglige faner i bunden – resten ligger under "Mere" */
+  .navitem[data-nav="secondary"] { display: none; }
+  .navitem--more { display: flex; }
+
   /* app-agtig bund-navigation: minimal, flydende glas */
   .sidebar__nav {
     position: fixed;
@@ -1166,8 +1199,9 @@ button { font-family: var(--font-body); }
     z-index: 90;
     display: flex;
     flex-wrap: nowrap;
+    justify-content: space-around;
     gap: 0;
-    overflow-x: auto;
+    overflow-x: hidden;
     scrollbar-width: none;
     background: rgba(26, 20, 15, 0.82);
     backdrop-filter: blur(20px) saturate(1.4);

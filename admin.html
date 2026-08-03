@@ -50,15 +50,16 @@
         <span>Spiis<em>Admin</em></span>
       </div>
       <nav class="sidebar__nav" id="sideNav">
-        <button class="navitem is-active" data-view="overblik"><span>📊</span>Overblik<b class="navitem__badge" id="badgeOverblik" hidden></b></button>
-        <button class="navitem" data-view="uge"><span>📆</span>Kalender</button>
-        <button class="navitem" data-view="bestillinger"><span>🥡</span>Bestillinger<b class="navitem__badge" id="badgeOrders" hidden></b></button>
-        <button class="navitem" data-view="bookinger"><span>📅</span>Bookinger<b class="navitem__badge" id="badgeBookings" hidden></b></button>
-        <button class="navitem" data-view="nyheder"><span>📣</span>Nyheder</button>
-        <button class="navitem" data-view="dagensret"><span>🍲</span>Dagens ret</button>
-        <button class="navitem" data-view="menukort"><span>📖</span>Menukort</button>
-        <button class="navitem" data-view="tider"><span>🕐</span>Åbningstider</button>
-        <button class="navitem" data-view="indstillinger"><span>⚙️</span>Indstillinger</button>
+        <button class="navitem is-active" data-view="overblik" data-nav="primary"><span>📊</span>Overblik<b class="navitem__badge" id="badgeOverblik" hidden></b></button>
+        <button class="navitem" data-view="bestillinger" data-nav="primary"><span>🥡</span>Bestillinger<b class="navitem__badge" id="badgeOrders" hidden></b></button>
+        <button class="navitem" data-view="bookinger" data-nav="primary"><span>📅</span>Bookinger<b class="navitem__badge" id="badgeBookings" hidden></b></button>
+        <button class="navitem" data-view="dagensret" data-nav="primary"><span>🍲</span>Dagens ret</button>
+        <button class="navitem" data-view="uge" data-nav="secondary"><span>📆</span>Kalender</button>
+        <button class="navitem" data-view="menukort" data-nav="secondary"><span>📖</span>Menukort</button>
+        <button class="navitem" data-view="nyheder" data-nav="secondary"><span>📣</span>Nyheder</button>
+        <button class="navitem" data-view="tider" data-nav="secondary"><span>🕐</span>Åbningstider</button>
+        <button class="navitem" data-view="indstillinger" data-nav="secondary"><span>⚙️</span>Indstillinger</button>
+        <button class="navitem navitem--more" id="moreBtn" type="button"><span>⋯</span>Mere</button>
       </nav>
       <div class="sidebar__foot">
         <a href="index.html" target="_blank" rel="noopener">↗ Se hjemmesiden</a>
@@ -103,6 +104,21 @@
         <section class="view" id="view-tider" hidden></section>
         <section class="view" id="view-indstillinger" hidden></section>
       </main>
+    </div>
+  </div>
+
+  <!-- "Mere"-panel på telefon: de faner, der bruges sjældnere -->
+  <div class="moresheet" id="moreSheet">
+    <div class="moresheet__panel" role="dialog" aria-label="Mere">
+      <div class="moresheet__grab" aria-hidden="true"></div>
+      <div class="moresheet__head">Mere</div>
+      <div class="moresheet__grid">
+        <button class="moreitem" data-view="uge"><span>📆</span>Kalender</button>
+        <button class="moreitem" data-view="menukort"><span>📖</span>Menukort</button>
+        <button class="moreitem" data-view="nyheder"><span>📣</span>Nyheder</button>
+        <button class="moreitem" data-view="tider"><span>🕐</span>Åbningstider &amp; ferie</button>
+        <button class="moreitem" data-view="indstillinger"><span>⚙️</span>Indstillinger</button>
+      </div>
     </div>
   </div>
 

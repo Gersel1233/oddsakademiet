@@ -304,15 +304,33 @@
     indstillinger: 'Indstillinger',
   };
   let activeView = 'overblik';
+  const MORE_VIEWS = ['uge', 'menukort', 'nyheder', 'tider', 'indstillinger'];
+
+  function switchView(view) {
+    if (!view || !VIEW_TITLES[view]) return;
+    activeView = view;
+    $$('.navitem').forEach((b) => b.classList.toggle('is-active', b.dataset.view === view));
+    /* "Mere"-knappen lyser, når man er inde i en af de sjældnere faner */
+    $('#moreBtn')?.classList.toggle('is-active', MORE_VIEWS.includes(view));
+    $$('.view').forEach((v) => { v.hidden = v.id !== `view-${view}`; });
+    $('#viewTitle').textContent = VIEW_TITLES[view];
+    renderView(view);
+  }
+
+  /* "Mere"-panel (telefon) */
+  const moreSheet = $('#moreSheet');
+  const openMore = () => { moreSheet.classList.add('is-open'); };
+  const closeMore = () => { moreSheet.classList.remove('is-open'); };
 
   $('#sideNav').addEventListener('click', (e) => {
+    if (e.target.closest('.navitem--more')) { openMore(); return; }
     const btn = e.target.closest('.navitem');
-    if (!btn) return;
-    activeView = btn.dataset.view;
-    $$('.navitem').forEach((b) => b.classList.toggle('is-active', b === btn));
-    $$('.view').forEach((v) => { v.hidden = v.id !== `view-${activeView}`; });
-    $('#viewTitle').textContent = VIEW_TITLES[activeView];
-    renderView(activeView);
+    if (btn && btn.dataset.view) switchView(btn.dataset.view);
+  });
+  moreSheet?.addEventListener('click', (e) => {
+    const item = e.target.closest('.moreitem');
+    if (item && item.dataset.view) { switchView(item.dataset.view); closeMore(); return; }
+    if (e.target === moreSheet) closeMore(); /* tryk uden for panelet lukker */
   });
 
   function renderView(view) {
