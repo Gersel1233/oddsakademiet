@@ -502,8 +502,10 @@
           ${b.staff_note ? `<div class="staffnote">📝 ${esc(b.staff_note)}</div>` : ''}
         </div>
         <div class="row__actions">
-          <button class="abtn ${b.status === 'bekraeftet' ? 'abtn--ghost' : 'abtn--green'}" data-act="booking-edit" data-id="${b.id}">${b.status === 'bekraeftet' ? '🖉 Ret / notér' : (isMoede ? '✓ Bekræft & sæt tid' : '✓ Aftal & sæt tid')}</button>
-          ${b.status !== 'afvist' ? `<button class="abtn abtn--ghost" data-act="booking-no" data-id="${b.id}">Afvis</button>` : ''}
+          ${b.status === 'afvist'
+            ? `<button class="abtn abtn--green" data-act="booking-restore" data-id="${b.id}" title="Fortryd – læg den tilbage under 'Venter på jer'">↩ Gendan</button>`
+            : `<button class="abtn ${b.status === 'bekraeftet' ? 'abtn--ghost' : 'abtn--green'}" data-act="booking-edit" data-id="${b.id}">${b.status === 'bekraeftet' ? '🖉 Ret / notér' : (isMoede ? '✓ Bekræft & sæt tid' : '✓ Aftal & sæt tid')}</button>
+               <button class="abtn abtn--ghost" data-act="booking-no" data-id="${b.id}">Afvis</button>`}
           <button class="abtn abtn--danger abtn--icon" data-act="booking-del" data-id="${b.id}" aria-label="Slet">🗑</button>
         </div>
         <div class="bkedit" hidden>
@@ -1760,6 +1762,10 @@
       return;
     }
     else if (act === 'booking-no') { S.updateBooking(id, { status: 'afvist', read: true }); }
+    else if (act === 'booking-restore') {
+      S.updateBooking(id, { status: 'ny', read: true });
+      toast('Booking hentet tilbage – ligger nu under "Venter på jer" ↩');
+    }
     else if (act === 'booking-del') {
       if (!confirm('Slet denne booking?')) return;
       S.deleteBooking(id);
