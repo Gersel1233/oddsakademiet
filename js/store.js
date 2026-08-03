@@ -718,16 +718,40 @@ const SpiisStore = (() => {
   async function addBooking(booking) {
     if (cloud) {
       try {
+        const row = {
+          kind: booking.kind, subject: booking.subject, descr: booking.desc || '',
+          date: booking.date || null, time: booking.time || '', name: booking.name,
+          phone: booking.phone, email: booking.email || '',
+        };
+        /* felter, som personalet selv kan sætte, når de opretter en booking
+           i appen (telefon / i butikken). Kunder på hjemmesiden sender dem ikke. */
+        if (booking.status) row.status = booking.status;
+        if (booking.staff_note) row.staff_note = booking.staff_note;
+        if (typeof booking.block_orders === 'boolean') row.block_orders = booking.block_orders;
+        if (typeof booking.read === 'boolean') row.read = booking.read;
+        /* admin (logget ind) må læse rækken tilbage – så vi henter den og viser
+           den med det samme, i stedet for at vente på realtime/polling.
+           Anonyme kunder må ikke læse bookinger (RLS), så der bruges minimal. */
+        const wantRow = !!session;
         const res = await sbFetch('/rest/v1/bookings', {
           method: 'POST',
-          headers: { Prefer: 'return=minimal' },
-          body: JSON.stringify([{
-            kind: booking.kind, subject: booking.subject, descr: booking.desc || '',
-            date: booking.date || null, time: booking.time || '', name: booking.name,
-            phone: booking.phone, email: booking.email || '',
-          }]),
+          auth: !!session,
+          headers: { Prefer: wantRow ? 'return=representation' : 'return=minimal' },
+          body: JSON.stringify([row]),
         });
         if (!res.ok) throw new Error();
+        if (wantRow) {
+          try {
+            const rows = await res.json();
+            const r = Array.isArray(rows) ? rows[0] : rows;
+            if (r && r.id && !data.bookings.some((b) => b.id === r.id)) {
+              data.bookings.push(rowToBooking(r));
+              save();
+              syncArrangementDates();
+              return { ok: true, booking: rowToBooking(r) };
+            }
+          } catch { /* rækken kom ikke retur – realtime henter den straks */ }
+        }
         return { ok: true };
       } catch {
         return { ok: false, error: 'net' };
@@ -742,6 +766,7 @@ const SpiisStore = (() => {
     };
     data.bookings.push(entry);
     save();
+    syncArrangementDates();
     return { ok: true, booking: entry };
   }
   function getBookings() {

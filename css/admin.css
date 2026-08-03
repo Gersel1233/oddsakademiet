@@ -482,6 +482,30 @@ button { font-family: var(--font-body); }
 .bkedit__check input { width: 18px; height: 18px; margin-top: 2px; accent-color: var(--accent); flex-shrink: 0; }
 .bkedit__check em { font-style: normal; color: var(--ink-soft); font-size: 0.82rem; }
 
+/* Opret booking selv – felterne til telefon/i-butikken-bookinger */
+.nbk { display: grid; gap: 14px; }
+.nbk__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+}
+.nbk .afield > span em { font-style: normal; font-weight: 500; color: var(--ink-soft); font-size: 0.8rem; }
+.nbk__check {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  background: var(--cream);
+  border: 1.6px solid rgba(28, 24, 20, 0.1);
+  border-radius: 12px;
+  padding: 10px 14px;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+.nbk__check input { width: 18px; height: 18px; margin-top: 2px; accent-color: var(--accent); flex-shrink: 0; }
+.nbk__check em { font-style: normal; color: var(--ink-soft); font-size: 0.82rem; }
+.nbk .abtn--big { justify-self: start; }
+@media (max-width: 760px) { .nbk .abtn--big { justify-self: stretch; width: 100%; } }
+
 /* tjekliste-flueben: tryk for færdig, tryk igen for at fortryde */
 .checkbtn {
   width: 44px;

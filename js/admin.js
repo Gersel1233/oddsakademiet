@@ -935,6 +935,47 @@
         <span class="pipebar__chip ${todays.length ? 'is-today' : ''}">🎉 ${todays.length} i dag</span>
       </div>
 
+      <details class="acard acard--fold" id="newBookingFold">
+        <summary class="acard__head acard__head--sum">
+          <h2>➕ Opret booking selv</h2>
+          <span class="sub">ringer nogen ind, eller aftaler I det i butikken? Skriv den ind her</span>
+        </summary>
+        <div class="nbk" style="margin-top:14px;">
+          <div class="nbk__grid">
+            <label class="afield"><span>Type</span>
+              <select id="nbkKind">
+                <option value="arrangement">🎉 Arrangement / selskab</option>
+                <option value="moede">📅 Møde</option>
+              </select>
+            </label>
+            <label class="afield"><span>Navn på kunden</span>
+              <input type="text" id="nbkName" placeholder="Fx Anne Jensen" autocomplete="off" />
+            </label>
+            <label class="afield"><span>Telefon</span>
+              <input type="tel" id="nbkPhone" inputmode="tel" placeholder="12 34 56 78" autocomplete="off" />
+            </label>
+            <label class="afield"><span>Dato</span>
+              <input type="date" id="nbkDate" min="${today}" />
+            </label>
+            <label class="afield"><span>Tidspunkt</span>
+              <select id="nbkTime"></select>
+            </label>
+            <label class="afield" id="nbkPersonsWrap"><span>Antal personer <em>(valgfrit)</em></span>
+              <input type="number" id="nbkPersons" min="1" max="500" placeholder="fx 25" />
+            </label>
+          </div>
+          <label class="afield afield--wide"><span>Hvad drejer det sig om? / intern note</span>
+            <textarea id="nbkNote" rows="2" placeholder="Fx: 50 års fødselsdag, buffet, én er glutenallergiker"></textarea>
+          </label>
+          <label class="nbk__check" id="nbkBlockWrap">
+            <input type="checkbox" id="nbkBlock" checked />
+            <span><strong>🍲 Luk dagen for andre arrangementer &amp; madbestillinger</strong><br/>
+            <em>Fjern fluebenet ved små selskaber, hvor Spiis holder åbent som normalt.</em></span>
+          </label>
+          <button class="abtn abtn--accent abtn--big" id="nbkSave">Opret booking ✓</button>
+        </div>
+      </details>
+
       ${todays.length ? `
       <div class="acard acard--today">
         <div class="acard__head">
@@ -1014,6 +1055,58 @@
       renderBookinger();
       toast(`${S.formatDate(val)} er nu lukket for booking`);
     });
+
+    /* ---- Opret booking selv (telefon / i butikken) ---- */
+    const nbkTime = $('#nbkTime');
+    if (nbkTime) {
+      const opts = ['<option value="">– vælg tid –</option>'];
+      for (let m = 8 * 60; m <= 23 * 60 + 30; m += 30) {
+        const t = `${String(Math.floor(m / 60)).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}`;
+        opts.push(`<option value="${t}">kl. ${t}</option>`);
+      }
+      nbkTime.innerHTML = opts.join('');
+      nbkTime.value = '18:00';
+
+      SpiisDatepicker.attach($('#nbkDate'), {
+        min: today,
+        marker: (iso) => S.getBookings().some((x) =>
+          x.kind === 'arrangement' && x.status === 'bekraeftet' && x.date === iso),
+      });
+
+      const nbkKind = $('#nbkKind');
+      const nbkBlockWrap = $('#nbkBlockWrap');
+      const syncKind = () => { nbkBlockWrap.style.display = nbkKind.value === 'moede' ? 'none' : ''; };
+      nbkKind.addEventListener('change', syncKind);
+      syncKind();
+
+      $('#nbkSave').addEventListener('click', async () => {
+        const kind = nbkKind.value;
+        const name = $('#nbkName').value.trim();
+        const phone = $('#nbkPhone').value.trim();
+        const date = $('#nbkDate').value;
+        const time = $('#nbkTime').value;
+        const persons = $('#nbkPersons').value.trim();
+        const note = $('#nbkNote').value.trim();
+        if (!name || !phone) { toast('Skriv mindst navn og telefon'); return; }
+        if (!date) { toast('Vælg en dato for aftalen'); return; }
+        const isMoede = kind === 'moede';
+        const subject = isMoede
+          ? (persons ? `Møde · ${persons} pers.` : 'Møde')
+          : (persons ? `Arrangement · ${persons} pers.` : 'Arrangement');
+        const btn = $('#nbkSave');
+        btn.disabled = true;
+        const res = await S.addBooking({
+          kind, subject, desc: '', name, phone, email: '',
+          date, time, staff_note: note,
+          status: 'bekraeftet', read: true,
+          block_orders: isMoede ? false : $('#nbkBlock').checked,
+        });
+        btn.disabled = false;
+        if (!res.ok) { toast('Kunne ikke gemme – tjek nettet og prøv igen'); return; }
+        renderListViews();
+        toast(`Booking oprettet: ${S.formatDate(date)}${time ? ` kl. ${time}` : ''} ✓`);
+      });
+    }
   }
 
   /* ============================================================
@@ -1791,7 +1884,12 @@
   function renderListViews() {
     if (activeView === 'overblik') renderOverblik();
     if (activeView === 'bestillinger') renderBestillinger();
-    if (activeView === 'bookinger') renderBookinger();
+    /* bookinger følger også med live – men aldrig midt i, at der skrives
+       en note eller udfyldes en "Opret booking"/rediger-formular */
+    if (activeView === 'bookinger') {
+      const el = document.activeElement;
+      if (!el || !el.closest || !el.closest('#view-bookinger textarea, #view-bookinger input, #view-bookinger select')) renderBookinger();
+    }
     /* ugeoverblikket følger også med live – men aldrig midt i, at der skrives en note */
     if (activeView === 'uge') {
       const el = document.activeElement;
