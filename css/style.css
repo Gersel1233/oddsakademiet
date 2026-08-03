@@ -1488,21 +1488,13 @@ input:focus-visible, select:focus-visible, textarea:focus-visible {
     pointer-events: none;
   }
 
-  /* ugeplanen bliver et swipe-bånd */
+  /* ugeplanen: to rene kolonner på telefon – intet swipe, intet der
+     bliver klippet af eller går ud over skærmen */
   .weekplan__grid {
-    display: flex;
-    overflow-x: auto;
-    scroll-snap-type: x mandatory;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 12px;
-    margin: 0 -4vw;
-    padding: 4px 4vw 16px;
-    scrollbar-width: none;
   }
-  .weekplan__grid::-webkit-scrollbar { display: none; }
-  .dayplan {
-    flex: 0 0 70%;
-    scroll-snap-align: start;
-  }
+  .dayplan { padding: 14px; overflow-wrap: anywhere; }
   .dayplan:hover { transform: none; }
 
   /* ugedags-faner ruller vandret i stedet for at knække */
