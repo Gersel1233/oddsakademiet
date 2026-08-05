@@ -163,13 +163,10 @@ input:focus-visible, select:focus-visible, textarea:focus-visible {
 }
 
 .btn--accent {
-  background: var(--accent);
+  /* blød indre glans øverst – følger formen perfekt, ingen kant-ringe */
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.16), rgba(255, 255, 255, 0) 45%), var(--accent);
   color: #fff;
-  /* glas-kant: lys overkant + dyb skygge giver knappen fysik */
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.35),
-    inset 0 -1px 0 rgba(0, 0, 0, 0.12),
-    0 12px 30px -12px rgba(217, 108, 44, 0.7);
+  box-shadow: 0 12px 30px -12px rgba(217, 108, 44, 0.7);
   position: relative;
   overflow: hidden;
 }
@@ -185,35 +182,35 @@ input:focus-visible, select:focus-visible, textarea:focus-visible {
   pointer-events: none;
 }
 
-/* ægte glas-knap – virker nu også på iPhone (-webkit-backdrop-filter) */
+/* liquid glass – jævn 1px lys-ring (følger pilleformen), dyb blur og mætning */
 .btn--ghost {
-  border-color: rgba(255, 255, 255, 0.55);
+  border-color: transparent;
   color: #fff;
-  -webkit-backdrop-filter: blur(14px) saturate(160%);
-  backdrop-filter: blur(14px) saturate(160%);
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.16), rgba(255, 255, 255, 0.07));
+  -webkit-backdrop-filter: blur(18px) saturate(180%);
+  backdrop-filter: blur(18px) saturate(180%);
+  background: linear-gradient(160deg, rgba(255, 255, 255, 0.22), rgba(255, 255, 255, 0.06) 55%, rgba(255, 255, 255, 0.12));
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.35),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.35),
     0 8px 24px -12px rgba(0, 0, 0, 0.45);
 }
 
 .btn--ghost-dark {
-  border-color: rgba(28, 24, 20, 0.55);
+  border-color: transparent;
   color: var(--ink);
-  -webkit-backdrop-filter: blur(12px) saturate(150%);
-  backdrop-filter: blur(12px) saturate(150%);
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.5), rgba(255, 255, 255, 0.22));
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6);
+  -webkit-backdrop-filter: blur(16px) saturate(170%);
+  backdrop-filter: blur(16px) saturate(170%);
+  background: linear-gradient(160deg, rgba(255, 255, 255, 0.55), rgba(255, 255, 255, 0.25) 55%, rgba(255, 255, 255, 0.4));
+  box-shadow: inset 0 0 0 1px rgba(28, 24, 20, 0.28);
 }
 
 /* hover-effekter kun på enheder MED en rigtig mus/pegepind –
    så telefoner aldrig "hænger" i en hover-tilstand ved første tryk */
 @media (hover: hover) {
   .btn:hover { transform: translateY(-1px); }
-  .btn--accent:hover { background: var(--accent-deep); box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35), 0 16px 34px -12px rgba(217, 108, 44, 0.8); }
+  .btn--accent:hover { background: linear-gradient(180deg, rgba(255, 255, 255, 0.16), rgba(255, 255, 255, 0) 45%), var(--accent-deep); box-shadow: 0 16px 34px -12px rgba(217, 108, 44, 0.8); }
   .btn--accent:hover::after { left: 130%; }
-  .btn--ghost:hover { background: linear-gradient(180deg, rgba(255, 255, 255, 0.26), rgba(255, 255, 255, 0.13)); }
-  .btn--ghost-dark:hover { background: var(--ink); color: var(--cream); }
+  .btn--ghost:hover { background: linear-gradient(160deg, rgba(255, 255, 255, 0.3), rgba(255, 255, 255, 0.12) 55%, rgba(255, 255, 255, 0.18)); }
+  .btn--ghost-dark:hover { background: var(--ink); color: var(--cream); box-shadow: none; }
 }
 
 .btn--small { padding: 10px 20px; font-size: 0.92rem; }

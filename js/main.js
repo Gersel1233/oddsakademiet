@@ -120,6 +120,10 @@
   ['touchstart', 'pointerdown', 'click', 'scroll', 'keydown'].forEach((ev) =>
     window.addEventListener(ev, kickHero, { once: true, passive: true }));
 
+  /* iOS Safari viser kun :active-tryk-effekter, hvis siden har en (blivende)
+     touch-lytter – denne tomme, passive lytter tænder for klik-følelsen */
+  document.addEventListener('touchstart', () => {}, { passive: true });
+
   /* ---------- nominerings-stribe (Greve Business Awards) ----------
      Vises kun frem til udløbsdatoen og forsvinder så helt af sig selv.
      Den enkelte besøgende kan også skjule den med ✕. */
