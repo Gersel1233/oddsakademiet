@@ -826,6 +826,9 @@
           if (!basket[k].qty) delete basket[k];
         }
         if (S.isCloud()) S.refreshPublic();
+      } else if (result.reason === 'forbi' || result.reason === 'dato') {
+        error.textContent = 'Tidspunktet er nået, mens siden stod åben – vælg venligst en ny tid eller en kommende dag.';
+        renderOrderDates();
       } else if (result.reason === 'tom' || result.reason === 'mangler' || result.reason === 'ugyldig') {
         error.textContent = 'Tjek lige bestillingen: vælg mindst én ret og udfyld navn og telefon.';
       } else {

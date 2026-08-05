@@ -73,6 +73,16 @@ begin
     return jsonb_build_object('ok', false, 'remaining', 0);
   end if;
 
+  -- datoen må ikke være passeret (dansk tid) …
+  if p_date is null or p_date < (now() at time zone 'Europe/Copenhagen')::date then
+    return jsonb_build_object('ok', false, 'reason', 'dato');
+  end if;
+  -- … og til i dag skal tiden være mindst 20 min. ude i fremtiden
+  if coalesce(p_time, '') ~ '^[0-2][0-9]:[0-5][0-9]$'
+     and (p_date + p_time::time) < ((now() at time zone 'Europe/Copenhagen') + interval '20 minutes') then
+    return jsonb_build_object('ok', false, 'reason', 'forbi');
+  end if;
+
   select data into v_cfg from config where id = 1 for update;
 
   if coalesce(v_cfg->'blockedDates' ? to_char(p_date, 'YYYY-MM-DD'), false)

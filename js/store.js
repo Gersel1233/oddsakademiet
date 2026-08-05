@@ -604,6 +604,17 @@ const SpiisStore = (() => {
     const oFrom = data.settings.orderFrom || '16:00';
     const oTo = data.settings.orderTo || '21:00';
     if (order.time && (order.time < oFrom || order.time > oTo)) return { ok: false, reason: 'tid' };
+    /* datoen må ikke være passeret – og til i dag skal tiden være mindst
+       20 min. ude i fremtiden (fanger fx en fane, der har stået åben i timevis) */
+    const tToday = todayISO();
+    if (!order.date || order.date < tToday) return { ok: false, reason: 'dato' };
+    if (order.date === tToday && order.time) {
+      const n = new Date();
+      const [oh, om] = order.time.split(':').map(Number);
+      if (oh * 60 + om < n.getHours() * 60 + n.getMinutes() + 20) {
+        return { ok: false, reason: 'forbi' };
+      }
+    }
     /* udsolgte varer og "få tilbage"-antal stoppes før afsendelse
        – databasen tjekker og tæller også selv (kapløbs-sikkert) */
     const soldout = soldoutNames();
