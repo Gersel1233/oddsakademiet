@@ -85,24 +85,27 @@
   /* video: indlæses straks på desktop, men dovent på mobil, så tekst og
      dagens ret lander øjeblikkeligt på mobildata – videoen toner ind bagefter */
   const heroVideo = $('#heroVideo');
-  function loadHeroVideo() {
-    if (heroVideo.src) return;
-    /* vis videoen så snart der er et billede – både når den "playing" og når
-       første frame er klar (så telefonen viser et pænt stillbillede frem for sort,
-       hvis autoplay bremses). Play-knappen skjules i CSS. */
-    const reveal = () => heroVideo.classList.add('is-playing');
-    heroVideo.addEventListener('playing', reveal, { once: true });
-    heroVideo.addEventListener('loadeddata', reveal, { once: true });
-    /* muted SKAL sættes i JS på iOS, ellers nægter den at autoplay'e */
-    heroVideo.muted = true;
-    heroVideo.setAttribute('muted', '');
-    heroVideo.src = heroVideo.dataset.src;
-    const tryPlay = () => { const p = heroVideo.play?.(); if (p) p.catch(() => {}); };
-    tryPlay();
-    heroVideo.addEventListener('canplay', tryPlay, { once: true });
-  }
-  /* start videoen med det samme – også på telefon, så den kører som på desktop */
-  loadHeroVideo();
+  /* vis videoen så snart der er et billede – både når den "playing" og når
+     første frame er klar. Play-knappen er skjult i CSS. */
+  const revealHero = () => heroVideo.classList.add('is-playing');
+  heroVideo.addEventListener('playing', revealHero, { once: true });
+  heroVideo.addEventListener('loadeddata', revealHero, { once: true });
+  /* de første ~0,5 s af optagelsen står stille – dem springer vi over,
+     både ved start og hver gang videoen looper forfra */
+  const HERO_START = 0.5;
+  const skipStill = () => {
+    if (heroVideo.currentTime < HERO_START - 0.1) {
+      try { heroVideo.currentTime = HERO_START; } catch { /* endnu ikke klar */ }
+    }
+  };
+  heroVideo.addEventListener('loadedmetadata', skipStill);
+  heroVideo.addEventListener('timeupdate', skipStill);
+  /* muted SKAL sættes i JS på iOS, ellers nægter den at autoplay'e */
+  heroVideo.muted = true;
+  if (!heroVideo.getAttribute('src')) heroVideo.src = heroVideo.dataset.src;
+  const tryPlay = () => { const p = heroVideo.play?.(); if (p) p.catch(() => {}); };
+  tryPlay();
+  heroVideo.addEventListener('canplay', tryPlay, { once: true });
 
   /* Nogle telefoner nægter at auto-starte en video, før brugeren har rørt
      skærmen (fx strøm-spare-tilstand / streng autoplay-politik). Derfor sætter

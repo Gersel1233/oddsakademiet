@@ -48,7 +48,7 @@
   <section class="hero" id="top">
     <div class="hero__media">
       <!-- src sættes af js: straks på desktop, dovent på mobil så teksten lander først -->
-      <video id="heroVideo" autoplay muted loop playsinline preload="auto" data-src="assets/hero.mp4"></video>
+      <video id="heroVideo" autoplay muted loop playsinline preload="auto" src="assets/hero.mp4" data-src="assets/hero.mp4"></video>
       <div class="hero__overlay"></div>
     </div>
     <div class="hero__content">
@@ -79,14 +79,12 @@
   <main>
     <!-- ====== NOMINERING (Greve Business Awards) – auto-skjules efter udløbsdato ====== -->
     <div class="award" id="awardBanner" hidden>
-      <a class="award__link" href="https://erhvervscentret.greve.dk/nyheder/2026/greve-ivaerksaetterpris-2026" target="_blank" rel="noopener">
-        <span class="award__badge" aria-hidden="true">🏆</span>
-        <span class="award__text">
-          <strong>Spiis er nomineret ved Greve Business Awards 2026</strong>
-          <span>Giv os din stemme – det tager under et minut 🙏</span>
-        </span>
-        <span class="award__cta">Stem på os →</span>
-      </a>
+      <span class="award__badge" aria-hidden="true">🏆</span>
+      <span class="award__text">
+        <strong>Spiis er nomineret ved Greve Business Awards 2026</strong>
+        <span>Giv os din stemme – det tager under et minut 🙏</span>
+      </span>
+      <a class="award__cta" href="https://erhvervscentret.greve.dk/nyheder/2026/greve-ivaerksaetterpris-2026" target="_blank" rel="noopener">Stem på os →</a>
       <button class="award__close" type="button" id="awardClose" aria-label="Skjul">✕</button>
     </div>
 

@@ -321,13 +321,11 @@ input:focus-visible, select:focus-visible, textarea:focus-visible {
   border-radius: 16px;
   box-shadow: 0 12px 30px rgba(30, 28, 78, 0.18);
   overflow: hidden;
-}
-.award__link {
+  /* kun KNAPPEN er klikbar – resten af boksen er ren visning */
   display: flex;
   align-items: center;
   gap: 15px;
   padding: 13px 48px 13px 18px;
-  text-decoration: none;
   color: #fff;
 }
 .award__badge { font-size: 1.85rem; line-height: 1; flex: none; }
@@ -344,8 +342,9 @@ input:focus-visible, select:focus-visible, textarea:focus-visible {
   border-radius: 999px;
   white-space: nowrap;
   box-shadow: 0 3px 10px rgba(201, 162, 39, 0.35);
+  text-decoration: none;
 }
-.award__link:hover .award__cta { filter: brightness(1.05); }
+.award__cta:hover { filter: brightness(1.05); }
 .award__close {
   position: absolute;
   top: 8px; right: 9px;
@@ -358,7 +357,7 @@ input:focus-visible, select:focus-visible, textarea:focus-visible {
 }
 .award__close:hover { background: rgba(255, 255, 255, 0.26); }
 @media (max-width: 560px) {
-  .award__link { flex-wrap: wrap; padding: 14px 42px 15px 16px; gap: 10px 14px; }
+  .award { flex-wrap: wrap; padding: 14px 42px 15px 16px; gap: 10px 14px; }
   .award__badge { font-size: 1.6rem; }
   .award__cta { width: 100%; text-align: center; padding: 11px; }
 }
