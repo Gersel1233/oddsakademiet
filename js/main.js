@@ -104,6 +104,19 @@
   /* start videoen med det samme – også på telefon, så den kører som på desktop */
   loadHeroVideo();
 
+  /* Nogle telefoner nægter at auto-starte en video, før brugeren har rørt
+     skærmen (fx strøm-spare-tilstand / streng autoplay-politik). Derfor sætter
+     vi den i gang ved den ALLERførste handling – berøring, scroll, klik – så
+     den starter stort set med det samme, i stedet for først når man scroller. */
+  const kickHero = () => {
+    if (hero.classList.contains('is-offscreen')) return;
+    heroVideo.muted = true;
+    const p = heroVideo.play?.();
+    if (p) p.catch(() => {});
+  };
+  ['touchstart', 'pointerdown', 'click', 'scroll', 'keydown'].forEach((ev) =>
+    window.addEventListener(ev, kickHero, { once: true, passive: true }));
+
   /* pausér video og marquee, når de er ude af syne – sparer CPU/batteri
      og gør scroll mere flydende */
   const heroIo = new IntersectionObserver((entries) => {
