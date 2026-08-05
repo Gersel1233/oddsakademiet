@@ -425,8 +425,20 @@ input:focus-visible, select:focus-visible, textarea:focus-visible {
   animation: heroZoom 22s ease-in-out infinite alternate;
   opacity: 0;
   transition: opacity 1s ease;
+  pointer-events: none;      /* dekorativ baggrund – taps går til indholdet */
+  will-change: transform;    /* jævn zoom uden hak */
 }
 .hero__media video.is-playing { opacity: 1; }
+/* skjul telefonens indbyggede play-knap/kontroller på baggrundsvideoen */
+.hero__media video::-webkit-media-controls-start-playback-button,
+.hero__media video::-webkit-media-controls-play-button,
+.hero__media video::-webkit-media-controls-overlay-play-button,
+.hero__media video::-webkit-media-controls-panel,
+.hero__media video::-webkit-media-controls {
+  display: none !important;
+  -webkit-appearance: none;
+  opacity: 0 !important;
+}
 @keyframes heroZoom {
   from { transform: scale(1.06); }
   to { transform: scale(1.14); }

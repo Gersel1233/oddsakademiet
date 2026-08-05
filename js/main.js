@@ -87,21 +87,22 @@
   const heroVideo = $('#heroVideo');
   function loadHeroVideo() {
     if (heroVideo.src) return;
-    /* vis videoen så snart der er et billede at vise – ikke kun når den "playing".
-       Så dukker den op på telefonen, selv hvis autoplay bliver bremset (fx spare-tilstand). */
+    /* vis videoen så snart der er et billede – både når den "playing" og når
+       første frame er klar (så telefonen viser et pænt stillbillede frem for sort,
+       hvis autoplay bremses). Play-knappen skjules i CSS. */
     const reveal = () => heroVideo.classList.add('is-playing');
     heroVideo.addEventListener('playing', reveal, { once: true });
     heroVideo.addEventListener('loadeddata', reveal, { once: true });
+    /* muted SKAL sættes i JS på iOS, ellers nægter den at autoplay'e */
+    heroVideo.muted = true;
+    heroVideo.setAttribute('muted', '');
     heroVideo.src = heroVideo.dataset.src;
-    heroVideo.play?.().catch(() => { /* autoplay kan blokeres – første billede vises stadig */ });
+    const tryPlay = () => { const p = heroVideo.play?.(); if (p) p.catch(() => {}); };
+    tryPlay();
+    heroVideo.addEventListener('canplay', tryPlay, { once: true });
   }
-  if (window.matchMedia('(min-width: 761px)').matches) {
-    loadHeroVideo();
-  } else if (document.readyState === 'complete') {
-    setTimeout(loadHeroVideo, 250);
-  } else {
-    window.addEventListener('load', () => setTimeout(loadHeroVideo, 250), { once: true });
-  }
+  /* start videoen med det samme – også på telefon, så den kører som på desktop */
+  loadHeroVideo();
 
   /* pausér video og marquee, når de er ude af syne – sparer CPU/batteri
      og gør scroll mere flydende */
