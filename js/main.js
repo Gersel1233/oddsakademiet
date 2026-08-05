@@ -87,9 +87,13 @@
   const heroVideo = $('#heroVideo');
   function loadHeroVideo() {
     if (heroVideo.src) return;
-    heroVideo.addEventListener('playing', () => heroVideo.classList.add('is-playing'), { once: true });
+    /* vis videoen så snart der er et billede at vise – ikke kun når den "playing".
+       Så dukker den op på telefonen, selv hvis autoplay bliver bremset (fx spare-tilstand). */
+    const reveal = () => heroVideo.classList.add('is-playing');
+    heroVideo.addEventListener('playing', reveal, { once: true });
+    heroVideo.addEventListener('loadeddata', reveal, { once: true });
     heroVideo.src = heroVideo.dataset.src;
-    heroVideo.play?.().catch(() => { /* autoplay kan blokeres – baggrunden dækker */ });
+    heroVideo.play?.().catch(() => { /* autoplay kan blokeres – første billede vises stadig */ });
   }
   if (window.matchMedia('(min-width: 761px)').matches) {
     loadHeroVideo();

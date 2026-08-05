@@ -456,7 +456,7 @@ input:focus-visible, select:focus-visible, textarea:focus-visible {
   font-family: var(--font-display);
   font-weight: 600;
   font-size: clamp(2.6rem, 7vw, 5.2rem);
-  line-height: 1.05;
+  line-height: 1.1;
   letter-spacing: -0.015em;
   text-shadow: 0 8px 40px rgba(0, 0, 0, 0.35);
 }
@@ -484,13 +484,15 @@ input:focus-visible, select:focus-visible, textarea:focus-visible {
   animation: underlineIn 0.7s 1.2s cubic-bezier(0.22, 1, 0.36, 1) forwards;
 }
 @keyframes underlineIn { to { transform: scaleX(1); } }
-.hero__line { display: block; overflow: hidden; }
+/* display:block, men UDEN overflow:hidden – den klippede bogstav-haler (j, g) af */
+.hero__line { display: block; }
 .hero__line > span { display: inline-block; }
 .hero__sub {
   margin: 26px auto 0;
   max-width: 560px;
   font-size: clamp(1.05rem, 2vw, 1.25rem);
-  color: rgba(255, 255, 255, 0.88);
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.9);
 }
 .hero__cta {
   margin-top: 38px;
@@ -1453,9 +1455,9 @@ input:focus-visible, select:focus-visible, textarea:focus-visible {
   body { padding-bottom: 84px; } /* plads til den faste bestil-knap */
   .section { padding: 60px 0; }
 
-  /* kortere hero, så dagens ret er lige under folden */
-  .hero { min-height: 88svh; }
-  .hero__content { padding: 100px 18px 70px; }
+  /* fuld skærm på telefon */
+  .hero { min-height: 100svh; }
+  .hero__content { padding: 96px 20px 88px; }
 
   /* scroll-pillen er overflødig og klemt på mobil */
   .hero__scroll { display: none; }
