@@ -1311,6 +1311,16 @@ input:focus-visible, select:focus-visible, textarea:focus-visible {
 .hours tr.is-today td { color: var(--accent-deep); font-weight: 700; }
 .hours tr.is-closed td:last-child { color: var(--ink-soft); font-weight: 500; }
 .hours__kitchen { margin-top: 14px; color: var(--ink-soft); font-size: 0.92rem; }
+.hours__cutoff {
+  margin-top: 8px;
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: var(--accent, #D96C2C);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.hours__cutoff.is-closed { color: #B3372B; }
 .hours__status { margin-top: 10px; font-weight: 600; }
 .hours__status.is-open { color: #3F7A3B; }
 .hours__status.is-soon { color: #B8860B; }

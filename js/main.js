@@ -389,6 +389,30 @@
       kitchenNote.textContent = `🍽️ Bestillinger kan vælges kl. ${orderFrom()} – ${orderTo()}`;
     }
 
+    /* tydelig deadline til kunden: hvor længe kan man nå at bestille til i dag.
+       Bruger PRÆCIS samme tider som selve bestillingen, så det aldrig kan vise
+       et andet tal end det, systemet faktisk tillader. */
+    const cutoffEl = $('#orderCutoff');
+    if (cutoffEl) {
+      const todayIso = S.todayISO();
+      const daySlots = S.orderSlots(todayIso, 30); /* hele dagens vindue (uden "nu"-filter) */
+      const lastSlot = daySlots[daySlots.length - 1];
+      if (S.isClosureNow() || hours[todayIdx].closed || S.isOrderingClosed(todayIso) || !lastSlot) {
+        cutoffEl.hidden = true; /* ferie, lukket dag eller intet vindue i dag → ingen linje */
+      } else {
+        const deadline = toMin(lastSlot) - 20; /* mindst 20 min. varsel */
+        const fmt = (m) => `${String(Math.floor(m / 60)).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}`;
+        if (slotsFor(todayIso).length > 0) {
+          cutoffEl.textContent = `🕐 Bestil til i dag frem til kl. ${fmt(deadline)}`;
+          cutoffEl.className = 'hours__cutoff';
+        } else {
+          cutoffEl.textContent = '🕐 Bestillinger til i dag er lukket – vælg en kommende dag';
+          cutoffEl.className = 'hours__cutoff is-closed';
+        }
+        cutoffEl.hidden = false;
+      }
+    }
+
     const status = $('#openStatus');
     const h = hours[todayIdx];
     const now = nowMin();
