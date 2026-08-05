@@ -310,6 +310,58 @@ input:focus-visible, select:focus-visible, textarea:focus-visible {
 /* under ferie skjules de "bestil"-knapper, der ellers inviterer til bestilling */
 .site-closed .mobilecta,
 .site-closed .nav__cta { display: none !important; }
+
+/* ---------- nominerings-stribe (Greve Business Awards) ---------- */
+.award {
+  position: relative;
+  width: min(1080px, calc(100% - 32px));
+  margin: 20px auto 0;
+  background: linear-gradient(135deg, #3b3a86, #2b2a66);
+  border: 1.5px solid #c7a53f;
+  border-radius: 16px;
+  box-shadow: 0 12px 30px rgba(30, 28, 78, 0.18);
+  overflow: hidden;
+}
+.award__link {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  padding: 13px 48px 13px 18px;
+  text-decoration: none;
+  color: #fff;
+}
+.award__badge { font-size: 1.85rem; line-height: 1; flex: none; }
+.award__text { flex: 1 1 auto; min-width: 0; }
+.award__text strong { display: block; font-weight: 700; font-size: 1rem; line-height: 1.3; }
+.award__text span { font-size: 0.86rem; color: rgba(255, 255, 255, 0.82); }
+.award__cta {
+  flex: none;
+  font-weight: 700;
+  font-size: 0.92rem;
+  color: #2a2a5e;
+  background: linear-gradient(135deg, #edcf76, #c9a227);
+  padding: 9px 17px;
+  border-radius: 999px;
+  white-space: nowrap;
+  box-shadow: 0 3px 10px rgba(201, 162, 39, 0.35);
+}
+.award__link:hover .award__cta { filter: brightness(1.05); }
+.award__close {
+  position: absolute;
+  top: 8px; right: 9px;
+  width: 26px; height: 26px;
+  border: none; border-radius: 50%;
+  background: rgba(255, 255, 255, 0.14);
+  color: #fff; cursor: pointer;
+  font-size: 0.72rem; line-height: 1;
+  display: grid; place-items: center;
+}
+.award__close:hover { background: rgba(255, 255, 255, 0.26); }
+@media (max-width: 560px) {
+  .award__link { flex-wrap: wrap; padding: 14px 42px 15px 16px; gap: 10px 14px; }
+  .award__badge { font-size: 1.6rem; }
+  .award__cta { width: 100%; text-align: center; padding: 11px; }
+}
 @media (max-width: 760px) {
   .news--big { flex-direction: column; align-items: stretch; }
   .news--big .news__media { flex: 0 0 auto; }

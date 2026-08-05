@@ -117,6 +117,24 @@
   ['touchstart', 'pointerdown', 'click', 'scroll', 'keydown'].forEach((ev) =>
     window.addEventListener(ev, kickHero, { once: true, passive: true }));
 
+  /* ---------- nominerings-stribe (Greve Business Awards) ----------
+     Vises kun frem til udløbsdatoen og forsvinder så helt af sig selv.
+     Den enkelte besøgende kan også skjule den med ✕. */
+  (() => {
+    const el = $('#awardBanner');
+    if (!el) return;
+    const UNTIL = '2026-09-05'; /* ← auto-skjul fra denne dato (om ~1 måned) */
+    let dismissed = false;
+    try { dismissed = localStorage.getItem('spiis-award') === 'x'; } catch { /* privat-tilstand */ }
+    if (S.todayISO() < UNTIL && !dismissed) el.hidden = false;
+    const close = $('#awardClose');
+    if (close) close.addEventListener('click', (e) => {
+      e.preventDefault(); e.stopPropagation();
+      el.hidden = true;
+      try { localStorage.setItem('spiis-award', 'x'); } catch { /* ignore */ }
+    });
+  })();
+
   /* pausér video og marquee, når de er ude af syne – sparer CPU/batteri
      og gør scroll mere flydende */
   const heroIo = new IntersectionObserver((entries) => {
