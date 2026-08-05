@@ -145,9 +145,17 @@ main .section {
   cursor: pointer;
   transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.25s ease, background 0.25s ease, color 0.25s ease;
   will-change: transform;
+  /* øjeblikkelig reaktion på telefon: ingen dobbelt-tryk-ventetid, intet gråt blink */
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+  -webkit-user-select: none;
 }
-.btn:hover { transform: translateY(-1px); }
-.btn:active { transform: translateY(0) scale(0.985); }
+/* trykket-ned: reagerer med det SAMME (hurtig kurve ind, blød fjeder ud) */
+.btn:active {
+  transform: translateY(1px) scale(0.96);
+  transition-duration: 0.07s;
+}
 .btn:focus-visible,
 input:focus-visible, select:focus-visible, textarea:focus-visible {
   outline: none;
@@ -157,11 +165,14 @@ input:focus-visible, select:focus-visible, textarea:focus-visible {
 .btn--accent {
   background: var(--accent);
   color: #fff;
-  box-shadow: 0 12px 30px -12px rgba(217, 108, 44, 0.7);
+  /* glas-kant: lys overkant + dyb skygge giver knappen fysik */
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.35),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.12),
+    0 12px 30px -12px rgba(217, 108, 44, 0.7);
   position: relative;
   overflow: hidden;
 }
-.btn--accent:hover { background: var(--accent-deep); box-shadow: 0 16px 34px -12px rgba(217, 108, 44, 0.8); }
 /* blødt lysstrejf hen over knappen ved hover */
 .btn--accent::after {
   content: '';
@@ -173,22 +184,37 @@ input:focus-visible, select:focus-visible, textarea:focus-visible {
   transition: left 0.55s ease;
   pointer-events: none;
 }
-.btn--accent:hover::after { left: 130%; }
 
+/* ægte glas-knap – virker nu også på iPhone (-webkit-backdrop-filter) */
 .btn--ghost {
-  border-color: rgba(255, 255, 255, 0.7);
+  border-color: rgba(255, 255, 255, 0.55);
   color: #fff;
-  backdrop-filter: blur(6px);
-  background: rgba(255, 255, 255, 0.08);
+  -webkit-backdrop-filter: blur(14px) saturate(160%);
+  backdrop-filter: blur(14px) saturate(160%);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.16), rgba(255, 255, 255, 0.07));
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.35),
+    0 8px 24px -12px rgba(0, 0, 0, 0.45);
 }
-.btn--ghost:hover { background: rgba(255, 255, 255, 0.18); }
 
 .btn--ghost-dark {
-  border-color: var(--ink);
+  border-color: rgba(28, 24, 20, 0.55);
   color: var(--ink);
-  background: transparent;
+  -webkit-backdrop-filter: blur(12px) saturate(150%);
+  backdrop-filter: blur(12px) saturate(150%);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.5), rgba(255, 255, 255, 0.22));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6);
 }
-.btn--ghost-dark:hover { background: var(--ink); color: var(--cream); }
+
+/* hover-effekter kun på enheder MED en rigtig mus/pegepind –
+   så telefoner aldrig "hænger" i en hover-tilstand ved første tryk */
+@media (hover: hover) {
+  .btn:hover { transform: translateY(-1px); }
+  .btn--accent:hover { background: var(--accent-deep); box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35), 0 16px 34px -12px rgba(217, 108, 44, 0.8); }
+  .btn--accent:hover::after { left: 130%; }
+  .btn--ghost:hover { background: linear-gradient(180deg, rgba(255, 255, 255, 0.26), rgba(255, 255, 255, 0.13)); }
+  .btn--ghost-dark:hover { background: var(--ink); color: var(--cream); }
+}
 
 .btn--small { padding: 10px 20px; font-size: 0.92rem; }
 .btn--big { padding: 16px 40px; font-size: 1.08rem; }
@@ -1453,14 +1479,37 @@ input:focus-visible, select:focus-visible, textarea:focus-visible {
 }
 .footer__admin:hover { color: var(--accent); }
 
-/* ---------- scroll-reveal ---------- */
+/* ---------- øjeblikkelig tryk-respons på ALLE tryk-flader ---------- */
+a, button, select, .daytab, .choice, .segmented label, .stepper button {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+/* lynhurtig "trykket ned"-fysik på småknapper (hurtig ind, blød ud) */
+.daytab, .choice, .stepper button { transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), background 0.2s ease, border-color 0.2s ease, color 0.2s ease, box-shadow 0.22s ease; }
+.daytab:active, .stepper button:active:not(:disabled) { transform: scale(0.94); transition-duration: 0.07s; }
+.choice:active, .segmented label:active { transform: scale(0.98); transition-duration: 0.07s; }
+/* på touch-skærme må intet "hænge" i en hover-tilstand efter et tryk */
+@media (hover: none) {
+  .daytab:hover { border-color: var(--line); color: var(--ink); }
+  .daytab.is-active:hover { border-color: var(--ink); color: var(--cream); }
+  .choice:hover { transform: none; }
+}
+
+/* ---------- scroll-reveal – lettere og hurtigere, så siden føles kvik ---------- */
 [data-reveal] {
   opacity: 0;
-  transform: translateY(36px);
-  transition: opacity 0.8s cubic-bezier(0.22, 1, 0.36, 1), transform 0.8s cubic-bezier(0.22, 1, 0.36, 1);
+  transform: translateY(22px);
+  transition: opacity 0.55s cubic-bezier(0.22, 1, 0.36, 1), transform 0.55s cubic-bezier(0.22, 1, 0.36, 1);
   transition-delay: var(--reveal-delay, 0s);
 }
 [data-reveal].is-visible { opacity: 1; transform: none; }
+
+/* tunge sektioner under folden renderes først, når man når dem – mærkbart
+   hurtigere første visning, især på telefon (ren visnings-optimering) */
+#menukort, #kontakt {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 900px;
+}
 
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
