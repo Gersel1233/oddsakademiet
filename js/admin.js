@@ -609,15 +609,21 @@
           <h2>🍲 Dagens ret i dag</h2>
           <button class="abtn abtn--ghost" data-goto="dagensret">Redigér ugeplan →</button>
         </div>
-        ${dish
-          ? `<div class="row"><div class="row__main">
-               <div class="row__title">${esc(dish.title)}
-                 ${dish.price ? `<span class="tag tag--accent">${kr(dish.price)}</span>` : ''}
-                 ${dish.stock != null && dish.stock !== '' ? `<span class="tag ${S.getSold(today) >= dish.stock ? 'tag--red' : 'tag--green'}">${S.getSold(today)}/${dish.stock} solgt</span>` : ''}
+        ${(() => {
+          const ds = S.getDagensRetList(today);
+          if (!ds.length) return '<div class="empty">Der er ikke sat en dagens ret i dag. Gå til "Dagens ret" og planlæg den.</div>';
+          return ds.map((dd) => {
+            const s = S.getSoldFor(today, dd.title);
+            return `<div class="row"><div class="row__main">
+               <div class="row__title">${esc(dd.title)}
+                 ${dd.price ? `<span class="tag tag--accent">${kr(dd.price)}</span>` : ''}
+                 ${dd.soldout ? '<span class="tag tag--red">🚫 Udsolgt</span>' : ''}
+                 ${!dd.soldout && dd.stock != null && dd.stock !== '' ? `<span class="tag ${s >= dd.stock ? 'tag--red' : 'tag--green'}">${s}/${dd.stock} solgt</span>` : (s ? `<span class="tag">${s} solgt</span>` : '')}
                </div>
-               <div class="row__sub">${esc(dish.desc || '')}</div>
-             </div></div>`
-          : '<div class="empty">Der er ikke sat en dagens ret i dag. Gå til "Dagens ret" og planlæg den.</div>'}
+               <div class="row__sub">${esc(dd.desc || '')}</div>
+             </div></div>`;
+          }).join('');
+        })()}
       </div>
 
       <div class="acard">
@@ -683,7 +689,8 @@
       persons, togo, spise: persons - togo,
       bookings: S.getBookings().filter((b) => b.date === iso && b.status !== 'afvist')
         .sort((a, b) => (a.time || '').localeCompare(b.time || '')),
-      dish: S.getDagensRet(iso), sold: S.getSold(iso), note: S.getNote(iso),
+      dish: S.getDagensRet(iso), dishes: S.getDagensRetList(iso),
+      sold: S.getSold(iso), note: S.getNote(iso),
       closed: !S.isOpenDay(iso), noOrders: S.isOrderingClosed(iso),
     };
   }
@@ -772,7 +779,7 @@
         <span class="kalcell__num">${Number(iso.slice(8))}${d.note ? ' <i title="Der er en note på dagen">📝</i>' : ''}</span>
         ${d.closed ? '<span class="kalcell__closed">Køkken lukket</span>' : `
           ${showPill ? `<span class="kalcell__status ${st.cls}">${st.short}</span>` : ''}
-          ${d.dish ? `<span class="kalcell__dish">🍲 ${esc(d.dish.title)}</span>` : ''}
+          ${d.dishes.length ? `<span class="kalcell__dish">🍲 ${esc(d.dishes[0].title)}${d.dishes.length > 1 ? ` +${d.dishes.length - 1}` : ''}</span>` : ''}
           ${d.items ? `<span class="kalcell__count"><b>${d.items}</b> retter · 🥡 ${d.togo} · 🍽️ ${d.spise}</span>` : ''}`}
         ${d.bookings.slice(0, 2).map((b) => `<span class="kalcell__bk ${b.kind === 'moede' ? 'kalcell__bk--moede' : ''}">${b.kind === 'moede' ? '📅' : '🎉'} ${esc(b.subject)}</span>`).join('')}
         ${d.bookings.length > 2 ? `<span class="kalcell__more">+ ${d.bookings.length - 2} mere</span>` : ''}
@@ -784,12 +791,12 @@
     const d = kalDayInfo(iso);
     const st = dayStatus(iso);
     const totals = dishTotals(d.orders);
-    /* handling til dagen: luk/åbn selv – eller hop hen hvor det styres */
+    /* handling til dagen: opret booking, luk/åbn – eller hop hen hvor det styres */
     let act = '';
     if (iso >= today) {
       if (!S.isOpenDay(iso)) act = `<span class="kalpanel__hint">🌙 Køkkenet er lukket på denne ugedag.</span><button class="abtn abtn--ghost" data-goto="tider">Redigér åbningstider →</button>`;
       else if (S.isInClosure(iso)) act = `<span class="kalpanel__hint">🌴 Dagen er en del af en ferieperiode.</span><button class="abtn abtn--ghost" data-goto="tider">Redigér ferie →</button>`;
-      else act = dayCloseBtn(iso, today);
+      else act = `<button class="abtn abtn--accent" data-act="kal-newbooking" data-iso="${iso}">➕ Opret booking denne dag</button>${dayCloseBtn(iso, today)}`;
     }
     return `
       <div class="acard kalpanel">
@@ -806,9 +813,14 @@
         </div>` : ''}
         <div class="kalpanel__grid">
           <div>
-            <h3 class="kp__sub">🍲 Dagens ret</h3>
-            ${d.dish
-              ? `<div class="kalpanel__dish">${esc(d.dish.title)}${d.dish.stock != null && d.dish.stock !== '' ? ` <span class="tag ${d.sold >= d.dish.stock ? 'tag--red' : 'tag--accent'}">${d.sold}/${d.dish.stock} solgt</span>` : ''}</div>`
+            <h3 class="kp__sub">🍲 Dagens ret${d.dishes.length > 1 ? 'ter' : ''}</h3>
+            ${d.dishes.length
+              ? d.dishes.map((dd) => {
+                  const s = S.getSoldFor(iso, dd.title);
+                  return `<div class="kalpanel__dish">${esc(dd.title)}
+                    ${dd.soldout ? '<span class="tag tag--red">🚫 Udsolgt</span>' : ''}
+                    ${!dd.soldout && dd.stock != null && dd.stock !== '' ? ` <span class="tag ${s >= dd.stock ? 'tag--red' : 'tag--accent'}">${s}/${dd.stock} solgt</span>` : (s ? ` <span class="tag">${s} solgt</span>` : '')}</div>`;
+                }).join('')
               : '<div class="kalpanel__none">Ingen dagens ret sat endnu</div>'}
             <h3 class="kp__sub">🧾 Bestillinger</h3>
             ${d.orders.length ? `
@@ -880,9 +892,14 @@
             </div>
             <div class="ugeday__status ${st.cls}">${st.full}</div>
             <div class="ugeday__dish">
-              ${dish
-                ? `🍲 ${esc(dish.title)}${dish.stock != null && dish.stock !== '' ? ` <span class="tag ${sold >= dish.stock ? 'tag--red' : 'tag--accent'}">${sold}/${dish.stock} solgt</span>` : ''}`
-                : '<span style="color:var(--ink-soft);">Ingen dagens ret sat</span>'}
+              ${(() => {
+                const ds = S.getDagensRetList(iso);
+                if (!ds.length) return '<span style="color:var(--ink-soft);">Ingen dagens ret sat</span>';
+                return ds.map((dd) => {
+                  const s = S.getSoldFor(iso, dd.title);
+                  return `<div>🍲 ${esc(dd.title)}${dd.soldout ? ' <span class="tag tag--red">🚫 Udsolgt</span>' : (dd.stock != null && dd.stock !== '' ? ` <span class="tag ${s >= dd.stock ? 'tag--red' : 'tag--accent'}">${s}/${dd.stock} solgt</span>` : '')}</div>`;
+                }).join('');
+              })()}
             </div>
             <div class="ugeday__stats">
               <span><strong>${orders.length}</strong> bestillinger</span>
@@ -932,6 +949,11 @@
       }
       else if (k === 'day') kalSelected = el.dataset.iso;
       renderUge();
+      /* klik på en dag "åbner" den: rul dag-panelet frem, så det fylder skærmen */
+      if (k === 'day') {
+        const panel = document.querySelector('#view-uge .kalpanel');
+        if (panel) panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
     };
 
     /* dagsnoter gemmer sig selv, mens der skrives */
@@ -971,12 +993,22 @@
           ${esc(S.formatDate(ordersDate))} · ${dish ? `Dagens ret: <strong>${esc(dish.title)}</strong> · ` : ''}${orders.length} bestillinger · ${itemsTotal} retter · ${persons} personer
         </p>
         ${orders.length ? `<div class="prodlist" style="margin-bottom:16px;">${dishTotals(orders).map(([n, q]) => `<span class="prod"><b>${q}</b>${esc(n)}</span>`).join('')}</div>` : ''}
-        <div class="rowlist">
-          ${orders.filter((o) => o.status === 'ny').length
-            ? orders.filter((o) => o.status === 'ny').map((o) => orderRow(o)).join('')
-            : `<div class="empty">${orders.length ? 'Alle bestillinger er lavet – flot! 🎉' : 'Ingen bestillinger på denne dato.'}</div>`}
+        ${(() => {
+          const pending = orders.filter((o) => o.status === 'ny');
+          const done = orders.filter((o) => o.status !== 'ny');
+          return `
+        <div class="statuschips">
+          <span class="schip schip--todo ${pending.length ? 'is-on' : ''}">🔥 ${pending.length} mangler at blive kørt</span>
+          <span class="schip schip--done ${done.length ? 'is-on' : ''}">✅ ${done.length} kørt</span>
         </div>
-        ${doneFold(orders.filter((o) => o.status !== 'ny'))}
+        ${pending.length ? `
+        <h3 class="kp__sub">🔥 Mangler <em class="kp__sub-hint">· tryk ✓ når bestillingen er kørt</em></h3>
+        <div class="rowlist">${pending.map((o) => orderRow(o)).join('')}</div>`
+          : `<div class="empty">${orders.length ? 'Alle bestillinger er kørt – flot! 🎉' : 'Ingen bestillinger på denne dato.'}</div>`}
+        ${done.length ? `
+        <h3 class="kp__sub">✅ Kørt / færdige <em class="kp__sub-hint">· tryk ↩ Gendan hvis noget var en fejl</em></h3>
+        <div class="rowlist">${done.map((o) => orderRow(o)).join('')}</div>` : ''}`;
+        })()}
       </div>`;
 
     /* Spiis-kalender med prik på dage, der har bestillinger */
@@ -1377,29 +1409,43 @@
   /* ============================================================
      DAGENS RET – planlægger
      ============================================================ */
+  function pdDishRow(day, d) {
+    const on = day.open;
+    const sold = d.title ? S.getSoldFor(day.iso, d.title) : 0;
+    return `
+      <div class="pd-dish ${d.soldout ? 'pd-dish--soldout' : ''}" data-out="${d.soldout ? '1' : ''}">
+        <input class="inline-input" data-f="title" placeholder="${on ? 'Ret, fx Boller i karry' : 'Lukket'}" value="${esc(d.title || '')}" ${on ? '' : 'disabled'} />
+        <textarea class="inline-input pd-dish__desc" data-f="desc" rows="1" placeholder="Beskrivelse – én linje pr. punkt (fx alt i en tapas)" ${on ? '' : 'disabled'}>${esc(d.desc || '')}</textarea>
+        <input class="inline-input" data-f="price" type="number" min="0" placeholder="Pris" value="${esc(d.price ?? '')}" ${on ? '' : 'disabled'} />
+        <input class="inline-input" data-f="stock" type="number" min="0" placeholder="Antal" title="Antal portioner – lad stå tomt for ubegrænset" value="${esc(d.stock ?? '')}" ${on ? '' : 'disabled'} />
+        <button type="button" class="abtn ${d.soldout ? 'abtn--green' : 'abtn--ghost'} pd-dish__so" data-soldout title="${d.soldout ? 'Åbn for bestilling igen' : 'Meld retten udsolgt med ét tryk'}" ${on ? '' : 'disabled'}>${d.soldout ? '✅ Åbn igen' : '🚫 Udsolgt'}</button>
+        <button type="button" class="abtn abtn--danger abtn--icon" data-delret title="Fjern retten" ${on ? '' : 'disabled'}>✕</button>
+        ${sold ? `<small class="pd-dish__sold">solgt: ${sold}${d.stock != null && d.stock !== '' ? ` / ${d.stock}` : ''}</small>` : ''}
+      </div>`;
+  }
+
   function renderDagensRetEditor() {
     const plan = S.getPlan(14);
     $('#view-dagensret').innerHTML = `
       <div class="acard">
         <div class="acard__head">
-          <h2>🍲 Planlæg dagens ret</h2>
-          <span class="sub">alt gemmes automatisk, mens du skriver – hjemmesiden opdateres med det samme</span>
+          <h2>🍲 Planlæg dagens ret(ter)</h2>
+          <span class="sub">alt gemmes automatisk – der kan være FLERE retter samme dag, og "🚫 Udsolgt" lukker en ret med ét tryk</span>
         </div>
         <div class="planner">
           ${plan.map((day) => {
-            const d = day.dish || { title: '', desc: '', price: '', stock: '' };
+            const dishes = (day.dishes && day.dishes.length) ? day.dishes : [{ title: '', desc: '', price: '', stock: '' }];
             const isToday = day.iso === S.todayISO();
-            const sold = S.getSold(day.iso);
             return `
-            <div class="planday ${day.open ? '' : 'planday--closed'} ${isToday ? 'planday--today' : ''}" data-iso="${day.iso}">
+            <div class="planday planday--multi ${day.open ? '' : 'planday--closed'} ${isToday ? 'planday--today' : ''}" data-iso="${day.iso}">
               <div class="planday__date">
                 <strong>${day.weekday}${isToday ? ' · i dag' : ''}</strong>
-                <small>${esc(S.formatDate(day.iso, false))}${day.open ? '' : ' · lukket'}${sold ? ` · solgt: ${sold}` : ''}</small>
+                <small>${esc(S.formatDate(day.iso, false))}${day.open ? '' : ' · lukket'}</small>
               </div>
-              <input class="inline-input" data-f="title" placeholder="${day.open ? 'Ret, fx Boller i karry' : 'Lukket'}" value="${esc(d.title)}" ${day.open ? '' : 'disabled'} />
-              <input class="inline-input" data-f="desc" placeholder="Kort beskrivelse (valgfrit)" value="${esc(d.desc || '')}" ${day.open ? '' : 'disabled'} />
-              <input class="inline-input" data-f="price" type="number" min="0" placeholder="Pris" value="${esc(d.price ?? '')}" ${day.open ? '' : 'disabled'} />
-              <input class="inline-input" data-f="stock" type="number" min="0" placeholder="Antal" title="Antal portioner – lad stå tomt for ubegrænset" value="${esc(d.stock ?? '')}" ${day.open ? '' : 'disabled'} />
+              <div class="planday__dishes">
+                ${dishes.map((d) => pdDishRow(day, d)).join('')}
+                ${day.open ? '<button type="button" class="abtn abtn--ghost planday__add" data-addret>＋ Tilføj ret mere</button>' : ''}
+              </div>
             </div>`;
           }).join('')}
         </div>
@@ -1414,23 +1460,49 @@
       clearTimeout(dayTimers[iso]);
       dayTimers[iso] = setTimeout(() => saveDay(row, true), 900);
     };
+    /* udsolgt-knap, fjern-ret og tilføj-ret */
+    $('#view-dagensret').onclick = (e) => {
+      const row = e.target.closest && e.target.closest('.planday');
+      if (!row) return;
+      const soBtn = e.target.closest('[data-soldout]');
+      if (soBtn) {
+        const dishEl = soBtn.closest('.pd-dish');
+        dishEl.dataset.out = dishEl.dataset.out === '1' ? '' : '1';
+        saveDay(row);
+        renderDagensRetEditor();
+        return;
+      }
+      if (e.target.closest('[data-delret]')) {
+        e.target.closest('.pd-dish').remove();
+        saveDay(row);
+        renderDagensRetEditor();
+        return;
+      }
+      if (e.target.closest('[data-addret]')) {
+        const add = e.target.closest('[data-addret]');
+        add.insertAdjacentHTML('beforebegin', pdDishRow({ iso: row.dataset.iso, open: true }, { title: '', desc: '', price: '', stock: '' }));
+        const inp = add.previousElementSibling.querySelector('[data-f="title"]');
+        if (inp) inp.focus();
+      }
+    };
   }
 
   function saveDay(rowEl, silent = false) {
     const iso = rowEl.dataset.iso;
-    const title = $('[data-f="title"]', rowEl).value.trim();
-    const desc = $('[data-f="desc"]', rowEl).value.trim();
-    const priceRaw = $('[data-f="price"]', rowEl).value;
-    const price = priceRaw ? Number(priceRaw) : null;
-    const stockRaw = $('[data-f="stock"]', rowEl).value;
-    const stock = stockRaw === '' ? null : Number(stockRaw);
-    if (!title) {
-      S.setDagensRet(iso, null);
-      if (silent) savedToast(); else toast(`${S.formatDate(iso)}: dagens ret fjernet`);
-    } else {
-      S.setDagensRet(iso, { title, desc, price, stock });
-      if (silent) savedToast(); else toast(`${S.formatDate(iso)}: "${title}" gemt ✓`);
-    }
+    const dishes = Array.from(rowEl.querySelectorAll('.pd-dish')).map((el) => {
+      const priceRaw = $('[data-f="price"]', el).value;
+      const stockRaw = $('[data-f="stock"]', el).value;
+      return {
+        title: $('[data-f="title"]', el).value.trim(),
+        desc: $('[data-f="desc"]', el).value.trim(),
+        price: priceRaw ? Number(priceRaw) : null,
+        stock: stockRaw === '' ? null : Number(stockRaw),
+        soldout: el.dataset.out === '1',
+      };
+    }).filter((d) => d.title);
+    S.setDagensRetList(iso, dishes);
+    if (silent) savedToast();
+    else toast(dishes.length ? `${S.formatDate(iso)}: ${dishes.map((d) => `"${d.title}"${d.soldout ? ' (udsolgt)' : ''}`).join(' · ')} gemt ✓` : `${S.formatDate(iso)}: dagens ret fjernet`);
     renderBell();
   }
 
@@ -1654,13 +1726,23 @@
           <span class="sub">alt gemmes automatisk, når du ændrer noget</span>
         </div>
         <p class="sub" style="color:var(--ink-soft);margin-bottom:16px;">Tiderne styrer også, hvilke afhentnings- og bookingtider kunderne kan vælge på hjemmesiden.</p>
-        <div class="hoursrow" style="margin-bottom:14px;">
-          <strong>🍽️ Bestillinger kan vælges</strong>
-          <span class="sub" style="color:var(--ink-soft);font-size:0.85rem;">Gælder alle dage (to-go og spis her). Kunderne kan kun vælge tider i dette vindue.</span>
+        <div class="hoursrow" style="margin-bottom:8px;">
+          <strong>🥡 To-go kan vælges</strong>
+          <span class="sub" style="color:var(--ink-soft);font-size:0.85rem;">Sidste afhentningstid for to-go.</span>
           <div style="display:flex;align-items:center;gap:8px;">
             <input class="inline-input" id="orderFrom" type="time" value="${esc(S.getSettings().orderFrom || '16:00')}" />
             <span class="dash">–</span>
-            <input class="inline-input" id="orderTo" type="time" value="${esc(S.getSettings().orderTo || '21:00')}" />
+            <input class="inline-input" id="orderToTogo" type="time" value="${esc(S.getSettings().orderToTogo || '19:00')}" />
+          </div>
+          <span></span><span></span>
+        </div>
+        <div class="hoursrow" style="margin-bottom:14px;">
+          <strong>🍽️ Spis her kan vælges</strong>
+          <span class="sub" style="color:var(--ink-soft);font-size:0.85rem;">Køkkenet lukker for siddende gæster her (medmindre andet er aftalt).</span>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <span class="sub" style="color:var(--ink-soft);">samme start</span>
+            <span class="dash">–</span>
+            <input class="inline-input" id="orderToDine" type="time" value="${esc(S.getSettings().orderToDine || '20:30')}" />
           </div>
           <span></span><span></span>
         </div>
@@ -1706,7 +1788,8 @@
       S.setHours(newHours);
       S.updateSettings({
         orderFrom: $('#orderFrom').value || '16:00',
-        orderTo: $('#orderTo').value || '21:00',
+        orderToTogo: $('#orderToTogo').value || '19:00',
+        orderToDine: $('#orderToDine').value || '20:30',
       });
       savedToast();
     }
@@ -1870,6 +1953,19 @@
     if (act === 'goto-orders') {
       ordersDate = btn.dataset.iso;
       $('.navitem[data-view="bestillinger"]')?.click();
+      return;
+    }
+
+    if (act === 'kal-newbooking') {
+      /* hop til Bookinger med formularen åben og datoen sat – arrangementer
+         med "luk"-fluebenet blokerer automatisk dagen for madbestillinger */
+      switchView('bookinger');
+      const fold = document.getElementById('newBookingFold');
+      if (fold) { fold.open = true; fold.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
+      const dateEl = document.getElementById('nbkDate');
+      if (dateEl) { dateEl.value = btn.dataset.iso; dateEl.dispatchEvent(new Event('change', { bubbles: true })); }
+      document.getElementById('nbkName')?.focus({ preventScroll: true });
+      toast(`Datoen ${S.formatDate(btn.dataset.iso)} er sat – udfyld resten og tryk Opret ✓`);
       return;
     }
 

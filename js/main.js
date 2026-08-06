@@ -22,25 +22,25 @@
     return n.getHours() * 60 + n.getMinutes();
   };
 
-  /* bestillingsvinduet (samme for to-go og spis her) */
+  /* bestillingsvinduet – FORSKELLIGT pr. type: to-go til kl. 19,
+     spis her til kl. 20:30 (kan ændres i admin) */
   const orderFrom = () => S.getSettings().orderFrom || '16:00';
-  const orderTo = () => S.getSettings().orderTo || '21:00';
+  const orderTo = (type) => S.orderToFor(type || currentType());
 
-  /* køkkenets tilstand lige nu: 'foer' (før åbning), 'aaben' eller 'lukket' */
+  /* køkkenets tilstand lige nu (styret af det SENESTE vindue = spis her) */
   function kitchenStateToday() {
     const h = S.hoursFor(S.todayISO());
     if (h.closed) return 'lukket';
     const now = nowMin();
-    if (now > toMin(orderTo())) return 'lukket';
+    if (now > toMin(S.orderToFor('spise'))) return 'lukket';
     if (now >= toMin(orderFrom())) return 'aaben';
     return 'foer';
   }
 
-  /* afhentningstider for en dag – i dag vises kun fremtidige tider
-     (min. 20 min. varsel), så dagen "udløber" af sig selv.
-     Bestillinger kan kun vælges i vinduet 16:00–21:00 (kan ændres i admin). */
-  function slotsFor(iso) {
-    let slots = S.orderSlots(iso, 30);
+  /* afhentningstider for en dag OG den valgte type – i dag vises kun
+     fremtidige tider (min. 20 min. varsel), så dagen "udløber" af sig selv */
+  function slotsFor(iso, type) {
+    let slots = S.orderSlots(iso, 30, type || currentType());
     if (iso === S.todayISO()) {
       const cutoff = nowMin() + 20;
       slots = slots.filter((t) => toMin(t) >= cutoff);
@@ -48,8 +48,8 @@
     return slots;
   }
 
-  /* er dagen reelt slut for madbestillinger? */
-  const dayDone = (iso) => iso === S.todayISO() && slotsFor(iso).length === 0;
+  /* er dagen reelt slut for madbestillinger? (målt på det længste vindue) */
+  const dayDone = (iso) => iso === S.todayISO() && slotsFor(iso, 'spise').length === 0;
 
   /* ---------- navigation ---------- */
   const nav = $('#nav');
@@ -207,16 +207,17 @@
     let iso = today;
     /* efter køkkenets lukketid er dagen slut – og dage med privat
        arrangement springes over, for dér kan man ikke bestille */
-    let dish = (dayDone(today) || S.isOrderingClosed(today)) ? null : S.getDagensRet(iso);
+    let dishes = (dayDone(today) || S.isOrderingClosed(today)) ? [] : S.getDagensRetList(iso);
 
     /* hvis der ikke er en ret (eller dagen er slut), så vis den næste planlagte */
-    if (!dish) {
-      for (let i = 1; i <= 14 && !dish; i++) {
+    if (!dishes.length) {
+      for (let i = 1; i <= 14 && !dishes.length; i++) {
         iso = S.addDays(today, i);
         if (S.isOrderingClosed(iso)) continue;
-        dish = S.getDagensRet(iso);
+        dishes = S.getDagensRetList(iso);
       }
     }
+    const dish = dishes[0] || null;
 
     const label = $('#todayLabel');
     const title = $('#todayDish');
@@ -233,27 +234,50 @@
       return;
     }
     label.textContent = iso === today ? 'I dag' : S.formatDate(iso);
-    title.textContent = dish.title;
-    desc.textContent = dish.desc || '';
-    price.textContent = dish.price ? kr(dish.price) : '';
+    title.textContent = dishes.length > 1 ? dishes.map((d) => d.title).join(' · ') : dish.title;
+    desc.innerHTML = dishes.length > 1 ? '' : descHtml(dish.desc || '');
+    price.textContent = dishes.length === 1 && dish.price ? kr(dish.price) : '';
 
-    const remaining = S.getRemaining(iso);
+    /* med flere retter: udsolgt først når ALLE er udsolgte; "få tilbage"
+       vises for den ret, der er tættest på at slippe op */
     stockEl.className = 'today__stock';
-    if (remaining === null) {
-      stockEl.textContent = '';
-    } else if (remaining <= 0) {
+    if (dishes.length > 1 && S.dagensAllSoldOut(iso)) {
       stockEl.textContent = 'Udsolgt i dag – vi ses i morgen!';
       stockEl.classList.add('is-soldout');
-    } else if (remaining <= 5) {
-      stockEl.textContent = `🔥 Kun ${remaining} portion${remaining === 1 ? '' : 'er'} tilbage!`;
-      stockEl.classList.add('is-low');
+    } else if (dishes.length > 1) {
+      const low = dishes
+        .map((d) => ({ t: d.title, r: S.getRemainingFor(iso, d.title) }))
+        .filter((x) => x.r !== null && x.r > 0 && x.r <= 5)
+        .sort((a, b) => a.r - b.r)[0];
+      stockEl.textContent = low ? `🔥 Kun ${low.r} × ${low.t} tilbage!` : '';
+      if (low) stockEl.classList.add('is-low');
     } else {
-      stockEl.textContent = `${remaining} portioner tilbage`;
+      const remaining = S.getRemainingFor(iso, dish.title);
+      if (remaining === null) {
+        stockEl.textContent = '';
+      } else if (remaining <= 0) {
+        stockEl.textContent = 'Udsolgt i dag – vi ses i morgen!';
+        stockEl.classList.add('is-soldout');
+      } else if (remaining <= 5) {
+        stockEl.textContent = `🔥 Kun ${remaining} portion${remaining === 1 ? '' : 'er'} tilbage!`;
+        stockEl.classList.add('is-low');
+      } else {
+        stockEl.textContent = `${remaining} portioner tilbage`;
+      }
     }
     /* pulserende "live"-prik mens køkkenet er åbent i dag */
-    if (iso === today && remaining !== null && remaining > 0 && kitchenStateToday() === 'aaben') {
+    if (iso === today && stockEl.textContent && !stockEl.classList.contains('is-soldout')
+        && kitchenStateToday() === 'aaben') {
       stockEl.classList.add('is-live');
     }
+  }
+
+  /* beskrivelser kan skrives i PUNKTFORM: hver linje bliver sit eget punkt
+     (fx alt hvad en tapas-tallerken indeholder) */
+  function descHtml(desc) {
+    const lines = String(desc || '').split('\n').map((l) => l.replace(/^[-•·*]\s*/, '').trim()).filter(Boolean);
+    if (lines.length <= 1) return esc(desc || '');
+    return `<ul class="descpoints">${lines.map((l) => `<li>${esc(l)}</li>`).join('')}</ul>`;
   }
 
   function renderWeekPlan() {
@@ -277,17 +301,34 @@
           <div class="dayplan__desc">Lukket for bestillinger denne dag.</div>
         </div>`;
       }
-      const remaining = S.getRemaining(day.iso);
-      let stockTag = '';
-      if (remaining !== null && remaining <= 0) stockTag = '<span class="dayplan__tag dayplan__tag--soldout">Udsolgt</span>';
-      else if (remaining !== null && remaining <= 5) stockTag = `<span class="dayplan__tag">Kun ${remaining} tilbage</span>`;
+      const dishes = day.dishes || [];
+      /* én ret: som altid. Flere retter: en linje pr. ret med eget udsolgt/få-tilbage-mærke */
+      let dishHtml;
+      if (!dishes.length) {
+        dishHtml = '<div class="dayplan__dish">Følger snart…</div>';
+      } else if (dishes.length === 1) {
+        const d0 = dishes[0];
+        const rem = S.getRemainingFor(day.iso, d0.title);
+        let stockTag = '';
+        if (rem !== null && rem <= 0) stockTag = '<span class="dayplan__tag dayplan__tag--soldout">Udsolgt</span>';
+        else if (rem !== null && rem <= 5) stockTag = `<span class="dayplan__tag">Kun ${rem} tilbage</span>`;
+        dishHtml = `<div class="dayplan__dish">${esc(d0.title)}</div>
+          ${d0.desc ? `<div class="dayplan__desc">${descHtml(d0.desc)}</div>` : ''}
+          ${d0.price ? `<div class="dayplan__price">${kr(d0.price)}</div>` : ''}
+          ${stockTag}`;
+      } else {
+        dishHtml = dishes.map((d) => {
+          const rem = S.getRemainingFor(day.iso, d.title);
+          const tag = rem !== null && rem <= 0
+            ? ' <span class="dayplan__tag dayplan__tag--soldout">Udsolgt</span>'
+            : (rem !== null && rem <= 5 ? ` <span class="dayplan__tag">Kun ${rem} tilbage</span>` : '');
+          return `<div class="dayplan__dish dayplan__dish--multi">${esc(d.title)}${d.price ? ` <em class="dayplan__inlineprice">${kr(d.price)}</em>` : ''}${tag}</div>`;
+        }).join('');
+      }
       return `<div class="dayplan">
         <div class="dayplan__day">${day.weekday}${isToday ? ' · i dag' : ''}</div>
         <div class="dayplan__date">${esc(S.formatDate(day.iso, false))}</div>
-        <div class="dayplan__dish">${day.dish ? esc(day.dish.title) : 'Følger snart…'}</div>
-        ${day.dish && day.dish.desc ? `<div class="dayplan__desc">${esc(day.dish.desc)}</div>` : ''}
-        ${day.dish && day.dish.price ? `<div class="dayplan__price">${kr(day.dish.price)}</div>` : ''}
-        ${stockTag}
+        ${dishHtml}
       </div>`;
     }).join('');
   }
@@ -429,7 +470,7 @@
 
     const kitchenNote = $('#kitchenNote');
     if (kitchenNote) {
-      kitchenNote.textContent = `🍽️ Bestillinger kan vælges kl. ${orderFrom()} – ${orderTo()}`;
+      kitchenNote.textContent = `🥡 To-go: kl. ${orderFrom()} – ${S.orderToFor('togo')} · 🍽️ Spis her: kl. ${orderFrom()} – ${S.orderToFor('spise')}`;
     }
 
     /* tydelig deadline til kunden: hvor længe kan man nå at bestille til i dag.
@@ -438,20 +479,27 @@
     const cutoffEl = $('#orderCutoff');
     if (cutoffEl) {
       const todayIso = S.todayISO();
-      const daySlots = S.orderSlots(todayIso, 30); /* hele dagens vindue (uden "nu"-filter) */
-      const lastSlot = daySlots[daySlots.length - 1];
-      if (S.isClosureNow() || hours[todayIdx].closed || S.isOrderingClosed(todayIso) || !lastSlot) {
+      const fmt = (m) => `${String(Math.floor(m / 60)).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}`;
+      const deadlineFor = (type) => {
+        const daySlots = S.orderSlots(todayIso, 30, type);
+        const lastSlot = daySlots[daySlots.length - 1];
+        if (!lastSlot) return null;
+        return { deadline: toMin(lastSlot) - 20, open: slotsFor(todayIso, type).length > 0 };
+      };
+      const tg = deadlineFor('togo');
+      const sp = deadlineFor('spise');
+      if (S.isClosureNow() || hours[todayIdx].closed || S.isOrderingClosed(todayIso) || (!tg && !sp)) {
         cutoffEl.hidden = true; /* ferie, lukket dag eller intet vindue i dag → ingen linje */
+      } else if ((tg && tg.open) || (sp && sp.open)) {
+        const parts = [];
+        if (tg && tg.open) parts.push(`to-go frem til kl. ${fmt(tg.deadline)}`);
+        if (sp && sp.open) parts.push(`spis her frem til kl. ${fmt(sp.deadline)}`);
+        cutoffEl.textContent = `🕐 Bestil til i dag: ${parts.join(' · ')}`;
+        cutoffEl.className = 'hours__cutoff';
+        cutoffEl.hidden = false;
       } else {
-        const deadline = toMin(lastSlot) - 20; /* mindst 20 min. varsel */
-        const fmt = (m) => `${String(Math.floor(m / 60)).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}`;
-        if (slotsFor(todayIso).length > 0) {
-          cutoffEl.textContent = `🕐 Bestil til i dag frem til kl. ${fmt(deadline)}`;
-          cutoffEl.className = 'hours__cutoff';
-        } else {
-          cutoffEl.textContent = '🕐 Bestillinger til i dag er lukket – vælg en kommende dag';
-          cutoffEl.className = 'hours__cutoff is-closed';
-        }
+        cutoffEl.textContent = '🕐 Bestillinger til i dag er lukket – vælg en kommende dag';
+        cutoffEl.className = 'hours__cutoff is-closed';
         cutoffEl.hidden = false;
       }
     }
@@ -459,7 +507,7 @@
     const status = $('#openStatus');
     const h = hours[todayIdx];
     const now = nowMin();
-    const oTo = toMin(orderTo());
+    const oTo = toMin(S.orderToFor('spise'));
     if (h.closed) {
       status.textContent = '● Vi holder lukket i dag';
       status.className = 'hours__status is-closed';
@@ -514,25 +562,33 @@
     }, 0);
   }
 
+  /* samlet antal dagens ret(ter) i kurven – på tværs af flere retter */
+  function dagensQtyInBasket() {
+    return basketLines().filter((l) => l.kind === 'dagensret').reduce((s, l) => s + l.qty, 0);
+  }
+
   /* varelinjerne der faktisk sendes: kurven + evt. emballage/genbrug */
   function orderSendLines() {
     const lines = basketLines().slice();
     if (currentType() !== 'togo') return lines;
-    const reuse = reuseChecked() && basket.dagens;
+    const dagensQty = dagensQtyInBasket();
+    const reuse = reuseChecked() && dagensQty > 0;
     const packs = packagingCount(!reuse);
     if (packs > 0) lines.push({ name: 'Emballage (to-go)', qty: packs, price: EMBALLAGE_PRIS, kind: 'emballage', cat: 'Emballage' });
-    if (reuse) lines.push({ name: '♻️ Egen emballage til dagens ret', qty: basket.dagens.qty, price: 0, kind: 'genbrug', cat: 'Emballage' });
+    if (reuse) lines.push({ name: '♻️ Egen emballage til dagens ret', qty: dagensQty, price: 0, kind: 'genbrug', cat: 'Emballage' });
     return lines;
   }
 
   function renderOrderDates() {
     const plan = S.getPlan(14);
     const options = plan
-      .filter((d) => d.open && slotsFor(d.iso).length > 0 && !S.isOrderingClosed(d.iso))
+      .filter((d) => d.open && slotsFor(d.iso, 'spise').length > 0 && !S.isOrderingClosed(d.iso))
       .map((d) => {
-        const remaining = S.getRemaining(d.iso);
-        const soldOut = d.dish && remaining !== null && remaining <= 0;
-        const what = d.dish ? `${d.dish.title}${soldOut ? ' (udsolgt)' : ''}` : 'menukort';
+        const dishes = d.dishes || [];
+        const soldOut = dishes.length > 0 && S.dagensAllSoldOut(d.iso);
+        const what = dishes.length
+          ? `${dishes[0].title}${dishes.length > 1 ? ` +${dishes.length - 1}` : ''}${soldOut ? ' (udsolgt)' : ''}`
+          : 'menukort';
         const label = `${d.iso === S.todayISO() ? 'I dag – ' : ''}${S.formatDate(d.iso)} · ${what}`;
         return `<option value="${d.iso}">${esc(label)}</option>`;
       });
@@ -552,12 +608,15 @@
       renderBasketBar();
       return;
     }
-    const dish = S.getDagensRet(iso);
-    const remaining = S.getRemaining(iso);
+    const dishes = S.getDagensRetList(iso);
+    const dish = dishes[0] || null;
+    const remaining = dish ? S.getRemainingFor(iso, dish.title) : null;
     let hint = dish
-      ? `Dagens ret: ${dish.title}${dish.price ? ` · ${kr(dish.price)}` : ''}`
+      ? (dishes.length > 1
+          ? `Dagens retter: ${dishes.map((d) => d.title).join(' · ')}`
+          : `Dagens ret: ${dish.title}${dish.price ? ` · ${kr(dish.price)}` : ''}`)
       : 'Ingen dagens ret denne dag – vælg frit fra menukortet.';
-    if (dish && remaining !== null) hint += remaining > 0 ? ` · ${remaining} tilbage` : ' · udsolgt';
+    if (dish && dishes.length === 1 && remaining !== null) hint += remaining > 0 ? ` · ${remaining} tilbage` : ' · udsolgt';
     orderDishHint.textContent = hint;
     orderDishHint.className = `field__hint ${dish && remaining !== null && remaining <= 5 ? (remaining <= 0 ? 'is-bad' : 'is-ok') : ''}`;
     if (iso === S.todayISO() && dish && remaining !== null && remaining > 0 && kitchenStateToday() === 'aaben') {
@@ -578,15 +637,22 @@
   /* kurv-opbyggeren: dagens ret øverst, menukortets kategorier under */
   function renderBuilder() {
     const iso = orderDate.value;
-    const dish = iso ? S.getDagensRet(iso) : null;
-    const remaining = iso ? S.getRemaining(iso) : null;
+    const dishes = iso ? S.getDagensRetList(iso) : [];
     const menu = S.getMenu();
     const wIdx = iso ? S.weekdayIndex(iso) : 0;
     const weekend = wIdx >= 5;
 
-    /* indeks over alt, der kan bestilles på den valgte dag */
+    /* indeks over alt, der kan bestilles på den valgte dag –
+       hver dagens ret får sin egen nøgle, så flere retter pr. dag virker */
     builderIndex = {};
-    if (dish) builderIndex.dagens = { name: dish.title, price: dish.price ?? null, kind: 'dagensret', cat: 'Dagens ret' };
+    delete basket.dagens; /* gammel nøgle fra før flere-retter – ryd altid */
+    dishes.forEach((d) => {
+      const rem = S.getRemainingFor(iso, d.title);
+      builderIndex['d::' + d.title] = {
+        name: d.title, price: d.price ?? null, kind: 'dagensret', cat: 'Dagens ret',
+        soldout: rem !== null && rem <= 0, left: rem,
+      };
+    });
     const groups = [];
     const extras = (menu.weekly[wIdx] || []).filter((i) => i.name);
     if (extras.length) groups.push({ name: 'Dagens ekstra retter', items: extras });
@@ -605,15 +671,11 @@
     Object.keys(basket).forEach((key) => {
       const inf = builderIndex[key];
       if (!inf || inf.soldout) { delete basket[key]; return; }
-      if (key !== 'dagens' && inf.left != null && basket[key].qty > Number(inf.left)) {
+      if (inf.left != null && basket[key].qty > Number(inf.left)) {
         basket[key].qty = Number(inf.left);
         if (!basket[key].qty) delete basket[key];
       }
     });
-    if (basket.dagens && remaining !== null && basket.dagens.qty > remaining) {
-      basket.dagens.qty = remaining;
-      if (!basket.dagens.qty) delete basket.dagens;
-    }
 
     const stepper = (key, max) => {
       const qty = basket[key] ? basket[key].qty : 0;
@@ -626,17 +688,18 @@
     };
 
     let html = '';
-    if (dish) {
-      const soldOut = remaining !== null && remaining <= 0;
+    dishes.forEach((d) => {
+      const inf = builderIndex['d::' + d.title];
+      const rem = inf.left;
       html += `<div class="builder__dagens">
         <div class="bitem__info">
-          <strong>${esc(dish.title)}<span class="menuline__badge">Dagens ret</span></strong>
-          ${dish.desc ? `<small>${esc(dish.desc)}</small>` : ''}
-          ${dish.price ? `<em>${kr(dish.price)}</em>` : ''}
+          <strong>${esc(d.title)}<span class="menuline__badge">Dagens ret</span>${rem !== null && rem > 0 && rem <= 5 ? `<span class="menuline__badge menuline__badge--few">Kun ${rem} tilbage</span>` : ''}</strong>
+          ${d.desc ? `<small>${esc(d.desc)}</small>` : ''}
+          ${d.price ? `<em>${kr(d.price)}</em>` : ''}
         </div>
-        ${soldOut ? '<span class="builder__soldout">Udsolgt</span>' : stepper('dagens', remaining)}
+        ${inf.soldout ? '<span class="builder__soldout">Udsolgt</span>' : stepper('d::' + d.title, rem)}
       </div>`;
-    }
+    });
     html += groups.map((g) => {
       const count = g.items.reduce((s, item) => s + ((basket['m::' + item.name] || {}).qty || 0), 0);
       const open = openCats.has(g.name) || count > 0;
@@ -672,8 +735,8 @@
     if (!info || info.soldout) return;
     const cur = basket[key] ? basket[key].qty : 0;
     let next = cur + Number(btn.dataset.step);
-    const max = key === 'dagens'
-      ? S.getRemaining(orderDate.value)
+    const max = key.startsWith('d::')
+      ? S.getRemainingFor(orderDate.value, info.name)
       : (info.left != null ? Number(info.left) : 50);
     if (max !== null && next > max) next = max;
     if (next <= 0) delete basket[key];
@@ -704,7 +767,7 @@
     if (!reuseWrap || !packHint) return;
     const togo = currentType() === 'togo';
     const packs = packagingCount(true);
-    reuseWrap.hidden = !(togo && basket.dagens);
+    reuseWrap.hidden = !(togo && dagensQtyInBasket() > 0);
     if (reuseWrap.hidden && $('#reuseBox')) $('#reuseBox').checked = false;
     packHint.hidden = !(togo && packs > 0);
     packHint.textContent = togo && packs > 0
@@ -790,8 +853,9 @@
     btn.disabled = true;
     btn.textContent = 'Sender…';
 
-    const dish = S.getDagensRet(o.iso);
-    const dagensQty = basket.dagens ? basket.dagens.qty : 0;
+    /* dagens ret-tal fra selve linjerne – virker også med flere retter pr. dag */
+    const dagensLines = o.lines.filter((l) => l.kind === 'dagensret');
+    const dagensQty = dagensLines.reduce((s, l) => s + l.qty, 0);
     const result = await S.addOrder({
       date: o.iso,
       time: o.time,
@@ -800,8 +864,8 @@
       name: o.name,
       phone: o.phone,
       note: o.note,
-      dish: dagensQty > 0 && dish ? dish.title : '',
-      price: dagensQty > 0 && dish ? dish.price : null,
+      dish: dagensLines.length ? dagensLines[0].name : '',
+      price: dagensLines.length === 1 ? (dagensLines[0].price ?? null) : null,
       items: o.lines,
       persons: o.persons,
     });
@@ -824,11 +888,11 @@
         if (S.isCloud()) S.refreshPublic();
       } else if (result.reason === 'antal') {
         error.textContent = `Der er kun ${result.remaining} × „${result.item}" tilbage i dag – antallet i jeres bestilling er sat ned, så tjek og send igen.`;
-        const k = 'm::' + result.item;
-        if (basket[k]) {
+        ['m::' + result.item, 'd::' + result.item].forEach((k) => {
+          if (!basket[k]) return;
           basket[k].qty = Math.max(0, Number(result.remaining));
           if (!basket[k].qty) delete basket[k];
-        }
+        });
         if (S.isCloud()) S.refreshPublic();
       } else if (result.reason === 'forbi' || result.reason === 'dato') {
         error.textContent = 'Tidspunktet er nået, mens siden stod åben – vælg venligst en ny tid eller en kommende dag.';

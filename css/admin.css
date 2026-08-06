@@ -442,8 +442,14 @@ button { font-family: var(--font-body); }
   transition: border-color 0.2s ease;
 }
 .row:hover { border-color: rgba(217, 108, 44, 0.4); }
-.row--new { border-color: var(--accent); background: var(--accent-soft); }
-.row--done { opacity: 0.55; }
+/* farvekode: orange kant = mangler at blive kørt · grøn kant = kørt/færdig */
+.row--new { border-color: var(--accent); background: var(--accent-soft); box-shadow: inset 4px 0 0 var(--accent); }
+.row--done {
+  opacity: 0.82;
+  border-color: #C4E6D0;
+  background: #F2FAF4;
+  box-shadow: inset 4px 0 0 #1B7A44;
+}
 .row--done:hover { opacity: 1; }
 
 /* tydelig forskel på bookinger: orange kant = arrangement, blå kant = møde */
@@ -898,6 +904,35 @@ button { font-family: var(--font-body); }
 .kallegend { display: flex; flex-wrap: wrap; gap: 8px 14px; margin-top: 12px; }
 .kallegend__item { display: inline-flex; align-items: center; gap: 6px; font-size: 0.8rem; color: var(--ink-soft); font-weight: 600; }
 .ds-dot { width: 12px; height: 12px; border-radius: 50%; background: var(--dc); border: 1.5px solid var(--dbd); flex-shrink: 0; }
+
+/* status-chips: hurtigt farve-overblik over kørte / manglende bestillinger */
+.statuschips { display: flex; gap: 10px; flex-wrap: wrap; margin: 0 0 14px; }
+.schip {
+  font-weight: 700; font-size: 0.9rem;
+  padding: 7px 14px; border-radius: 999px;
+  background: var(--grey-b, #EFEDEA); color: var(--ink-soft);
+  border: 1.4px solid rgba(28, 24, 20, 0.1);
+}
+.schip--todo.is-on { background: #FBE9D8; color: #A9500D; border-color: #F0D2A0; }
+.schip--done.is-on { background: #E8F5EC; color: #1B7A44; border-color: #C4E6D0; }
+
+/* dagens ret-planlægger: flere retter pr. dag */
+.planday--multi { display: grid; grid-template-columns: 150px 1fr; gap: 12px; align-items: start; }
+.planday__dishes { display: grid; gap: 8px; }
+.pd-dish {
+  display: grid;
+  grid-template-columns: 1.1fr 1.5fr 78px 78px auto auto;
+  gap: 8px; align-items: start; position: relative;
+}
+.pd-dish__desc { resize: vertical; min-height: 40px; line-height: 1.4; }
+.pd-dish--soldout input, .pd-dish--soldout textarea { opacity: 0.55; }
+.pd-dish__sold { grid-column: 1 / -1; color: var(--ink-soft); font-weight: 600; }
+.planday__add { justify-self: start; }
+@media (max-width: 860px) {
+  .planday--multi { grid-template-columns: 1fr; }
+  .pd-dish { grid-template-columns: 1fr 1fr; }
+  .pd-dish [data-f="title"], .pd-dish__desc { grid-column: 1 / -1; }
+}
 
 /* handling-linje i dagspanelet: luk/åbn dagen eller hop til indstilling */
 .kalpanel__act { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin: 0 0 16px; }

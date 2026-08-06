@@ -212,6 +212,7 @@ const SpiisStore = (() => {
   let cloud = false;
   let cloudReady = null;
   let soldByDate = {}; /* { 'YYYY-MM-DD': solgte kuverter } fra get_sold */
+  let soldDishByDate = {}; /* { 'YYYY-MM-DD': { 'Ret-titel': antal } } fra get_sold_dishes */
   let session = null;
   try { session = JSON.parse(localStorage.getItem(SES_KEY) || 'null'); } catch { session = null; }
 
@@ -284,9 +285,12 @@ const SpiisStore = (() => {
   async function refreshPublic() {
     if (!cloud) return;
     try {
-      const [cfgRes, soldRes] = await Promise.all([
+      const [cfgRes, soldRes, dishRes] = await Promise.all([
         sbFetch('/rest/v1/config?id=eq.1&select=data'),
         sbFetch('/rest/v1/rpc/get_sold', { method: 'POST', body: '{}' }),
+        /* pr.-ret-tal (til dage med flere dagens retter) – findes funktionen
+           ikke endnu i databasen, klarer dag-totalen sig alene */
+        sbFetch('/rest/v1/rpc/get_sold_dishes', { method: 'POST', body: '{}' }).catch(() => null),
       ]);
       let remoteCfg = null;
       if (cfgRes.ok) {
@@ -295,8 +299,10 @@ const SpiisStore = (() => {
       }
       let remoteSold = null;
       if (soldRes.ok) remoteSold = await soldRes.json();
+      let remoteDish = null;
+      if (dishRes && dishRes.ok) { try { remoteDish = await dishRes.json(); } catch { remoteDish = null; } }
 
-      const snap = JSON.stringify([remoteCfg, remoteSold]);
+      const snap = JSON.stringify([remoteCfg, remoteSold, remoteDish]);
       if (snap === lastPublicSnap) return;
       lastPublicSnap = snap;
 
@@ -304,6 +310,13 @@ const SpiisStore = (() => {
       if (remoteSold) {
         soldByDate = {};
         remoteSold.forEach((r) => { soldByDate[r.date] = Number(r.sold) || 0; });
+      }
+      if (remoteDish) {
+        soldDishByDate = {};
+        remoteDish.forEach((r) => {
+          const bucket = (soldDishByDate[r.date] = soldDishByDate[r.date] || {});
+          bucket[r.name] = (bucket[r.name] || 0) + (Number(r.sold) || 0);
+        });
       }
       save(false);
       emit();
@@ -527,15 +540,34 @@ const SpiisStore = (() => {
     return !hoursFor(iso).closed;
   }
 
-  /* ---------- dagens ret ---------- */
-  const getDagensRet = (iso) => (data.dagensRet[iso] ? { ...data.dagensRet[iso] } : null);
+  /* ---------- dagens ret (én ELLER flere pr. dag) ----------
+     data.dagensRet[iso] kan være ét ret-objekt (som altid) eller en LISTE
+     af retter. Alt læses gennem listen, så gamle data virker uændret. */
+  const asDishList = (v) => {
+    if (!v) return [];
+    if (Array.isArray(v)) return v.filter((d) => d && d.title);
+    return v.title ? [v] : [];
+  };
+  const getDagensRetList = (iso) => asDishList(data.dagensRet[iso]).map((d) => ({ ...d }));
+  const getDagensRet = (iso) => {
+    const l = asDishList(data.dagensRet[iso]);
+    return l.length ? { ...l[0] } : null;
+  };
   function setDagensRet(iso, dish) {
     if (dish && dish.title) data.dagensRet[iso] = dish;
     else delete data.dagensRet[iso];
     save();
     pushConfig();
   }
-  /* De næste `days` dage med dato, ugedag, ret og åben/lukket */
+  function setDagensRetList(iso, dishes) {
+    const clean = (dishes || []).filter((d) => d && d.title && String(d.title).trim());
+    if (!clean.length) delete data.dagensRet[iso];
+    else if (clean.length === 1) data.dagensRet[iso] = clean[0];
+    else data.dagensRet[iso] = clean;
+    save();
+    pushConfig();
+  }
+  /* De næste `days` dage med dato, ugedag, ret(ter) og åben/lukket */
   function getPlan(days = 7, fromIso = todayISO()) {
     const plan = [];
     let iso = fromIso;
@@ -544,6 +576,7 @@ const SpiisStore = (() => {
         iso,
         weekday: WEEKDAYS[weekdayIndex(iso)],
         dish: getDagensRet(iso),
+        dishes: getDagensRetList(iso),
         open: isOpenDay(iso),
       });
       iso = addDays(iso, 1);
@@ -567,11 +600,44 @@ const SpiisStore = (() => {
     /* på kundesiden i sky-tilstand kommer tallet fra get_sold */
     return cloud ? Math.max(local, soldByDate[iso] || 0) : local;
   }
-  /* null = intet loft sat; ellers antal portioner tilbage (kan ikke gå under 0) */
+  /* solgt af NETOP denne ret (til dage med flere retter) – tælles på
+     items-linjerne (kind 'dagensret'), med fald tilbage til gamle ordrer */
+  function getSoldFor(iso, title) {
+    let local = 0;
+    data.orders.filter((o) => o.date === iso).forEach((o) => {
+      const lines = (o.items || []).filter((l) => l.kind === 'dagensret' && l.name === title);
+      if (lines.length) local += lines.reduce((s, l) => s + Number(l.qty || 0), 0);
+      else if (o.dish === title) local += Number(o.qty || 0);
+    });
+    const remote = (soldDishByDate[iso] || {})[title];
+    return cloud && remote != null ? Math.max(local, Number(remote)) : local;
+  }
+  /* null = intet loft sat; ellers antal tilbage af netop denne ret */
+  function getRemainingFor(iso, title) {
+    const dish = asDishList(data.dagensRet[iso]).find((d) => d.title === title);
+    if (!dish) return 0;
+    if (dish.soldout) return 0;
+    if (dish.stock == null || dish.stock === '') return null;
+    const list = asDishList(data.dagensRet[iso]);
+    /* én ret på dagen: brug dag-totalen (virker uden ny databasefunktion);
+       flere retter: brug pr.-ret-tallet */
+    const sold = list.length === 1 ? getSold(iso) : getSoldFor(iso, title);
+    return Math.max(0, Number(dish.stock) - sold);
+  }
+  /* bagudkompatibel: dagens "tilbage"-tal – med flere retter = første ret */
   function getRemaining(iso) {
-    const dish = data.dagensRet[iso];
-    if (!dish || dish.stock == null || dish.stock === '') return null;
-    return Math.max(0, Number(dish.stock) - getSold(iso));
+    const list = asDishList(data.dagensRet[iso]);
+    if (!list.length) return null;
+    return getRemainingFor(iso, list[0].title);
+  }
+  /* er ALLE dagens retter udsolgte/lukkede? (styrer "(udsolgt)"-mærket) */
+  function dagensAllSoldOut(iso) {
+    const list = asDishList(data.dagensRet[iso]);
+    if (!list.length) return false;
+    return list.every((d) => {
+      const rem = getRemainingFor(iso, d.title);
+      return rem !== null && rem <= 0;
+    });
   }
 
   /* varer, chefen har markeret som udsolgt på menukortet */
@@ -600,9 +666,10 @@ const SpiisStore = (() => {
     if (!String(order.name || '').trim() || !String(order.phone || '').trim()) return { ok: false, reason: 'mangler' };
     /* dage med privat arrangement (eller lukkede dage) tager ikke imod bestillinger */
     if (isOrderingClosed(order.date)) return { ok: false, reason: 'lukket' };
-    /* bestillinger kan kun vælges i vinduet 16:00–21:00 (kan ændres i admin) */
+    /* bestillingsvinduet er forskelligt pr. type: to-go til kl. 19,
+       spis her til kl. 20:30 (kan ændres i admin) */
     const oFrom = data.settings.orderFrom || '16:00';
-    const oTo = data.settings.orderTo || '21:00';
+    const oTo = orderToFor(order.type);
     if (order.time && (order.time < oFrom || order.time > oTo)) return { ok: false, reason: 'tid' };
     /* datoen må ikke være passeret – og til i dag skal tiden være mindst
        20 min. ude i fremtiden (fanger fx en fane, der har stået åben i timevis) */
@@ -624,6 +691,15 @@ const SpiisStore = (() => {
       const mi = findMenuItem(l.name);
       if (mi && mi.left != null && Number(l.qty) > Number(mi.left)) {
         return { ok: false, reason: 'antal', item: l.name, remaining: Math.max(0, Number(mi.left)) };
+      }
+    }
+    /* dagens ret(ter): udsolgt-flag og pr.-ret-antal tjekkes pr. linje */
+    for (const l of (order.items || [])) {
+      if (l.kind !== 'dagensret') continue;
+      const rem = getRemainingFor(order.date, l.name);
+      if (rem !== null && rem <= 0) return { ok: false, reason: 'udsolgt', item: l.name, remaining: 0 };
+      if (rem !== null && Number(l.qty) > rem) {
+        return { ok: false, reason: 'antal', item: l.name, remaining: rem };
       }
     }
     if (cloud) {
@@ -652,9 +728,13 @@ const SpiisStore = (() => {
         return { ok: false, error: 'net' };
       }
     }
-    const remaining = getRemaining(order.date);
-    if (remaining !== null && Number(order.qty) > remaining) {
-      return { ok: false, remaining };
+    /* gamle ordrer uden items-linjer: fald tilbage til dag-totalen */
+    const hasDagensLines = (order.items || []).some((l) => l.kind === 'dagensret');
+    if (!hasDagensLines && Number(order.qty) > 0) {
+      const remaining = getRemaining(order.date);
+      if (remaining !== null && Number(order.qty) > remaining) {
+        return { ok: false, remaining };
+      }
     }
     /* tæl "få tilbage" ned – rammer den 0, bliver retten selv UDSOLGT */
     (order.items || []).forEach((l) => {
@@ -957,12 +1037,18 @@ const SpiisStore = (() => {
   /* bestillingstider: ét fast vindue (16:00–21:00) på åbne dage.
      Vinduet lægges oven på dagens åbningstider, så vi aldrig tilbyder
      tider før køkkenet åbner eller efter det lukker. */
-  function orderSlots(iso, stepMinutes = 30) {
+  /* seneste bestillingstid pr. type: to-go / spis her */
+  function orderToFor(type) {
+    return type === 'spise'
+      ? (data.settings.orderToDine || '20:30')
+      : (data.settings.orderToTogo || '19:00');
+  }
+  function orderSlots(iso, stepMinutes = 30, type = 'spise') {
     const h = hoursFor(iso);
     if (h.closed || !h.open || !h.close) return [];
     const toMin = (hhmm) => { const [a, b] = hhmm.split(':').map(Number); return a * 60 + b; };
     const from = data.settings.orderFrom || '16:00';
-    const to = data.settings.orderTo || '21:00';
+    const to = orderToFor(type);
     const start = Math.max(toMin(from), toMin(h.open));
     const end = Math.min(toMin(to), toMin(h.close));
     const slots = [];
@@ -1139,14 +1225,15 @@ const SpiisStore = (() => {
     getSettings, updateSettings,
     getHours, setHours, hoursFor, isOpenDay,
     getDagensRet, setDagensRet, getPlan,
-    getSold, getRemaining,
+    getDagensRetList, setDagensRetList,
+    getSold, getRemaining, getSoldFor, getRemainingFor, dagensAllSoldOut,
     getNote, setNote, weekStart, weekNumber,
     getMenu, setMenu,
     addOrder, getOrders, updateOrder, deleteOrder,
     addBooking, getBookings, updateBooking, deleteBooking,
     getBlockedDates, getArrangementDates, isOrderingClosed, blockDate, unblockDate, isDateAvailable,
     getClosure, setClosure, isClosureNow, isInClosure,
-    timeslotsFor, orderSlots,
+    timeslotsFor, orderSlots, orderToFor,
     getNews, addNews, updateNews, deleteNews, uploadNewsImage, placeNewsOrder,
     getUnread, markAllRead,
     exportData, resetData,

@@ -59,6 +59,7 @@ declare
   v_ci int; v_ii int; v_item jsonb; v_left int; v_req int;
   v_changed boolean := false; r record;
   v_items jsonb := coalesce(p_items, '[]'::jsonb);
+  v_dr jsonb; v_dish jsonb;
 begin
   if p_qty is null or p_qty < 0 or p_qty > 100 then
     return jsonb_build_object('ok', false, 'remaining', 0);
@@ -98,9 +99,11 @@ begin
     return jsonb_build_object('ok', false, 'reason', 'lukket');
   end if;
 
+  -- bestillingsvinduet er FORSKELLIGT pr. type: to-go til kl. 19, spis her til kl. 20:30
   if coalesce(p_time, '') <> '' and (
        p_time < coalesce(v_cfg->'settings'->>'orderFrom', '16:00')
-       or p_time > coalesce(v_cfg->'settings'->>'orderTo', '21:00')
+       or (p_type = 'spise'  and p_time > coalesce(v_cfg->'settings'->>'orderToDine', '20:30'))
+       or (p_type <> 'spise' and p_time > coalesce(v_cfg->'settings'->>'orderToTogo', '19:00'))
      ) then
     return jsonb_build_object('ok', false, 'reason', 'tid');
   end if;
@@ -135,8 +138,43 @@ begin
     end if;
   end loop;
 
-  if p_qty > 0 then
-    v_stock := nullif(v_cfg->'dagensRet'->to_char(p_date,'YYYY-MM-DD')->>'stock','')::int;
+  -- dagens ret(ter): udsolgt-flag + pr.-ret-lager (understøtter FLERE retter pr. dag)
+  v_dr := v_cfg->'dagensRet'->to_char(p_date, 'YYYY-MM-DD');
+  if v_dr is not null and jsonb_typeof(v_dr) = 'object' then
+    v_dr := jsonb_build_array(v_dr);
+  end if;
+  for r in select value as v from jsonb_array_elements(v_items)
+           where coalesce(value->>'kind', '') = 'dagensret' loop
+    select value into v_dish from jsonb_array_elements(coalesce(v_dr, '[]'::jsonb))
+     where value->>'title' = r.v->>'name' limit 1;
+    if v_dish is null or coalesce((v_dish->>'soldout')::boolean, false) then
+      return jsonb_build_object('ok', false, 'reason', 'udsolgt', 'item', r.v->>'name');
+    end if;
+    if nullif(v_dish->>'stock', '') is not null then
+      -- solgt af netop denne ret: items-linjer + ældre ordrer uden items-linje
+      select coalesce(sum((i->>'qty')::int), 0) into v_sold
+        from orders o, lateral jsonb_array_elements(coalesce(o.items, '[]'::jsonb)) i
+       where o.date = p_date and i->>'kind' = 'dagensret' and i->>'name' = r.v->>'name';
+      select v_sold + coalesce(sum(o.qty), 0) into v_sold
+        from orders o
+       where o.date = p_date and o.qty > 0 and o.dish = r.v->>'name'
+         and not exists (select 1 from jsonb_array_elements(coalesce(o.items, '[]'::jsonb)) i2
+                          where i2->>'kind' = 'dagensret');
+      v_remaining := greatest((v_dish->>'stock')::int - v_sold, 0);
+      v_req := coalesce((r.v->>'qty')::int, 0);
+      if v_req > v_remaining then
+        return jsonb_build_object('ok', false, 'reason', 'antal',
+                                  'item', r.v->>'name', 'remaining', v_remaining);
+      end if;
+    end if;
+  end loop;
+  -- ældre klienter: qty uden items-linje → dag-total mod første rets antal
+  if p_qty > 0 and not exists (select 1 from jsonb_array_elements(v_items) i
+                                where coalesce(i.value->>'kind', '') = 'dagensret') then
+    if coalesce((v_dr->0->>'soldout')::boolean, false) then
+      return jsonb_build_object('ok', false, 'remaining', 0);
+    end if;
+    v_stock := nullif(coalesce(v_dr->0->>'stock', ''), '')::int;
     if v_stock is not null then
       select coalesce(sum(qty),0) into v_sold from orders where date = p_date;
       v_remaining := greatest(v_stock - v_sold, 0);
@@ -229,5 +267,26 @@ begin
   return jsonb_build_object('ok', true);
 end $$;
 grant execute on function public.place_news_order to anon, authenticated;
+
+-- 6) pr.-ret-salgstal – så hjemmesiden kan vise "kun X tilbage" pr. ret,
+--    når der er FLERE dagens retter på samme dag
+create or replace function public.get_sold_dishes()
+returns table("date" date, name text, sold bigint)
+language sql security definer set search_path = public as $$
+  select t.date, t.name, sum(t.sold)::bigint as sold from (
+    select o.date, i->>'name' as name, coalesce(sum((i->>'qty')::int), 0)::bigint as sold
+      from orders o, lateral jsonb_array_elements(coalesce(o.items, '[]'::jsonb)) i
+     where i->>'kind' = 'dagensret' and o.date >= current_date - 1
+     group by o.date, i->>'name'
+    union all
+    select o.date, o.dish as name, sum(o.qty)::bigint as sold
+      from orders o
+     where o.qty > 0 and coalesce(o.dish, '') <> '' and o.date >= current_date - 1
+       and not exists (select 1 from jsonb_array_elements(coalesce(o.items, '[]'::jsonb)) i2
+                        where i2->>'kind' = 'dagensret')
+     group by o.date, o.dish
+  ) t group by t.date, t.name;
+$$;
+grant execute on function public.get_sold_dishes to anon, authenticated;
 
 -- ✅ Færdig. Ser du ingen rød fejl, er alt sat op.

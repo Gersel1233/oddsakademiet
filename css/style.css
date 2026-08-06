@@ -1492,6 +1492,12 @@ a, button, select, .daytab, .choice, .segmented label, .stepper button {
   .choice:hover { transform: none; }
 }
 
+/* beskrivelser i punktform (fx alt hvad en tapas indeholder) */
+.descpoints { margin: 4px 0 0; padding-left: 1.15em; text-align: left; display: inline-block; }
+.descpoints li { margin: 2px 0; }
+.dayplan__dish--multi { font-size: 0.95rem; margin-top: 4px; }
+.dayplan__inlineprice { font-style: normal; color: var(--ink-soft); font-size: 0.85rem; }
+
 /* ---------- scroll-reveal – lettere og hurtigere, så siden føles kvik ---------- */
 [data-reveal] {
   opacity: 0;
