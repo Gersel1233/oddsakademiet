@@ -763,6 +763,12 @@
       </div>`;
   }
 
+  /* første linje af en note, kort nok til at stå i en kalender-celle */
+  function noteSnip(t, max = 34) {
+    const line = String(t || '').split('\n').map((s) => s.trim()).find(Boolean) || '';
+    return line.length > max ? line.slice(0, max - 1) + '…' : line;
+  }
+
   function kalCell(iso, today) {
     const inMonth = iso.slice(0, 7) === kalMonth;
     const d = kalDayInfo(iso);
@@ -776,18 +782,46 @@
     const showPill = st.key !== 'open' && st.key !== 'kitchen';
     return `
       <button class="${cls}" data-kal="day" data-iso="${iso}">
-        <span class="kalcell__num">${Number(iso.slice(8))}${d.note ? ' <i title="Der er en note på dagen">📝</i>' : ''}</span>
+        <span class="kalcell__num">${Number(iso.slice(8))}</span>
         ${d.closed ? '<span class="kalcell__closed">Køkken lukket</span>' : `
           ${showPill ? `<span class="kalcell__status ${st.cls}">${st.short}</span>` : ''}
           ${d.dishes.length ? `<span class="kalcell__dish">🍲 ${esc(d.dishes[0].title)}${d.dishes.length > 1 ? ` +${d.dishes.length - 1}` : ''}</span>` : ''}
           ${d.items ? `<span class="kalcell__count"><b>${d.items}</b> retter · 🥡 ${d.togo} · 🍽️ ${d.spise}</span>` : ''}`}
+        ${d.note ? `<span class="kalcell__note" title="${esc(d.note)}">📝 ${esc(noteSnip(d.note))}</span>` : ''}
         ${d.bookings.slice(0, 2).map((b) => `<span class="kalcell__bk ${b.kind === 'moede' ? 'kalcell__bk--moede' : ''}">${b.kind === 'moede' ? '📅' : '🎉'} ${esc(b.subject)}</span>`).join('')}
         ${d.bookings.length > 2 ? `<span class="kalcell__more">+ ${d.bookings.length - 2} mere</span>` : ''}
       </button>`;
   }
 
-  /* dagen man har valgt: alt om dagen + noten skrives direkte her */
-  function kalDayPanel(iso, today) {
+  /* ============================================================
+     DAG-VINDUET – tryk på en dag åbner den STORT oven på det hele:
+     stor note-editor der gemmer af sig selv (med synligt "Gemt ✓"),
+     dagens aftaler med alle knapper, dagens retter og bestillinger.
+     ← / → bladrer mellem dagene uden at lukke vinduet.
+     ============================================================ */
+  let dvIso = null;          /* dagen der er åben lige nu – null = lukket */
+  let dvNoteTimer = null;
+  let dvNoteDirty = false;
+
+  function dvFlushNote() {
+    const ta = document.getElementById('dvNote');
+    if (!ta || !dvNoteDirty || !dvIso) return;
+    clearTimeout(dvNoteTimer);
+    S.setNote(dvIso, ta.value);
+    dvNoteDirty = false;
+    const ind = document.getElementById('dvSave');
+    if (ind) { ind.textContent = 'Gemt ✓'; ind.classList.add('is-saved'); }
+  }
+
+  function closeDayModal() {
+    if (!document.getElementById('dvMask')) return;
+    dvFlushNote();
+    dvIso = null;
+    document.getElementById('dvMask').remove();
+    document.body.classList.remove('dv-open');
+  }
+
+  function dvBodyHtml(iso, today) {
     const d = kalDayInfo(iso);
     const st = dayStatus(iso);
     const totals = dishTotals(d.orders);
@@ -799,42 +833,115 @@
       else act = `<button class="abtn abtn--accent" data-act="kal-newbooking" data-iso="${iso}">➕ Opret booking denne dag</button>${dayCloseBtn(iso, today)}`;
     }
     return `
-      <div class="acard kalpanel">
-        <div class="acard__head">
-          <h2>${iso === today ? '🔴 ' : ''}${esc(S.formatDate(iso))}</h2>
-          <button class="abtn abtn--ghost" data-act="goto-orders" data-iso="${iso}">Se bestillinger →</button>
+      <div class="dv__status ${st.cls}">${st.full}</div>
+      ${act ? `<div class="dv__act">${act}</div>` : ''}
+      <div class="dv__notewrap">
+        <div class="dv__notehead">
+          <h3 class="kp__sub" style="margin:0;">📝 Dagens note</h3>
+          <span class="dv__save" id="dvSave" aria-live="polite"></span>
         </div>
-        <div class="kalpanel__status ${st.cls}">${st.full}</div>
-        ${act ? `<div class="kalpanel__act">${act}</div>` : ''}
-        ${d.bookings.length ? `
-        <h3 class="kp__sub">📅 Dagens aftaler &amp; arrangementer</h3>
-        <div class="rowlist" style="margin-bottom:16px;">
-          ${d.bookings.map(bookingRow).join('')}
-        </div>` : ''}
-        <div class="kalpanel__grid">
-          <div>
-            <h3 class="kp__sub">🍲 Dagens ret${d.dishes.length > 1 ? 'ter' : ''}</h3>
-            ${d.dishes.length
-              ? d.dishes.map((dd) => {
-                  const s = S.getSoldFor(iso, dd.title);
-                  return `<div class="kalpanel__dish">${esc(dd.title)}
-                    ${dd.soldout ? '<span class="tag tag--red">🚫 Udsolgt</span>' : ''}
-                    ${!dd.soldout && dd.stock != null && dd.stock !== '' ? ` <span class="tag ${s >= dd.stock ? 'tag--red' : 'tag--accent'}">${s}/${dd.stock} solgt</span>` : (s ? ` <span class="tag">${s} solgt</span>` : '')}</div>`;
-                }).join('')
-              : '<div class="kalpanel__none">Ingen dagens ret sat endnu</div>'}
-            <h3 class="kp__sub">🧾 Bestillinger</h3>
-            ${d.orders.length ? `
-              <div class="kalpanel__stats"><span><b>${d.orders.length}</b> bestillinger</span><span><b>${d.items}</b> retter</span><span>🥡 <b>${d.togo}</b> · 🍽️ <b>${d.spise}</b></span></div>
-              ${totals.length ? `<div class="ugeday__top">${totals.slice(0, 4).map(([n, q]) => `${q} × ${esc(n)}`).join(' · ')}${totals.length > 4 ? ' · …' : ''}</div>` : ''}`
-              : `<div class="kalpanel__none">${d.noOrders ? '🚫 Dagen er lukket for madbestillinger' : 'Ingen bestillinger på dagen endnu'}</div>`}
-          </div>
-          <div>
-            <h3 class="kp__sub">📝 Note til dagen</h3>
-            <textarea class="inline-input ugeday__note kalpanel__note" data-note="${iso}" rows="6" placeholder="Skriv direkte i dagen – gemmes automatisk…">${esc(d.note)}</textarea>
-          </div>
+        <textarea class="dv__note" id="dvNote" placeholder="Skriv løs – fx »Henning kommer kl. 18 med sin kone – dæk bord ved vinduet«.&#10;Gemmes helt af sig selv, mens du skriver."></textarea>
+      </div>
+      ${d.bookings.length ? `
+      <h3 class="kp__sub">📅 Dagens aftaler &amp; arrangementer</h3>
+      <div class="rowlist dv__rows">
+        ${d.bookings.map(bookingRow).join('')}
+      </div>` : ''}
+      <div class="dv__cols">
+        <div>
+          <h3 class="kp__sub">🍲 Dagens ret${d.dishes.length > 1 ? 'ter' : ''}</h3>
+          ${d.dishes.length
+            ? d.dishes.map((dd) => {
+                const s = S.getSoldFor(iso, dd.title);
+                return `<div class="kalpanel__dish">${esc(dd.title)}
+                  ${dd.soldout ? '<span class="tag tag--red">🚫 Udsolgt</span>' : ''}
+                  ${!dd.soldout && dd.stock != null && dd.stock !== '' ? ` <span class="tag ${s >= dd.stock ? 'tag--red' : 'tag--accent'}">${s}/${dd.stock} solgt</span>` : (s ? ` <span class="tag">${s} solgt</span>` : '')}</div>`;
+              }).join('')
+            : '<div class="kalpanel__none">Ingen dagens ret sat endnu</div>'}
+        </div>
+        <div>
+          <h3 class="kp__sub">🧾 Bestillinger</h3>
+          ${d.orders.length ? `
+            <div class="kalpanel__stats"><span><b>${d.orders.length}</b> bestillinger</span><span><b>${d.items}</b> retter</span><span>🥡 <b>${d.togo}</b> · 🍽️ <b>${d.spise}</b></span></div>
+            ${totals.length ? `<div class="ugeday__top">${totals.slice(0, 4).map(([n, q]) => `${q} × ${esc(n)}`).join(' · ')}${totals.length > 4 ? ' · …' : ''}</div>` : ''}
+            <button class="abtn abtn--ghost" style="margin-top:8px;" data-act="goto-orders" data-iso="${iso}">Se dagens bestillinger →</button>`
+            : `<div class="kalpanel__none">${d.noOrders ? '🚫 Dagen er lukket for madbestillinger' : 'Ingen bestillinger på dagen endnu'}</div>`}
         </div>
       </div>`;
   }
+
+  function renderDayModal() {
+    const mask = document.getElementById('dvMask');
+    if (!mask || !dvIso) return;
+    const today = S.todayISO();
+    const iso = dvIso;
+    mask.querySelector('.dv').innerHTML = `
+      <div class="dv__head">
+        <button class="dv__navbtn" data-dv="prev" aria-label="Dagen før" title="Dagen før">←</button>
+        <h2 class="dv__title">${iso === today ? '🔴 ' : ''}${esc(S.formatDate(iso))}</h2>
+        <button class="dv__navbtn" data-dv="next" aria-label="Dagen efter" title="Dagen efter">→</button>
+        <button class="dv__close" data-dv="close" aria-label="Luk dagen">✕</button>
+      </div>
+      <div class="dv__body">${dvBodyHtml(iso, today)}</div>`;
+    /* noten sættes som value (aldrig som HTML) og editoren vokser med teksten */
+    const ta = mask.querySelector('#dvNote');
+    ta.value = S.getNote(iso);
+    const grow = () => { ta.style.height = 'auto'; ta.style.height = Math.max(ta.scrollHeight + 4, 140) + 'px'; };
+    grow();
+    ta.addEventListener('input', () => {
+      dvNoteDirty = true;
+      const ind = document.getElementById('dvSave');
+      if (ind) { ind.textContent = 'Gemmer…'; ind.classList.remove('is-saved'); }
+      clearTimeout(dvNoteTimer);
+      dvNoteTimer = setTimeout(dvFlushNote, 800);
+      grow();
+    });
+  }
+
+  function openDayModal(iso) {
+    dvFlushNote();
+    dvIso = iso;
+    let mask = document.getElementById('dvMask');
+    if (!mask) {
+      mask = document.createElement('div');
+      mask.id = 'dvMask';
+      mask.className = 'dvmask';
+      mask.innerHTML = '<div class="dv" role="dialog" aria-modal="true"></div>';
+      document.body.appendChild(mask);
+      document.body.classList.add('dv-open');
+      mask.addEventListener('click', (e) => {
+        const nav = e.target.closest('[data-dv]');
+        if (nav) {
+          if (nav.dataset.dv === 'close') { closeDayModal(); return; }
+          dvFlushNote();
+          dvIso = S.addDays(dvIso, nav.dataset.dv === 'prev' ? -1 : 1);
+          kalSelected = dvIso;
+          if (kalMode === 'maaned' && dvIso.slice(0, 7) !== kalMonth) kalMonth = dvIso.slice(0, 7);
+          renderDayModal();
+          renderUge();
+          return;
+        }
+        if (e.target === mask) closeDayModal();
+      });
+    }
+    renderDayModal();
+  }
+
+  /* opdater vinduet når data ændrer sig – men ALDRIG mens der skrives
+     eller en booking-editor / datovælger er åben i det */
+  function refreshDayModal() {
+    const mask = document.getElementById('dvMask');
+    if (!mask || !dvIso) return;
+    if (mask.querySelector('.bkedit:not([hidden])')) return;
+    if (document.querySelector('.dp-pop:not([hidden])')) return;
+    const ae = document.activeElement;
+    if (ae && ae.closest && ae.closest('#dvMask textarea, #dvMask input, #dvMask select')) return;
+    renderDayModal();
+  }
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && dvIso) closeDayModal();
+  });
 
   function renderKalMaaned(today) {
     const days = kalGridDays(kalMonth);
@@ -845,14 +952,28 @@
     const mItems = mOrders.reduce((s, o) => s + itemsOf(o), 0);
     const mBookings = S.getBookings().filter((b) => b.date && b.date.slice(0, 7) === kalMonth && b.status !== 'afvist');
 
+    /* alle dage i måneden med en note – så intet skrevet nogensinde forsvinder i mængden */
+    const noted = monthDays.filter((iso) => (S.getNote(iso) || '').trim());
+
     $('#view-uge').innerHTML = `
       ${kalHeader(`${name[0].toUpperCase()}${name.slice(1)} ${y}`,
-        `Hele måneden: <strong>${mOrders.length}</strong> bestillinger · <strong>${mItems}</strong> retter · <strong>${mBookings.length}</strong> booking${mBookings.length === 1 ? '' : 'er'} · tryk på en dag for detaljer og noter`)}
+        `Hele måneden: <strong>${mOrders.length}</strong> bestillinger · <strong>${mItems}</strong> retter · <strong>${mBookings.length}</strong> booking${mBookings.length === 1 ? '' : 'er'} · tryk på en dag, så åbner den stort med noter og aftaler`)}
       <div class="acard kalcard">
         <div class="kalgrid kalgrid--head">${S.WEEKDAYS.map((w) => `<div class="kalwd">${w.slice(0, 3)}</div>`).join('')}</div>
         <div class="kalgrid">${days.map((iso) => kalCell(iso, today)).join('')}</div>
       </div>
-      ${kalDayPanel(kalSelected, today)}`;
+      ${noted.length ? `
+      <div class="acard">
+        <div class="acard__head"><h2>📝 Noter i ${name}</h2></div>
+        <p class="sub" style="color:var(--ink-soft);margin-bottom:10px;">${noted.length === 1 ? 'Én dag har en note' : `${noted.length} dage har noter`} denne måned – tryk på en note for at åbne dagen og skrive videre.</p>
+        <div class="notelist">
+          ${noted.map((iso) => `
+          <button class="notelist__row ${iso < today ? 'notelist__row--past' : ''}" data-kal="day" data-iso="${iso}">
+            <span class="notelist__date">${iso === today ? '🔴 I dag' : esc(S.formatDate(iso, false))}</span>
+            <span class="notelist__txt">${esc(S.getNote(iso))}</span>
+          </button>`).join('')}
+        </div>
+      </div>` : ''}`;
   }
 
   function renderKalUge(today) {
@@ -914,6 +1035,7 @@
               </div>` : ''}
             <textarea class="inline-input ugeday__note" data-note="${iso}" rows="2" placeholder="Noter til dagen – gemmes automatisk…">${esc(S.getNote(iso))}</textarea>
             <div class="ugeday__actions">
+              <button class="abtn" data-kal="day" data-iso="${iso}">📖 Åbn dagen stort</button>
               <button class="abtn abtn--ghost" data-act="goto-orders" data-iso="${iso}">Se bestillinger →</button>
               ${dayCloseBtn(iso, today)}
             </div>
@@ -947,13 +1069,15 @@
         ugeStart = S.weekStart(S.todayISO());
         kalSelected = S.todayISO();
       }
-      else if (k === 'day') kalSelected = el.dataset.iso;
-      renderUge();
-      /* klik på en dag "åbner" den: rul dag-panelet frem, så det fylder skærmen */
-      if (k === 'day') {
-        const panel = document.querySelector('#view-uge .kalpanel');
-        if (panel) panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      else if (k === 'day') {
+        /* klik på en dag åbner den STORT oven på kalenderen */
+        kalSelected = el.dataset.iso;
+        if (kalMode === 'maaned' && kalSelected.slice(0, 7) !== kalMonth) kalMonth = kalSelected.slice(0, 7);
+        renderUge();
+        openDayModal(kalSelected);
+        return;
       }
+      renderUge();
     };
 
     /* dagsnoter gemmer sig selv, mens der skrives */
@@ -1943,6 +2067,7 @@
   document.addEventListener('click', (e) => {
     const goto = e.target.closest('[data-goto]');
     if (goto) {
+      closeDayModal();
       $(`.navitem[data-view="${goto.dataset.goto}"]`)?.click();
       return;
     }
@@ -1951,6 +2076,7 @@
     const { act, id } = btn.dataset;
 
     if (act === 'goto-orders') {
+      closeDayModal();
       ordersDate = btn.dataset.iso;
       $('.navitem[data-view="bestillinger"]')?.click();
       return;
@@ -1959,6 +2085,7 @@
     if (act === 'kal-newbooking') {
       /* hop til Bookinger med formularen åben og datoen sat – arrangementer
          med "luk"-fluebenet blokerer automatisk dagen for madbestillinger */
+      closeDayModal();
       switchView('bookinger');
       const fold = document.getElementById('newBookingFold');
       if (fold) { fold.open = true; fold.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
@@ -1972,12 +2099,14 @@
     if (act === 'kal-block') {
       S.blockDate(btn.dataset.iso);
       renderUge();
+      refreshDayModal();
       toast(`${S.formatDate(btn.dataset.iso)} er nu lukket for bestilling og booking 🚫`);
       return;
     }
     if (act === 'kal-unblock') {
       S.unblockDate(btn.dataset.iso);
       renderUge();
+      refreshDayModal();
       toast(`${S.formatDate(btn.dataset.iso)} er åben igen ✅`);
       return;
     }
@@ -2037,6 +2166,7 @@
       const patch = { date, time, staff_note: staffNote, status: 'bekraeftet', read: true };
       const blockEl = editor.querySelector('.bkedit__block');
       if (blockEl) patch.block_orders = blockEl.checked;
+      editor.hidden = true; /* luk editoren, så dag-vinduet kan vise det gemte */
       S.updateBooking(id, patch);
       toast(bk && bk.kind === 'arrangement'
         ? `Gemt: ${S.formatDate(date)} kl. ${time} ✓ – ${patch.block_orders ? 'dagen er lukket for andre arrangementer og madbestillinger' : 'Spiis holder åbent for bestillinger ved siden af'}`
@@ -2093,6 +2223,7 @@
     if (activeView === 'bestillinger' && !editingInProgress('#view-bestillinger')) renderBestillinger();
     if (activeView === 'bookinger' && !editingInProgress('#view-bookinger')) renderBookinger();
     if (activeView === 'uge' && !editingInProgress('#view-uge')) renderUge();
+    refreshDayModal(); /* dag-vinduet følger med, når data ændrer sig */
   }
 
   function renderAll() {
