@@ -1156,24 +1156,43 @@
   function renderClosure() {
     const el = $('#closureBanner');
     if (!el) return;
-    const closed = S.isClosureNow();
-    document.body.classList.toggle('site-closed', closed); /* skjuler "Bestil"-knapper */
-    if (!closed) { el.hidden = true; el.innerHTML = ''; return; }
     const c = S.getClosure();
+    const today = S.todayISO();
+    const activeNow = S.isClosureNow();
+    /* varsl også FØR perioden: så ved kunderne det i god tid */
+    const upcoming = !!(c.active && c.reopen && !activeNow && c.from && c.from > today);
+    document.body.classList.toggle('site-closed', activeNow); /* skjuler "Bestil"-knapper */
+    if (!activeNow && !upcoming) { el.hidden = true; el.innerHTML = ''; return; }
+    const lastDay = c.reopen ? S.addDays(c.reopen, -1) : '';
+    const fromTxt = c.from ? S.formatDate(c.from, false) : '';
+    const toTxt = lastDay ? S.formatDate(lastDay, false) : '';
     const reopenTxt = c.reopen ? S.formatDate(c.reopen) : '';
+    const reopenLow = reopenTxt ? reopenTxt.charAt(0).toLowerCase() + reopenTxt.slice(1) : '';
     el.innerHTML = `
       <div class="container">
-        <div class="closurebanner__inner">
-          <span class="closurebanner__icon" aria-hidden="true">🌴</span>
-          <div class="closurebanner__text">
-            <strong>${esc(c.message || 'Vi holder lukket for madbestillinger lige nu.')}</strong>
-            ${reopenTxt ? `<span>Vi åbner for bestillinger igen ${esc(reopenTxt)}. I er velkomne til at sende en forespørgsel eller kontakte os.</span>` : ''}
+        <article class="feriekort">
+          <div class="feriekort__top">
+            <span class="feriekort__icon" aria-hidden="true">🌴</span>
+            <div>
+              <p class="feriekort__eyebrow">${upcoming ? 'Kommende lukkedage' : 'Vi holder lukket'}</p>
+              <h3 class="feriekort__period">${fromTxt && toTxt
+                ? (fromTxt === toTxt ? esc(fromTxt) : `${esc(fromTxt)} – ${esc(toTxt)}`)
+                : (toTxt ? `Til og med ${esc(toTxt)}` : 'Lige nu')}</h3>
+            </div>
           </div>
-          <div class="closurebanner__cta">
+          ${c.message ? `<p class="feriekort__msg">${esc(c.message)}</p>` : ''}
+          ${reopenLow ? `<p class="feriekort__back">Vi er tilbage ${esc(reopenLow)} 💛</p>` : ''}
+          <ul class="feriekort__facts">
+            <li>🍲 ${upcoming
+              ? 'Bestillinger er åbne som normalt indtil da – kun de lukkede dage kan ikke vælges'
+              : (reopenLow ? `Forudbestil gerne allerede nu – vælg bare en dato fra ${esc(reopenLow)}` : 'Madbestilling er lukket i perioden')}</li>
+            <li>📅 Forespørgsler, møder og kontakt er åbne som altid</li>
+          </ul>
+          <div class="feriekort__cta">
             <a href="#booking" class="btn btn--small btn--accent">Send forespørgsel</a>
             <a href="#kontakt" class="btn btn--small btn--ghost">Kontakt os</a>
           </div>
-        </div>
+        </article>
       </div>`;
     el.hidden = false;
   }
@@ -1197,19 +1216,33 @@
       } else if (n.cta) {
         action = '<a href="#bestil" class="btn btn--accent btn--small news__cta">Bestil her</a>';
       }
+      /* lange tekster foldes pænt sammen med "Læs mere", så kortene aldrig vælter */
+      const longText = (n.text || '').length > 220 || ((n.text || '').match(/\n/g) || []).length > 3;
       return `
       <article class="news ${i === 0 ? 'news--big' : ''}">
         ${n.image ? `<div class="news__media"><img src="${esc(n.image)}" alt="${esc(n.title)}" loading="lazy" /></div>` : ''}
         <div class="news__body">
           ${n.createdAt ? `<p class="news__date">${esc(S.formatDate(n.createdAt.slice(0, 10), false))}</p>` : ''}
           <h3 class="news__title">${esc(n.title)}</h3>
-          ${n.text ? `<p class="news__text">${esc(n.text)}</p>` : ''}
+          ${n.text ? `<p class="news__text ${longText ? 'news__text--clamp' : ''}">${esc(n.text)}</p>` : ''}
+          ${longText ? '<button class="news__more" type="button" data-news-more>Læs mere ↓</button>' : ''}
           ${n.orderable && n.orderBy && !past ? `<p class="news__deadline">🗓️ Bestil senest ${esc(S.formatDate(n.orderBy, false))}</p>` : ''}
           ${action}
         </div>
       </article>`;
     }).join('');
   }
+
+  /* "Læs mere" på lange nyheder – folder teksten ud og ind */
+  document.addEventListener('click', (e) => {
+    const btn = e.target.closest && e.target.closest('[data-news-more]');
+    if (!btn) return;
+    const text = btn.closest('.news__body')?.querySelector('.news__text');
+    if (!text) return;
+    const open = text.classList.toggle('news__text--open');
+    text.classList.toggle('news__text--clamp', !open);
+    btn.textContent = open ? 'Vis mindre ↑' : 'Læs mere ↓';
+  });
 
   /* ---------- mini-bestilling direkte fra en nyhed ---------- */
   let pendingNews = null;
