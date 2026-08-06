@@ -943,7 +943,6 @@ button { font-family: var(--font-body); }
 .kpnote__lbl { display: block; font-weight: 700; font-size: 0.92rem; margin-bottom: 6px; }
 .kpnote__lbl em { font-style: normal; font-weight: 500; color: var(--ink-soft); }
 .kpnote__input { width: 100%; min-height: 52px; resize: vertical; }
-.kalpanel__grid { display: grid; grid-template-columns: 1.4fr 1fr; gap: 24px; }
 .kalpanel__dish { font-weight: 600; }
 .kalpanel__none { color: var(--ink-soft); font-size: 0.92rem; padding: 4px 0 2px; }
 .kalpanel__stats {
@@ -955,13 +954,122 @@ button { font-family: var(--font-body); }
   margin-bottom: 8px;
 }
 .kalpanel__stats b { color: var(--ink); }
-.kalpanel__note { min-height: 130px; width: 100%; }
 @media (max-width: 900px) {
-  .kalpanel__grid { grid-template-columns: 1fr; gap: 12px; }
   .kalcell { min-height: 88px; padding: 7px 8px; }
   .kalhead__nav { width: 100%; justify-content: space-between; }
   .kaltoggle { margin-right: 0; }
   .kaltoggle button { padding: 8px 13px; }
+}
+
+/* note-linjen i måneds-cellen: man kan SE hvad der er skrevet uden at klikke */
+.kalcell__note {
+  font-size: 0.72rem; font-weight: 600;
+  color: #8A5A0B; background: #FBF3DF;
+  border-radius: 6px; padding: 1px 6px;
+  max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+
+/* måneds-oversigten over alle noter */
+.notelist { display: grid; gap: 8px; }
+.notelist__row {
+  display: grid; grid-template-columns: 118px 1fr; gap: 12px;
+  align-items: start; text-align: left;
+  background: #FDFAF3; border: 1.4px solid rgba(138, 90, 11, 0.18);
+  border-radius: 12px; padding: 10px 14px;
+  font: inherit; color: var(--ink); cursor: pointer;
+}
+.notelist__row:hover { border-color: var(--accent); }
+.notelist__row--past { opacity: 0.62; }
+.notelist__date { font-weight: 800; font-size: 0.88rem; font-family: var(--font-display); white-space: nowrap; }
+.notelist__txt { font-size: 0.92rem; line-height: 1.45; white-space: pre-line; word-break: break-word; }
+@media (max-width: 640px) {
+  .notelist__row { grid-template-columns: 1fr; gap: 2px; }
+}
+
+/* ============================================================
+   DAG-VINDUET – en dag åbnet stort oven på kalenderen
+   ============================================================ */
+body.dv-open { overflow: hidden; }
+.dvmask {
+  position: fixed; inset: 0; z-index: 400;
+  background: rgba(26, 20, 15, 0.5);
+  -webkit-backdrop-filter: blur(3px); backdrop-filter: blur(3px);
+  display: flex; align-items: flex-start; justify-content: center;
+  padding: 26px 16px;
+  overflow-y: auto;
+  animation: dvFade 0.16s ease-out;
+}
+@keyframes dvFade { from { opacity: 0; } to { opacity: 1; } }
+.dv {
+  background: var(--cream);
+  width: min(820px, 100%);
+  border-radius: var(--radius);
+  box-shadow: 0 30px 70px -25px rgba(28, 24, 20, 0.5);
+  margin: auto 0;
+  animation: dvUp 0.18s ease-out;
+}
+@keyframes dvUp { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+.dv__head {
+  display: flex; align-items: center; gap: 10px;
+  padding: 14px 18px;
+  border-bottom: 1.4px solid var(--line);
+  position: sticky; top: 0; z-index: 2;
+  background: var(--cream);
+  border-radius: var(--radius) var(--radius) 0 0;
+}
+.dv__title {
+  flex: 1; text-align: center;
+  font-family: var(--font-display); font-size: 1.18rem; font-weight: 800;
+  margin: 0; line-height: 1.25;
+}
+.dv__navbtn, .dv__close {
+  flex-shrink: 0;
+  width: 40px; height: 40px; border-radius: 12px;
+  border: 1.4px solid var(--line); background: #fff;
+  font-size: 1.05rem; font-weight: 700; color: var(--ink);
+  cursor: pointer;
+  display: inline-flex; align-items: center; justify-content: center;
+}
+.dv__navbtn:hover, .dv__close:hover { border-color: var(--accent); color: var(--accent-deep); }
+.dv__body { padding: 18px; }
+.dv__status {
+  display: flex; align-items: center; gap: 6px;
+  background: var(--db); color: var(--dc);
+  border: 1.4px solid var(--dbd);
+  border-radius: 10px;
+  padding: 8px 12px;
+  font-weight: 700; font-size: 0.9rem; line-height: 1.35;
+  margin-bottom: 14px;
+}
+.dv__act { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin: 0 0 16px; }
+.dv__notewrap {
+  background: #FDFAF3;
+  border: 1.4px solid rgba(138, 90, 11, 0.22);
+  border-radius: 14px;
+  padding: 12px 14px;
+  margin-bottom: 18px;
+}
+.dv__notehead { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 8px; }
+.dv__save { font-size: 0.84rem; font-weight: 700; color: var(--ink-soft); min-height: 1.2em; }
+.dv__save.is-saved { color: var(--green); }
+.dv__note {
+  display: block; width: 100%;
+  min-height: 140px; resize: vertical;
+  border: 1.4px solid var(--line); border-radius: 10px;
+  background: #fff; color: var(--ink);
+  font: inherit; font-size: 1rem; line-height: 1.6;
+  padding: 12px 14px;
+  overflow: hidden;
+}
+.dv__note:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(217, 108, 44, 0.15); }
+.dv__rows { margin-bottom: 16px; }
+.dv__cols { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+@media (max-width: 640px) {
+  .dvmask { padding: 0; }
+  .dv { width: 100%; min-height: 100%; border-radius: 0; margin: 0; }
+  .dv__head { border-radius: 0; padding: 12px 12px; }
+  .dv__body { padding: 14px 14px 40px; }
+  .dv__cols { grid-template-columns: 1fr; gap: 14px; }
 }
 
 /* produktionsliste – alle bestilte retter lagt sammen */
