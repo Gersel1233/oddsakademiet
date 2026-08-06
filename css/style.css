@@ -528,11 +528,18 @@ input:focus-visible, select:focus-visible, textarea:focus-visible {
   align-items: center;
   margin-bottom: 34px;
 }
+/* rene, moderne bogstaver i hele sektionen – ingen krøllede j'er */
+#selskaber .section__head h2 {
+  font-family: var(--font-body);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
 .selsk__text h3 {
-  font-family: var(--font-display);
-  font-weight: 600;
-  font-size: clamp(1.3rem, 2.4vw, 1.65rem);
-  line-height: 1.2;
+  font-family: var(--font-body);
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  font-size: clamp(1.25rem, 2.3vw, 1.55rem);
+  line-height: 1.25;
   margin-bottom: 12px;
 }
 .selsk__text > p { color: var(--ink-soft); line-height: 1.65; margin-bottom: 18px; max-width: 58ch; }
@@ -578,16 +585,22 @@ input:focus-visible, select:focus-visible, textarea:focus-visible {
   justify-items: center;
   gap: 10px;
 }
-.selsk__cta h3 { font-family: var(--font-display); font-weight: 600; font-size: 1.35rem; }
+.selsk__cta h3 { font-family: var(--font-body); font-weight: 700; letter-spacing: -0.01em; font-size: 1.3rem; }
 .selsk__cta > p { color: var(--ink-soft); max-width: 46ch; line-height: 1.55; }
 .selsk__cta .btn { margin-top: 4px; }
 .selsk__contactrows { display: flex; gap: 8px 22px; flex-wrap: wrap; justify-content: center; margin-top: 8px; }
 @media (max-width: 860px) {
-  .selsk { grid-template-columns: 1fr; gap: 24px; }
-  .selsk__fotos { grid-auto-rows: 110px; }
-  .selsk__foto { font-size: 2.4rem; }
+  .selsk { grid-template-columns: 1fr; gap: 22px; }
+  .selsk__text h3 { text-align: center; }
+  .selsk__text > p { text-align: center; margin-left: auto; margin-right: auto; }
+  .selsk__points li { padding: 12px 14px; font-size: 0.93rem; text-align: center; }
+  .selsk__stars { justify-content: center; }
+  .selsk__fotos { grid-auto-rows: 108px; gap: 10px; }
+  .selsk__foto { font-size: 2.4rem; border-radius: 16px; }
   .selsk__foto--a { font-size: 3.2rem; }
-  .selsk__cta .btn--big { width: 100%; }
+  .selsk__cta { padding: 24px 16px; }
+  .selsk__cta .btn--big { width: 100%; font-size: 1rem; padding: 15px 18px; }
+  .selsk__contactrows { flex-direction: column; align-items: center; gap: 8px; }
 }
 
 /* ---------- logo ---------- */
