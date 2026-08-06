@@ -387,14 +387,11 @@
   /* dagens forløb: bestillinger + dagens møder i tidsorden
      (arrangementer har deres egen sektion i køreplanen) */
   function dayTimeline(iso) {
-    const entries = [
-      /* færdige bestillinger er lagt i arkivet – forløbet viser kun de aktive */
-      ...S.getOrders(iso).filter((o) => o.status === 'ny').map((o) => ({ time: o.time || '', kind: 'order', o })),
-      ...S.getBookings()
-        .filter((b) => b.date === iso && b.status !== 'afvist' && b.kind !== 'arrangement')
-        .map((b) => ({ time: b.time || '', kind: 'booking', b })),
-    ];
-    /* poster uden tidspunkt (fx aftalte arrangementer uden fast tid) først */
+    /* forløbet viser kun aktive bestillinger – ALLE dagens bookinger
+       (arrangementer OG møder) står samlet i sektionen ovenover */
+    const entries = S.getOrders(iso)
+      .filter((o) => o.status === 'ny')
+      .map((o) => ({ time: o.time || '', kind: 'order', o }));
     return entries.sort((a, b) => (a.time || '00:00').localeCompare(b.time || '00:00'));
   }
 
@@ -536,8 +533,10 @@
     const dagensSold = S.getSold(today);
     const totalsSplit = dishTotalsSplit(orders);
     const timeline = dayTimeline(today);
-    const todaysArrangements = S.getBookings().filter((b) =>
-      b.date === today && b.kind === 'arrangement' && b.status !== 'afvist');
+    /* ALLE dagens bookinger – arrangementer OG møder – så intet kan gemme sig */
+    const todaysArrangements = S.getBookings()
+      .filter((b) => b.date === today && b.status !== 'afvist')
+      .sort((a, b) => (a.time || '').localeCompare(b.time || ''));
     /* dagens bookinger står i køreplanen – her vises kun et kort overblik */
     const waitingCount = S.getBookings().filter((b) => b.status === 'ny').length;
     const nextUp = S.getBookings()
@@ -583,7 +582,7 @@
         </div>
 
         ${todaysArrangements.length ? `
-        <h3 class="kp__sub">🎉 Dagens arrangementer</h3>
+        <h3 class="kp__sub">🎉 Dagens arrangementer &amp; aftaler</h3>
         <div class="rowlist rowlist--arr">
           ${todaysArrangements.map(bookingRow).join('')}
         </div>` : ''}
@@ -682,7 +681,8 @@
       orders,
       items: orders.reduce((s, o) => s + itemsOf(o), 0),
       persons, togo, spise: persons - togo,
-      bookings: S.getBookings().filter((b) => b.date === iso && b.status !== 'afvist'),
+      bookings: S.getBookings().filter((b) => b.date === iso && b.status !== 'afvist')
+        .sort((a, b) => (a.time || '').localeCompare(b.time || '')),
       dish: S.getDagensRet(iso), sold: S.getSold(iso), note: S.getNote(iso),
       closed: !S.isOpenDay(iso), noOrders: S.isOrderingClosed(iso),
     };
@@ -799,6 +799,11 @@
         </div>
         <div class="kalpanel__status ${st.cls}">${st.full}</div>
         ${act ? `<div class="kalpanel__act">${act}</div>` : ''}
+        ${d.bookings.length ? `
+        <h3 class="kp__sub">📅 Dagens aftaler &amp; arrangementer</h3>
+        <div class="rowlist" style="margin-bottom:16px;">
+          ${d.bookings.map(bookingRow).join('')}
+        </div>` : ''}
         <div class="kalpanel__grid">
           <div>
             <h3 class="kp__sub">🍲 Dagens ret</h3>
@@ -810,9 +815,6 @@
               <div class="kalpanel__stats"><span><b>${d.orders.length}</b> bestillinger</span><span><b>${d.items}</b> retter</span><span>🥡 <b>${d.togo}</b> · 🍽️ <b>${d.spise}</b></span></div>
               ${totals.length ? `<div class="ugeday__top">${totals.slice(0, 4).map(([n, q]) => `${q} × ${esc(n)}`).join(' · ')}${totals.length > 4 ? ' · …' : ''}</div>` : ''}`
               : `<div class="kalpanel__none">${d.noOrders ? '🚫 Dagen er lukket for madbestillinger' : 'Ingen bestillinger på dagen endnu'}</div>`}
-            ${d.bookings.length ? `
-              <h3 class="kp__sub">📅 Aftaler</h3>
-              <div class="ugeday__bookings">${d.bookings.map((b) => `<div>${b.kind === 'moede' ? '📅' : '🎉'} ${b.time ? `kl. ${esc(b.time)} · ` : ''}${esc(b.subject)} <em>(${esc(b.name)})</em>${b.status === 'ny' ? ' <span class="tag tag--red">Ny</span>' : ''}</div>`).join('')}</div>` : ''}
           </div>
           <div>
             <h3 class="kp__sub">📝 Note til dagen</h3>
