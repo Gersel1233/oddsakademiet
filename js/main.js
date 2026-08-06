@@ -362,7 +362,6 @@
     const el = $('#dayMenu');
     const iso = nextDateForWeekday(activeDay);
     const hours = S.getHours()[activeDay];
-    const dish = S.getDagensRet(iso);
     const extras = S.getMenu().weekly[activeDay] || [];
 
     let rows = '';
@@ -370,20 +369,21 @@
       rows = `<p class="daymenu__empty">Vi holder lukket om ${S.WEEKDAYS[activeDay].toLowerCase()}en – vi ses en anden dag! 👋</p>`;
     } else {
       const lines = [];
-      if (dish) {
+      /* ALLE dagens retter (der kan være flere) – med punktopstilling i beskrivelsen */
+      S.getDagensRetList(iso).forEach((d) => {
         lines.push(`<div class="menuline">
           <div>
-            <div class="menuline__name">${esc(dish.title)}<span class="menuline__badge">Dagens ret</span></div>
-            ${dish.desc ? `<div class="menuline__desc">${esc(dish.desc)}</div>` : ''}
+            <div class="menuline__name">${esc(d.title)}<span class="menuline__badge">Dagens ret</span></div>
+            ${d.desc ? `<div class="menuline__desc">${descHtml(d.desc)}</div>` : ''}
           </div>
-          <span class="menuline__price">${dish.price ? kr(dish.price) : ''}</span>
+          <span class="menuline__price">${d.price ? kr(d.price) : ''}</span>
         </div>`);
-      }
+      });
       extras.forEach((item) => {
         lines.push(`<div class="menuline">
           <div>
             <div class="menuline__name">${esc(item.name)}</div>
-            ${item.desc ? `<div class="menuline__desc">${esc(item.desc)}</div>` : ''}
+            ${item.desc ? `<div class="menuline__desc">${descHtml(item.desc)}</div>` : ''}
           </div>
           <span class="menuline__price">${item.price ? kr(item.price) : ''}</span>
         </div>`);

@@ -555,8 +555,23 @@ input:focus-visible, select:focus-visible, textarea:focus-visible {
   line-height: 1.45;
 }
 .selsk__points strong { color: var(--ink); }
-.selsk__stars { display: flex; align-items: center; gap: 10px; font-size: 1.05rem; letter-spacing: 1px; }
-.selsk__stars span { font-size: 0.92rem; color: var(--ink-soft); font-weight: 600; letter-spacing: 0; }
+/* stjernerne er et LINK til Google-anmeldelserne – pænt, ikke skrigende */
+.selsk__stars {
+  display: inline-flex; align-items: center; gap: 10px;
+  font-size: 1.05rem; letter-spacing: 1px;
+  text-decoration: none; color: inherit;
+  padding: 8px 14px; margin-left: -14px;
+  border-radius: 12px;
+  transition: background 0.2s ease, transform 0.2s ease;
+}
+.selsk__stars:hover { background: rgba(217, 108, 44, 0.08); transform: translateY(-1px); }
+.selsk__starstxt { font-size: 0.92rem; color: var(--ink-soft); font-weight: 600; letter-spacing: 0; }
+.selsk__starstxt em { font-style: normal; color: var(--accent-deep); font-weight: 700; white-space: nowrap; }
+.selsk__starstxt em::before { content: '· '; }
+@media (max-width: 860px) {
+  .selsk__starstxt em { display: block; margin-top: 2px; }
+  .selsk__starstxt em::before { content: ''; }
+}
 /* billed-collage: emoji-felter i dag, rigtige fotos i morgen (samme felter) */
 .selsk__fotos {
   display: grid;
@@ -594,7 +609,7 @@ input:focus-visible, select:focus-visible, textarea:focus-visible {
   .selsk__text h3 { text-align: center; }
   .selsk__text > p { text-align: center; margin-left: auto; margin-right: auto; }
   .selsk__points li { padding: 12px 14px; font-size: 0.93rem; text-align: center; }
-  .selsk__stars { justify-content: center; }
+  .selsk__stars { justify-content: center; margin-left: 0; flex-direction: column; gap: 4px; text-align: center; }
   .selsk__fotos { grid-auto-rows: 108px; gap: 10px; }
   .selsk__foto { font-size: 2.4rem; border-radius: 16px; }
   .selsk__foto--a { font-size: 3.2rem; }
