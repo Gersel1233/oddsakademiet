@@ -935,17 +935,9 @@
     const btn = $('#selskabMail');
     if (!btn) return;
     const s = S.getSettings();
-    const subject = 'Forespørgsel: selskab hos Spiis';
-    const body = [
-      'Hej Spiis', '',
-      'Vi vil gerne holde et selskab hos jer 🎉', '',
-      'Dato (cirka): ',
-      'Antal personer: ',
-      'Ønsker til menu og budget: ', '',
-      'Navn: ',
-      'Telefon: ', '',
-      'Vi glæder os til at høre fra jer!',
-    ].join('\n');
+    const subject = 'Selskab hos Spiis';
+    /* kort og venlig – markøren lander til sidst, så man bare skriver videre */
+    const body = ['Hej Spiis', '', 'Vi vil gerne holde et selskab hos jer 🎉', '', ''].join('\n');
     btn.href = `mailto:${s.email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
   }
 
