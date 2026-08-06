@@ -1010,8 +1010,8 @@ body.dv-open { overflow: hidden; }
 }
 @keyframes dvUp { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
 .dv__head {
-  display: flex; align-items: center; gap: 10px;
-  padding: 14px 18px;
+  display: block;
+  padding: 14px 18px 8px;
   border-bottom: 1.4px solid var(--line);
   position: sticky; top: 0; z-index: 2;
   background: var(--cream);
@@ -1063,13 +1063,97 @@ body.dv-open { overflow: hidden; }
 }
 .dv__note:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(217, 108, 44, 0.15); }
 .dv__rows { margin-bottom: 16px; }
-.dv__cols { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+.dv__headrow { display: flex; align-items: center; gap: 10px; }
+
+/* uge-strippen – som i en rigtig kalender-app */
+.dv__strip { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; margin-top: 10px; }
+.dv__stripday {
+  display: grid; justify-items: center; gap: 1px;
+  padding: 6px 2px 5px;
+  border: none; border-radius: 12px;
+  background: transparent; cursor: pointer;
+  font: inherit; color: var(--ink);
+}
+.dv__stripwd { font-size: 0.64rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--ink-soft); }
+.dv__stripnum { font-size: 1.02rem; font-weight: 800; font-family: var(--font-display); line-height: 1.2; }
+.dv__stripday.is-today .dv__stripnum { color: var(--accent-deep); }
+.dv__stripday.is-sel { background: var(--accent); }
+.dv__stripday.is-sel .dv__stripnum, .dv__stripday.is-sel .dv__stripwd { color: #fff; }
+.dv__stripdots { display: flex; gap: 2px; min-height: 6px; }
+.dvdot { width: 5px; height: 5px; border-radius: 50%; display: inline-block; }
+.dvdot--bk { background: #1B7A44; }
+.dvdot--ny { background: var(--red); }
+.dvdot--o { background: var(--accent); }
+.dvdot--n { background: #C99B22; }
+.dv__stripday.is-sel .dvdot { background: rgba(255, 255, 255, 0.9); }
+
+/* advarsel når en booking venter på svar */
+.dv__alert {
+  background: var(--red-soft); color: var(--red);
+  border: 1.4px solid #F1C4BF;
+  border-radius: 10px;
+  padding: 8px 12px;
+  font-weight: 700; font-size: 0.9rem;
+  margin-bottom: 14px;
+}
+
+/* hurtige nøgletal for dagen */
+.dv__chips { display: flex; gap: 8px; flex-wrap: wrap; margin: 0 0 16px; }
+.dvchip {
+  font-size: 0.84rem; font-weight: 600; color: var(--ink-soft);
+  background: #fff; border: 1.4px solid var(--line);
+  border-radius: 999px; padding: 5px 12px;
+}
+.dvchip b { color: var(--ink); }
+
+/* dagens program – tidslinje som i en kalender-app */
+.dvtl { display: grid; gap: 8px; margin-bottom: 18px; }
+.dvtl__row { display: grid; grid-template-columns: 52px 1fr; gap: 10px; align-items: start; }
+.dvtl__time {
+  font-size: 0.8rem; font-weight: 800; color: var(--ink-soft);
+  font-family: var(--font-display);
+  text-align: right; padding-top: 8px; line-height: 1.15;
+}
+.dvtl__content { min-width: 0; border-left: 2px solid var(--line); padding-left: 10px; }
+.dvtl__content .row { margin: 0; }
+.dvtl__mark {
+  font-size: 0.8rem; font-weight: 600; color: var(--ink-soft);
+  padding: 6px 2px;
+  border-bottom: 1px dashed var(--line);
+}
+.dvtl__order {
+  display: grid; grid-template-columns: 1fr auto; gap: 2px 10px;
+  width: 100%; text-align: left;
+  background: #fff; border: 1.4px solid var(--line);
+  border-radius: 12px; padding: 9px 12px;
+  font: inherit; color: var(--ink); cursor: pointer;
+}
+.dvtl__order--ny { border-left: 4px solid var(--accent); background: #FFF8F1; }
+.dvtl__order--ok { border-left: 4px solid #1B7A44; }
+.dvtl__otitle { grid-column: 1; grid-row: 1; font-weight: 700; font-size: 0.92rem; }
+.dvtl__osub { grid-column: 1; grid-row: 2; font-size: 0.84rem; color: var(--ink-soft); }
+.dvtl__ostatus { grid-column: 2; grid-row: 1 / span 2; align-self: center; font-size: 0.8rem; font-weight: 700; white-space: nowrap; }
+.dvtl__order--ny .dvtl__ostatus { color: #A9500D; }
+.dvtl__order--ok .dvtl__ostatus { color: #1B7A44; }
+.dvtl__order:hover { border-color: var(--accent); }
+
+.dv__foot { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 14px; }
+
+/* rødt mærke i månedscellen når en booking venter på svar */
+.kalcell__ny {
+  font-size: 0.7rem; font-weight: 800;
+  color: #fff; background: var(--red);
+  border-radius: 6px; padding: 1px 6px;
+  max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+
 @media (max-width: 640px) {
   .dvmask { padding: 0; }
   .dv { width: 100%; min-height: 100%; border-radius: 0; margin: 0; }
   .dv__head { border-radius: 0; padding: 12px 12px; }
   .dv__body { padding: 14px 14px 40px; }
-  .dv__cols { grid-template-columns: 1fr; gap: 14px; }
+  .dvtl__row { grid-template-columns: 42px 1fr; gap: 8px; }
+  .dvtl__content .row__actions { flex-wrap: wrap; }
 }
 
 /* produktionsliste – alle bestilte retter lagt sammen */
