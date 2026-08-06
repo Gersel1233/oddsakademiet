@@ -32,7 +32,7 @@ jobs:
       - name: Version assets
         run: |
           V="${GITHUB_SHA::8}"
-          sed -i "s/__V__/${V}/g" index.html admin.html
+          sed -i "s/__V__/${V}/g" index.html admin.html menu.html
 
       - name: Setup Pages
         uses: actions/configure-pages@v5

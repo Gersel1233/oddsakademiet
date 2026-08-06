@@ -67,7 +67,7 @@
       </a>
       <nav class="nav__links" id="navLinks" aria-label="Hovedmenu">
         <a href="#dagensret">Dagens ret</a>
-        <a href="#menukort">Menukort</a>
+        <a href="menu.html">Menukort</a>
         <a href="#om">Om Spiis</a>
         <a href="#selskaber">Selskab &amp; catering</a>
         <a href="#kontakt">Kontakt</a>
@@ -261,22 +261,20 @@
     </section>
 
     <!-- ====== MENUKORT ====== -->
+    <!-- ====== MENUKORT-TEASER (hele kortet ligger på sin egen side) ====== -->
     <section class="section" id="menukort">
       <div class="container">
         <div class="section__head" data-reveal>
           <p class="eyebrow">Altid noget godt</p>
           <h2>Menukort</h2>
           <span class="dotline" aria-hidden="true"></span>
-          <p class="section__lead">Menuen skifter løbende, så du altid får varieret og frisk mad – lavet med kærlighed.</p>
-          <p class="allerginote" data-reveal>🥜 Allergi? Spørg personalet ift. allergener – vi hjælper gerne.</p>
+          <p class="section__lead">Dagens retter for hele ugen og vores faste sortiment – samlet ét sted, nemt at bladre i.</p>
         </div>
-
-        <div class="daytabs" id="dayTabs" role="tablist" aria-label="Ugedage" data-reveal><!-- js --></div>
-        <div class="daymenu card" id="dayMenu" data-reveal><!-- js --></div>
-
-        <h3 class="menucats__title" data-reveal>Fast sortiment</h3>
-        <p class="menucats__note" id="menucatsNote" data-reveal></p>
-        <div class="menucats" id="menuCategories"><!-- js --></div>
+        <div class="menuteaser card" data-reveal>
+          <div class="menuteaser__icons" aria-hidden="true"><span>🍲</span><span>🍔</span><span>🥗</span><span>🥤</span></div>
+          <a href="menu.html" class="btn btn--accent btn--big">📖 Se hele menukortet</a>
+          <p class="menuteaser__note">🥜 Allergi? Spørg personalet ift. allergener – vi hjælper gerne.</p>
+        </div>
       </div>
     </section>
 
@@ -319,19 +317,19 @@
       <div class="container">
         <div class="section__head" data-reveal>
           <p class="eyebrow">Selskab &amp; catering</p>
-          <h2>Lad os holde jeres næste fest</h2>
+          <h2>Lad os holde jeres næste arrangement</h2>
           <span class="dotline" aria-hidden="true"></span>
-          <p class="section__lead">Fødselsdag, konfirmation, jubilæum eller firmafest – vi ELSKER at holde selskaber, og vi gør det med hjemmelavet mad, hjerterum og styr på det hele.</p>
+          <p class="section__lead">Her hos Spiis ELSKER vi at holde arrangementer – det er noget af det, vi er allermest stolte af.</p>
         </div>
 
         <div class="selsk" data-reveal>
           <div class="selsk__text">
-            <h3>Skræddersyet til jer – til en pris, I bliver glade for</h3>
-            <p>Ingen faste pakker og ingen standardløsninger. I fortæller os om jeres dag, jeres gæster og jeres budget – så sætter vi en menu sammen, der passer præcis til jer. Vi gør os umage med hver eneste ret, så I kan koncentrere jer om det vigtigste: at være sammen med jeres gæster.</p>
+            <h3>Vi gør os umage – hver eneste gang</h3>
+            <p>Fødselsdag, konfirmation, mindestund eller firmafest – uanset hvad jeres dag går på, lægger vi hjertet i den. Vores dygtige personale sørger for maden, opdækningen og de små detaljer, så I kan læne jer tilbage og være sammen med jeres gæster. Det er dét, vi brænder for.</p>
             <ul class="selsk__points">
-              <li>🍲 <strong>Hjemmelavet fra bunden</strong> – ærlig mad, lavet med kærlighed</li>
-              <li>💛 <strong>Menu efter jeres ønsker og budget</strong> – vi finder den rigtige løsning sammen</li>
-              <li>🥂 <strong>Store og små selskaber</strong> – vi dækker op og gør dagen nem for jer</li>
+              <li>🍲 <strong>Hjemmelavet fra bunden</strong> – vi går aldrig på kompromis med maden</li>
+              <li>👩‍🍳 <strong>Et dygtigt personale</strong> – der elsker det, de laver</li>
+              <li>💛 <strong>Store som små arrangementer</strong> – vi skræddersyr menu og opdækning til jer</li>
             </ul>
             <a class="selsk__stars" href="https://www.google.com/search?sa=X&amp;sca_esv=d8473d4d0eaf6e64&amp;rlz=1C5CHFA_enDK1008DK1008&amp;sxsrf=APpeQnvAz4lMK0mFnziXNnTvVAKSOTh60w:1786057574545&amp;q=Spiis+ApS+Anmeldelser&amp;rflfq=1&amp;num=20&amp;stick=H4sIAAAAAAAAAONgkxIxNDA2Nzc2NDczMzAwMDIyNTE1M9nAyPiKUTS4IDOzWMGxIFjBMS83NSclNac4tWgRK3ZxADLDrLJLAAAA&amp;rldimm=10377317660002254564&amp;tbm=lcl&amp;hl=da-DK&amp;ved=2ahUKEwjzs536jo2WAxVhAtsEHUuGIqQQ9fQKegQITxAG&amp;biw=1440&amp;bih=900&amp;dpr=2#lkt=LocalPoiReviews" target="_blank" rel="noopener" aria-label="5 ud af 5 stjerner – læs vores anmeldelser på Google">
               <span class="selsk__starrow" aria-hidden="true">⭐⭐⭐⭐⭐</span>
@@ -349,7 +347,7 @@
 
         <div class="card selsk__cta" data-reveal>
           <h3>Skal vi tage snakken?</h3>
-          <p>Skriv løs – dato, antal personer og jeres ønsker. Så vender vi hurtigt tilbage med et forslag og en pris.</p>
+          <p>Klik på knappen herunder og fortæl os om jeres arrangement – dato, antal og ønsker. Vi glæder os allerede til at høre fra jer.</p>
           <a class="btn btn--accent btn--big" id="selskabMail" href="mailto:spiis.bestilling@gmail.com">✉️ Book jeres selskab</a>
           <div class="selsk__contactrows">
             <a class="contactcard__row" id="contactPhone" href="tel:+4593995858"><span class="contactcard__icon">📞</span><span>93 99 58 58</span></a>
@@ -459,7 +457,7 @@
       </div>
       <nav class="footer__links" aria-label="Sidefod">
         <a href="#dagensret">Dagens ret</a>
-        <a href="#menukort">Menukort</a>
+        <a href="menu.html">Menukort</a>
         <a href="#selskaber">Selskab &amp; catering</a>
         <a href="#kontakt">Kontakt</a>
       </nav>

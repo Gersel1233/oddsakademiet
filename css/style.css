@@ -353,15 +353,7 @@ input:focus-visible, select:focus-visible, textarea:focus-visible {
   padding: 26px 28px 24px;
   overflow: hidden;
 }
-.feriekort::after {
-  content: '🌴';
-  position: absolute;
-  right: -12px; bottom: -22px;
-  font-size: 7rem;
-  opacity: 0.1;
-  transform: rotate(-12deg);
-  pointer-events: none;
-}
+
 .feriekort__top { display: flex; align-items: center; gap: 16px; margin-bottom: 10px; }
 .feriekort__icon {
   flex: none;
@@ -516,6 +508,39 @@ input:focus-visible, select:focus-visible, textarea:focus-visible {
   .news--big { flex-direction: column; align-items: stretch; }
   .news--big .news__media { flex: 0 0 auto; }
   .news__body { padding: 20px 20px 24px; }
+}
+
+/* ---------- menukort-teaser (hele kortet ligger på menu.html) ---------- */
+.menuteaser {
+  max-width: 560px;
+  margin: 0 auto;
+  padding: 30px 26px;
+  text-align: center;
+  display: grid;
+  justify-items: center;
+  gap: 14px;
+}
+.menuteaser__icons { display: flex; gap: 14px; font-size: 1.9rem; }
+.menuteaser__icons span {
+  display: grid; place-items: center;
+  width: 56px; height: 56px;
+  background: var(--cream-2);
+  border-radius: 16px;
+}
+.menuteaser__note { color: var(--ink-soft); font-size: 0.88rem; }
+@media (max-width: 560px) {
+  .menuteaser .btn--big { width: 100%; }
+  .menuteaser__icons { gap: 10px; font-size: 1.6rem; }
+  .menuteaser__icons span { width: 48px; height: 48px; }
+}
+
+/* ---------- menu-siden (menu.html) ---------- */
+.menupage__navbtns { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.menupage__section { padding-top: 110px; }
+.menupage__foot { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; margin-top: 34px; }
+@media (max-width: 560px) {
+  .menupage__navbtns .btn--ghost { display: none; } /* pladsen er lille – logoet er vejen tilbage */
+  .menupage__foot .btn { width: 100%; text-align: center; }
 }
 
 /* ---------- selskaber & catering ---------- */
@@ -697,7 +722,13 @@ input:focus-visible, select:focus-visible, textarea:focus-visible {
   border: 0;
   cursor: pointer;
   padding: 8px;
+  color: var(--ink); /* aldrig telefonens blå standardfarve */
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  transition: transform 0.2s ease;
 }
+.nav__burger:active { transform: scale(0.88); transition-duration: 0.05s; }
+.nav__burger:active span { background: var(--accent-deep); }
 .nav__burger span {
   width: 26px; height: 2.6px;
   border-radius: 2px;
