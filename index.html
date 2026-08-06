@@ -69,7 +69,7 @@
         <a href="#dagensret">Dagens ret</a>
         <a href="#menukort">Menukort</a>
         <a href="#om">Om Spiis</a>
-        <a href="#booking">Booking</a>
+        <a href="#selskaber">Selskaber</a>
         <a href="#kontakt">Kontakt</a>
         <a href="#bestil" class="btn btn--small btn--accent nav__cta">Bestil dagens ret</a>
       </nav>
@@ -95,7 +95,7 @@
       <p class="hero__sub" data-hero="4">Velsmag og kvalitet i hver en bid – nemt, hurtigt og altid en fornøjelse!</p>
       <div class="hero__cta" data-hero="5">
         <a href="#dagensret" class="btn btn--accent">Se dagens ret</a>
-        <a href="#booking" class="btn btn--ghost">Book arrangement</a>
+        <a href="#selskaber" class="btn btn--ghost">Selskaber &amp; catering</a>
       </div>
     </div>
     <a href="#dagensret" class="hero__scroll" aria-label="Scroll ned">
@@ -313,90 +313,45 @@
       </div>
     </section>
 
-    <!-- ====== BOOKING ====== -->
-    <section class="section section--tint" id="booking">
+    <!-- ====== SELSKABER & CATERING ====== -->
+    <span id="booking" class="anchor-alias" aria-hidden="true"></span>
+    <section class="section section--tint" id="selskaber">
       <div class="container">
         <div class="section__head" data-reveal>
-          <p class="eyebrow">Arrangementer & møder</p>
-          <h2>Book os</h2>
+          <p class="eyebrow">Selskaber &amp; catering</p>
+          <h2>Lad os holde jeres næste fest</h2>
           <span class="dotline" aria-hidden="true"></span>
-          <p class="section__lead">Send en forespørgsel på jeres arrangement – så vender vi tilbage til jer. Eller book et møde med os, hvis I vil forbi og vende mulighederne.</p>
+          <p class="section__lead">Fødselsdag, konfirmation, jubilæum eller firmafest – vi ELSKER at holde selskaber, og vi gør det med hjemmelavet mad, hjerterum og styr på det hele.</p>
         </div>
 
-        <div class="booking__choice" data-reveal>
-          <button class="choice is-active" type="button" data-kind="arrangement">
-            <span class="choice__icon">🎉</span>
-            <span class="choice__title">Forespørg på et arrangement</span>
-            <span class="choice__desc">Fødselsdag, fest, klubaften eller firmaevent – fortæl os om det, så vender vi tilbage.</span>
-          </button>
-          <button class="choice" type="button" data-kind="moede">
-            <span class="choice__icon">📅</span>
-            <span class="choice__title">Book et fysisk møde</span>
-            <span class="choice__desc">Kom forbi og lad os tale om jeres ønsker, inden I beslutter jer.</span>
-          </button>
-        </div>
-
-        <div class="booking__layout">
-          <form class="card form" id="bookingForm" data-reveal novalidate>
-            <input type="hidden" id="bookingKind" value="arrangement" />
-            <div class="form__grid">
-              <label class="field field--full">
-                <span id="bookingSubjectLabel">Hvad drejer arrangementet sig om?</span>
-                <input type="text" id="bookingSubject" placeholder="Fx konfirmation for 30 personer" required />
-              </label>
-              <label class="field field--full">
-                <span>Fortæl os lidt mere <em>(valgfrit)</em></span>
-                <textarea id="bookingDesc" rows="3" placeholder="Antal gæster, ønsker til menuen, særlige hensyn…"></textarea>
-              </label>
-              <label class="field">
-                <span id="bookingDateLabel">Ønsket dato <em>(valgfrit)</em></span>
-                <input type="date" id="bookingDate" />
-                <small class="field__hint" id="bookingAvail"></small>
-              </label>
-              <label class="field" id="bookingTimeField" hidden>
-                <span>Tidspunkt</span>
-                <select id="bookingTime"></select>
-              </label>
-              <label class="field">
-                <span>Navn</span>
-                <input type="text" id="bookingName" placeholder="Dit fulde navn" autocomplete="name" required />
-              </label>
-              <label class="field">
-                <span>Telefonnummer</span>
-                <input type="tel" id="bookingPhone" placeholder="12 34 56 78" autocomplete="tel" required />
-              </label>
-              <label class="field field--full">
-                <span id="bookingEmailLabel">E-mail <em>(vi svarer på mail eller telefon)</em></span>
-                <input type="email" id="bookingEmail" placeholder="din@mail.dk" autocomplete="email" />
-              </label>
-            </div>
-            <p class="form__error" id="bookingError" hidden></p>
-            <p class="form__error" id="bookingOffline" hidden></p>
-            <button type="submit" class="btn btn--accent btn--big form__submit" id="bookingSubmit">Send forespørgsel</button>
-            <p class="form__note" id="bookingNote">Vi vender tilbage til jer hurtigst muligt på telefon eller mail.</p>
-          </form>
-
-          <aside class="booking__aside" data-reveal>
-            <div class="card contactcard">
-              <h3>…eller skriv direkte</h3>
-              <p>Vil du hellere bare tage fat i os? Det er altid velkomment.</p>
-              <a class="contactcard__row" id="contactPhone" href="tel:+4593995858">
-                <span class="contactcard__icon">📞</span><span>93 99 58 58</span>
-              </a>
-              <a class="contactcard__row" id="contactEmail" href="mailto:spiis.bestilling@gmail.com">
-                <span class="contactcard__icon">✉️</span><span>spiis.bestilling@gmail.com</span>
-              </a>
-            </div>
-          </aside>
-        </div>
-
-        <div class="card success container--narrow" id="bookingSuccess" hidden>
-          <div class="success__check" aria-hidden="true">
-            <svg viewBox="0 0 52 52"><circle cx="26" cy="26" r="24" fill="none"/><path fill="none" d="M14 27l8 8 16-17"/></svg>
+        <div class="selsk" data-reveal>
+          <div class="selsk__text">
+            <h3>Skræddersyet til jer – til en pris, I bliver glade for</h3>
+            <p>Ingen faste pakker og ingen standardløsninger. I fortæller os om jeres dag, jeres gæster og jeres budget – så sætter vi en menu sammen, der passer præcis til jer. Vi gør os umage med hver eneste ret, så I kan koncentrere jer om det vigtigste: at være sammen med jeres gæster.</p>
+            <ul class="selsk__points">
+              <li>🍲 <strong>Hjemmelavet fra bunden</strong> – ærlig mad, lavet med kærlighed</li>
+              <li>💛 <strong>Menu efter jeres ønsker og budget</strong> – vi finder den rigtige løsning sammen</li>
+              <li>🥂 <strong>Store og små selskaber</strong> – vi dækker op og gør dagen nem for jer</li>
+            </ul>
+            <p class="selsk__stars" aria-label="5 ud af 5 stjerner">⭐⭐⭐⭐⭐ <span>Vores gæster giver os 5 stjerner</span></p>
           </div>
-          <h3 id="bookingSuccessTitle">Tak for jeres forespørgsel! 🎉</h3>
-          <p id="bookingSuccessText"></p>
-          <button class="btn btn--ghost-dark" id="bookAgainBtn" type="button">Send en ny</button>
+          <div class="selsk__fotos" aria-hidden="true">
+            <!-- NÅR BILLEDERNE ER KLAR: erstat hvert emoji-felt med
+                 <img src="assets/selskab-1.jpg" alt="" loading="lazy" /> -->
+            <div class="selsk__foto selsk__foto--a">🎂</div>
+            <div class="selsk__foto">🥂</div>
+            <div class="selsk__foto">🍲</div>
+          </div>
+        </div>
+
+        <div class="card selsk__cta" data-reveal>
+          <h3>Skal vi tage snakken?</h3>
+          <p>Skriv løs – dato, antal personer og jeres ønsker. Så vender vi hurtigt tilbage med et forslag og en pris.</p>
+          <a class="btn btn--accent btn--big" id="selskabMail" href="mailto:spiis.bestilling@gmail.com">✉️ Book jeres selskab – skriv til os</a>
+          <div class="selsk__contactrows">
+            <a class="contactcard__row" id="contactPhone" href="tel:+4593995858"><span class="contactcard__icon">📞</span><span>93 99 58 58</span></a>
+            <a class="contactcard__row" id="contactEmail" href="mailto:spiis.bestilling@gmail.com"><span class="contactcard__icon">✉️</span><span>spiis.bestilling@gmail.com</span></a>
+          </div>
         </div>
       </div>
     </section>
@@ -435,20 +390,6 @@
 
   <!-- fast bestil-knap i bunden på mobil -->
   <a href="#bestil" class="mobilecta" id="mobileCta">🍲 Bestil dagens ret</a>
-
-  <!-- bekræft booking/forespørgsel: kvittering inden afsendelse -->
-  <div class="confirm" id="bookingConfirmWrap" hidden>
-    <div class="confirm__card" role="dialog" aria-modal="true" aria-labelledby="bkConfirmTitle">
-      <p class="confirm__kicker">Ét sidste kig</p>
-      <h3 class="confirm__title" id="bkConfirmTitle">Tjek jeres forespørgsel</h3>
-      <div class="confirm__lines" id="bkConfirmLines"></div>
-      <div class="confirm__meta" id="bkConfirmMeta"></div>
-      <div class="confirm__btns">
-        <button type="button" class="btn btn--ghost-dark" id="bkConfirmBack">← Ret noget</button>
-        <button type="button" class="btn btn--accent" id="bkConfirmSend">✓ Bekræft &amp; send</button>
-      </div>
-    </div>
-  </div>
 
   <!-- bestil en special direkte fra en nyhed (fx juleplatter) -->
   <div class="confirm" id="newsOrderWrap" hidden>
@@ -516,7 +457,7 @@
       <nav class="footer__links" aria-label="Sidefod">
         <a href="#dagensret">Dagens ret</a>
         <a href="#menukort">Menukort</a>
-        <a href="#booking">Booking</a>
+        <a href="#selskaber">Selskaber</a>
         <a href="#kontakt">Kontakt</a>
       </nav>
       <div class="footer__meta">

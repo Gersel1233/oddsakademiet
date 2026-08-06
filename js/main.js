@@ -199,7 +199,7 @@
       $('#todayPrice').textContent = '';
       $('#todayStock').textContent = '';
       $('#todayStock').className = 'today__stock';
-      if (orderBtn) { orderBtn.textContent = 'Send forespørgsel'; orderBtn.setAttribute('href', '#booking'); }
+      if (orderBtn) { orderBtn.textContent = 'Send forespørgsel'; orderBtn.setAttribute('href', '#selskaber'); }
       return;
     }
     if (orderBtn) { orderBtn.textContent = 'Bestil dagens ret'; orderBtn.setAttribute('href', '#bestil'); }
@@ -928,209 +928,42 @@
     renderOrderDates();
   });
 
-  /* ---------- booking ---------- */
-  const bookingKind = $('#bookingKind');
-  const bookingDate = $('#bookingDate');
-  const bookingTime = $('#bookingTime');
-  const bookingAvail = $('#bookingAvail');
-
-  /* arrangement = uforpligtende forespørgsel · møde = rigtig booking */
-  function syncBookingMode() {
-    const isMoede = bookingKind.value === 'moede';
-    $('#bookingSubjectLabel').textContent = isMoede
-      ? 'Hvad vil du gerne tale med os om?'
-      : 'Hvad drejer arrangementet sig om?';
-    $('#bookingSubject').placeholder = isMoede
-      ? 'Fx menu til konfirmation i maj'
-      : 'Fx konfirmation for 30 personer';
-    $('#bookingDateLabel').innerHTML = isMoede ? 'Ønsket dato' : 'Ønsket dato <em>(valgfrit)</em>';
-    $('#bookingTimeField').hidden = !isMoede;
-    $('#bookingEmailLabel').innerHTML = isMoede
-      ? 'E-mail <em>(valgfrit)</em>'
-      : 'E-mail <em>(vi svarer på mail eller telefon)</em>';
-    $('#bookingSubmit').textContent = isMoede ? 'Book mødet' : 'Send forespørgsel';
-    $('#bookingNote').textContent = isMoede
-      ? 'Vi bekræfter din booking hurtigst muligt på telefon.'
-      : 'Vi vender tilbage til jer hurtigst muligt på telefon eller mail.';
+  /* ---------- selskaber & catering: mail-knappen åbner kundens egen
+     mail-app (Gmail, Mail, Outlook …) med adressen sat i "til" og en
+     færdig skabelon, så vi altid får dato, antal og ønsker med ---------- */
+  function renderSelskabMail() {
+    const btn = $('#selskabMail');
+    if (!btn) return;
+    const s = S.getSettings();
+    const subject = 'Forespørgsel: selskab hos Spiis';
+    const body = [
+      'Hej Spiis', '',
+      'Vi vil gerne holde et selskab hos jer 🎉', '',
+      'Dato (cirka): ',
+      'Antal personer: ',
+      'Ønsker til menu og budget: ', '',
+      'Navn: ',
+      'Telefon: ', '',
+      'Vi glæder os til at høre fra jer!',
+    ].join('\n');
+    btn.href = `mailto:${s.email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
   }
-
-  $$('.choice').forEach((btn) => {
-    btn.addEventListener('click', () => {
-      $$('.choice').forEach((b) => b.classList.remove('is-active'));
-      btn.classList.add('is-active');
-      bookingKind.value = btn.dataset.kind;
-      syncBookingMode();
-      /* en dag kan være ledig til møde men optaget til arrangement */
-      onBookingDateChange();
-    });
-  });
-  syncBookingMode();
-
-  bookingDate.min = S.todayISO();
-
-  /* Spiis-kalender: lukkede og optagede dage kan slet ikke vælges.
-     Dage med et aftalt arrangement er kun optaget for NYE arrangementer. */
-  SpiisDatepicker.attach(bookingDate, {
-    min: S.todayISO(),
-    legend: true,
-    state: (iso) => {
-      if (!S.isOpenDay(iso)) return 'closed';
-      if (S.getBlockedDates().includes(iso)) return 'blocked';
-      if (bookingKind.value !== 'moede' && S.getArrangementDates().includes(iso)) return 'blocked';
-      return 'ok';
-    },
-  });
-
-  function onBookingDateChange() {
-    const iso = bookingDate.value;
-    if (!iso) { bookingAvail.textContent = ''; bookingAvail.className = 'field__hint'; return; }
-    const avail = S.isDateAvailable(iso, bookingKind.value);
-    bookingAvail.textContent = (avail.ok ? '✓ ' : '✕ ') + avail.reason;
-    bookingAvail.className = `field__hint ${avail.ok ? 'is-ok' : 'is-bad'}`;
-
-    const slots = avail.ok ? S.timeslotsFor(iso, 30) : [];
-    bookingTime.innerHTML = slots.length
-      ? slots.map((t) => `<option value="${t}">kl. ${t}</option>`).join('')
-      : '<option value="">–</option>';
-  }
-  bookingDate.addEventListener('change', onBookingDateChange);
-  bookingDate.addEventListener('input', onBookingDateChange);
-  onBookingDateChange();
-
-  /* Trin 1: tjek felterne og vis "ét sidste kig" med opsummering */
-  let pendingBooking = null;
-  const bkConfirmWrap = $('#bookingConfirmWrap');
-
-  $('#bookingForm').addEventListener('submit', (e) => {
-    e.preventDefault();
-    const error = $('#bookingError');
-    error.hidden = true;
-
-    const kind = bookingKind.value;
-    const isMoede = kind === 'moede';
-    const subject = $('#bookingSubject').value.trim();
-    const desc = $('#bookingDesc').value.trim();
-    const iso = bookingDate.value;
-    const time = isMoede ? bookingTime.value : '';
-    const name = $('#bookingName').value.trim();
-    const phone = $('#bookingPhone').value.trim();
-    const email = $('#bookingEmail').value.trim();
-
-    const problems = [];
-    if (!subject) problems.push('skriv hvad det drejer sig om');
-    if (isMoede && !iso) problems.push('vælg en dato');
-    if (!name) problems.push('skriv dit navn');
-    if (!/^[\d+\s-]{6,}$/.test(phone)) problems.push('skriv et gyldigt telefonnummer');
-
-    if (problems.length) {
-      error.textContent = `Hov! Du mangler at: ${problems.join(', ')}.`;
-      error.hidden = false;
-      return;
-    }
-
-    /* er der valgt en dato, skal den være ledig – uanset type */
-    if (iso) {
-      const avail = S.isDateAvailable(iso, kind);
-      if (!avail.ok) {
-        error.textContent = `Datoen kan ikke vælges: ${avail.reason}`;
-        error.hidden = false;
-        return;
-      }
-    }
-    if (isMoede && !time) {
-      error.textContent = 'Vælg et tidspunkt for dit møde.';
-      error.hidden = false;
-      return;
-    }
-
-    pendingBooking = { kind, isMoede, subject, desc, iso, time, name, phone, email };
-    openBookingConfirm();
-  });
-
-  function openBookingConfirm() {
-    const b = pendingBooking;
-    $('#bkConfirmTitle').textContent = b.isMoede ? 'Tjek din mødebooking' : 'Tjek jeres forespørgsel';
-    $('#bkConfirmLines').innerHTML = `
-      <div class="confirm__line"><span>${b.isMoede ? '📅' : '🎉'} <b>${esc(b.subject)}</b></span></div>
-      ${b.desc ? `<div class="confirm__line"><span>💬 ${esc(b.desc)}</span></div>` : ''}
-      <div class="confirm__line confirm__line--total"><span>${b.iso
-        ? `📆 ${esc(S.formatDate(b.iso))}${b.time ? ` kl. ${esc(b.time)}` : ' – ønsket dato'}`
-        : '📆 Dato aftales sammen med jer'}</span></div>`;
-    $('#bkConfirmMeta').innerHTML = `
-      <div>🙋 ${esc(b.name)} · 📞 ${esc(b.phone)}</div>
-      ${b.email ? `<div>✉️ ${esc(b.email)}</div>` : ''}
-      <div>${b.isMoede
-        ? 'Vi ringer og bekræfter din booking hurtigst muligt.'
-        : 'Uforpligtende forespørgsel – vi vender tilbage på telefon eller mail.'}</div>`;
-    bkConfirmWrap.hidden = false;
-    document.body.style.overflow = 'hidden';
-  }
-  function closeBookingConfirm() {
-    bkConfirmWrap.hidden = true;
-    document.body.style.overflow = '';
-  }
-  $('#bkConfirmBack').addEventListener('click', closeBookingConfirm);
-  bkConfirmWrap.addEventListener('click', (e) => { if (e.target === bkConfirmWrap) closeBookingConfirm(); });
-
-  /* Trin 2: kunden har set opsummeringen og bekræfter – NU sendes den */
-  $('#bkConfirmSend').addEventListener('click', async () => {
-    if (!pendingBooking) return;
-    const b = pendingBooking;
-    const btn = $('#bkConfirmSend');
-    const error = $('#bookingError');
-    error.hidden = true;
-    btn.disabled = true;
-    btn.textContent = 'Sender…';
-    const result = await S.addBooking({
-      kind: b.kind, subject: b.subject, desc: b.desc,
-      date: b.iso || null, time: b.time, name: b.name, phone: b.phone, email: b.email,
-    });
-    btn.disabled = false;
-    btn.textContent = '✓ Bekræft & send';
-    closeBookingConfirm();
-
-    if (!result.ok) {
-      error.textContent = `${b.isMoede ? 'Bookingen' : 'Forespørgslen'} kunne ikke sendes lige nu – prøv igen, eller ring til os.`;
-      error.hidden = false;
-      error.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      return;
-    }
-
-    $('#bookingForm').hidden = true;
-    document.querySelector('.booking__aside').hidden = true;
-    document.querySelector('.booking__choice').hidden = true;
-    const success = $('#bookingSuccess');
-    success.hidden = false;
-    $('#bookingSuccessTitle').textContent = b.isMoede ? 'Tak for din booking!' : 'Tak for jeres forespørgsel! 🎉';
-    $('#bookingSuccessText').textContent = b.isMoede
-      ? `Dit møde er booket ${S.formatDate(b.iso).toLowerCase()} kl. ${b.time}. Vi ringer til dig på ${b.phone} og bekræfter hurtigst muligt.`
-      : `Vi har modtaget jeres forespørgsel${b.iso ? ` med ønsket dato ${S.formatDate(b.iso).toLowerCase()}` : ''} og vender tilbage til jer på telefon eller mail hurtigst muligt – vi glæder os til at høre mere om jeres arrangement!`;
-    success.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    pendingBooking = null;
-  });
-
-  $('#bookAgainBtn').addEventListener('click', () => {
-    $('#bookingSuccess').hidden = true;
-    const form = $('#bookingForm');
-    form.hidden = false;
-    form.reset();
-    document.querySelector('.booking__aside').hidden = false;
-    document.querySelector('.booking__choice').hidden = false;
-    $$('.choice').forEach((b) => b.classList.toggle('is-active', b.dataset.kind === bookingKind.value));
-    syncBookingMode();
-    onBookingDateChange();
-  });
 
   /* ---------- kontakt fra indstillinger ---------- */
   function renderContact() {
     const s = S.getSettings();
     const tel = `tel:+45${s.phone.replace(/\s/g, '')}`;
     const phoneLink = $('#contactPhone');
-    phoneLink.href = tel;
-    phoneLink.lastElementChild.textContent = s.phone;
+    if (phoneLink) {
+      phoneLink.href = tel;
+      phoneLink.lastElementChild.textContent = s.phone;
+    }
     const emailLink = $('#contactEmail');
-    emailLink.href = `mailto:${s.email}`;
-    emailLink.lastElementChild.textContent = s.email;
+    if (emailLink) {
+      emailLink.href = `mailto:${s.email}`;
+      emailLink.lastElementChild.textContent = s.email;
+    }
+    renderSelskabMail();
   }
 
   /* ---------- besked hvis den fælles database er nede ----------
@@ -1140,17 +973,40 @@
     const down = S.isCloudConfigured() && S.isCloudDown();
     const phone = S.getSettings().phone;
     $('#orderOffline').hidden = !down;
-    $('#bookingOffline').hidden = !down;
     if (down) {
       $('#orderOffline').textContent = `⚠️ Online-bestilling er nede i øjeblikket. Ring til os på ${phone}, så klarer vi det over telefonen.`;
-      $('#bookingOffline').textContent = `⚠️ Online-booking er nede i øjeblikket. Ring til os på ${phone}, så finder vi en dag sammen.`;
     }
     $('#orderForm button[type="submit"]').disabled = down;
-    $('#bookingSubmit').disabled = down;
   }
 
   /* ---------- footer ---------- */
   $('#year').textContent = new Date().getFullYear();
+
+  /* ---------- præcise hop til sektioner ----------
+     Sektionerne renderes først, når man nærmer sig dem (hurtig side!),
+     men det kan forskyde et anker-hop en anelse. Når scrollet er faldet
+     til ro, justerer vi lydløst på plads, så man ALTID lander præcist. */
+  function fixAnchorScroll() {
+    const id = decodeURIComponent(location.hash.slice(1));
+    const el = id && document.getElementById(id);
+    if (!el) return;
+    let lastY = -1, stable = 0, tries = 0;
+    const tick = () => {
+      if (++tries > 40) return;
+      if (Math.abs(window.scrollY - lastY) < 2) stable++; else stable = 0;
+      lastY = window.scrollY;
+      if (stable >= 3) {
+        const margin = parseFloat(getComputedStyle(el).scrollMarginTop) || 0;
+        const off = el.getBoundingClientRect().top - margin;
+        if (Math.abs(off) > 10) window.scrollTo(0, window.scrollY + off);
+        return;
+      }
+      setTimeout(tick, 90);
+    };
+    setTimeout(tick, 120);
+  }
+  window.addEventListener('hashchange', fixAnchorScroll);
+  window.addEventListener('load', fixAnchorScroll);
 
   /* ---------- ferie / luk-periode banner ---------- */
   function renderClosure() {
@@ -1189,7 +1045,7 @@
             <li>📅 Forespørgsler, møder og kontakt er åbne som altid</li>
           </ul>
           <div class="feriekort__cta">
-            <a href="#booking" class="btn btn--small btn--accent">Send forespørgsel</a>
+            <a href="#selskaber" class="btn btn--small btn--accent">Skriv til os</a>
             <a href="#kontakt" class="btn btn--small btn--ghost">Kontakt os</a>
           </div>
         </article>
