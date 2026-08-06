@@ -266,7 +266,30 @@ input:focus-visible, select:focus-visible, textarea:focus-visible {
   line-height: 1.15;
 }
 .news__text { color: var(--ink-soft); font-size: 0.98rem; line-height: 1.55; white-space: pre-line; }
+/* lange tekster foldes pænt – kortene vælter aldrig, uanset hvor meget der skrives */
+.news__text--clamp {
+  display: -webkit-box;
+  -webkit-line-clamp: 4;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.news__text--open { display: block; }
+.news__more {
+  border: none; background: none; padding: 0;
+  font: inherit; font-size: 0.9rem; font-weight: 700;
+  color: var(--accent-deep);
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
 .news__cta { margin-top: 6px; }
+/* billederne må gerne leve lidt, når man holder musen over */
+.news { transition: transform 0.25s ease, box-shadow 0.25s ease; }
+.news__media img { transition: transform 0.45s ease; }
+@media (hover: hover) {
+  .news:hover { transform: translateY(-3px); box-shadow: 0 20px 50px rgba(28, 24, 20, 0.13); }
+  .news:hover .news__media img { transform: scale(1.04); }
+}
 .news__deadline { font-size: 0.86rem; font-weight: 600; color: var(--accent-deep); }
 .news__closed { font-size: 0.9rem; font-weight: 600; color: var(--ink-soft); font-style: italic; }
 
@@ -314,22 +337,81 @@ input:focus-visible, select:focus-visible, textarea:focus-visible {
 .nof__done p { color: var(--ink-soft); margin-bottom: 18px; }
 
 /* ferie / luk-banner på hjemmesiden */
-.closurebanner {
-  background: linear-gradient(180deg, #FBE9D8, #F7DFC8);
-  border-bottom: 1px solid rgba(217, 108, 44, 0.25);
+.closurebanner { padding: 18px 0 4px; }
+
+/* ferie-kortet: sit HELT eget udtryk – ikke en nyhed */
+.feriekort {
+  position: relative;
+  max-width: 860px;
+  margin: 0 auto;
+  background:
+    radial-gradient(120% 140% at 100% 0%, rgba(255, 255, 255, 0.55), transparent 55%),
+    linear-gradient(135deg, #FDF3E3, #F7DFC2);
+  border: 1.5px solid rgba(185, 122, 52, 0.35);
+  border-radius: 24px;
+  box-shadow: 0 18px 45px -18px rgba(150, 95, 30, 0.35);
+  padding: 26px 28px 24px;
+  overflow: hidden;
 }
-.closurebanner__inner {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  flex-wrap: wrap;
-  padding: 16px 0;
+.feriekort::after {
+  content: '🌴';
+  position: absolute;
+  right: -12px; bottom: -22px;
+  font-size: 7rem;
+  opacity: 0.1;
+  transform: rotate(-12deg);
+  pointer-events: none;
 }
-.closurebanner__icon { font-size: 1.9rem; line-height: 1; }
-.closurebanner__text { flex: 1 1 300px; }
-.closurebanner__text strong { display: block; font-size: 1.05rem; color: var(--ink); }
-.closurebanner__text span { font-size: 0.92rem; color: var(--ink-soft); }
-.closurebanner__cta { display: flex; gap: 10px; flex-wrap: wrap; }
+.feriekort__top { display: flex; align-items: center; gap: 16px; margin-bottom: 10px; }
+.feriekort__icon {
+  flex: none;
+  display: grid; place-items: center;
+  width: 54px; height: 54px;
+  font-size: 1.7rem;
+  background: #fff;
+  border-radius: 50%;
+  box-shadow: 0 6px 16px rgba(150, 95, 30, 0.2);
+}
+.feriekort__eyebrow {
+  font-size: 0.76rem; font-weight: 700;
+  letter-spacing: 0.14em; text-transform: uppercase;
+  color: #A9700D;
+}
+.feriekort__period {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: clamp(1.3rem, 3vw, 1.7rem);
+  line-height: 1.15;
+  color: var(--ink);
+}
+.feriekort__msg {
+  color: var(--ink);
+  font-size: 1rem;
+  line-height: 1.6;
+  white-space: pre-line;
+  margin-bottom: 8px;
+  max-width: 62ch;
+}
+.feriekort__back { font-weight: 700; color: #8A5A0B; margin-bottom: 12px; }
+.feriekort__facts {
+  list-style: none;
+  display: grid;
+  gap: 6px;
+  margin: 0 0 16px;
+  padding: 0;
+}
+.feriekort__facts li { font-size: 0.92rem; color: var(--ink-soft); }
+.feriekort__cta { display: flex; gap: 10px; flex-wrap: wrap; position: relative; }
+/* spøgelses-knappen drukner i den sandfarvede baggrund – giv den hvid bund */
+.feriekort .btn--ghost {
+  background: #fff;
+  color: var(--ink);
+  box-shadow: inset 0 0 0 1px rgba(28, 24, 20, 0.16), 0 4px 12px rgba(150, 95, 30, 0.12);
+}
+@media (max-width: 560px) {
+  .feriekort { padding: 20px 18px; }
+  .feriekort__cta .btn { flex: 1 1 100%; text-align: center; }
+}
 /* under ferie skjules de "bestil"-knapper, der ellers inviterer til bestilling */
 .site-closed .mobilecta,
 .site-closed .nav__cta { display: none !important; }

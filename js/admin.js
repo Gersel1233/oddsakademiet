@@ -2027,9 +2027,7 @@
           <label class="afield"><span>Fra dato (valgfrit – ellers fra i dag)</span><input id="closureFrom" type="date" value="${esc(c.from || '')}" /></label>
           <label class="afield"><span>Åbner igen den</span><input id="closureReopen" type="date" value="${esc(c.reopen || '')}" /></label>
           <label class="afield afield--full"><span>Besked til kunderne</span><textarea id="closureMessage" class="inline-input" rows="4" placeholder="fx Vi holder sommerferie og åbner igen mandag den 2. august. I er velkomne til at sende en forespørgsel.">${esc(c.message || '')}</textarea></label>
-          <div style="grid-column:1/-1;display:flex;gap:10px;flex-wrap:wrap;">
-            <button class="abtn" id="closureNews" type="button">📣 Læg også op som nyhed</button>
-          </div>
+          <p class="sub" style="grid-column:1/-1;color:var(--ink-soft);">Beskeden vises automatisk som et flot ferie-kort øverst på hjemmesiden – både i god tid FØR lukkedagene og mens de står på. Den forsvinder af sig selv, når I åbner igen.</p>
         </div>
         <p class="sub" style="color:var(--ink-soft);margin-top:10px;">Mens ferien er aktiv, kan kunderne ikke bestille mad, men de kan stadig sende forespørgsler, booke møder og kontakte jer. Man kan godt forudbestille til dage efter I åbner igen.</p>
         <p class="sub" style="color:var(--ink-soft);margin-top:8px;">💡 <strong>Nemmeste vej:</strong> Brug <strong>🚫 Luk dage</strong>-knappen i kalenderen – dér kan I lukke en enkelt dag, flere perioder OG sætte ferie-beskeden på ét sted.</p>
@@ -2128,17 +2126,6 @@
     $('#closureFrom').addEventListener('change', saveClosure);
     $('#closureReopen').addEventListener('change', saveClosure);
     $('#closureMessage').addEventListener('input', debounce(saveClosure, 800));
-    $('#closureNews').addEventListener('click', () => {
-      const msg = $('#closureMessage').value.trim();
-      const reopen = $('#closureReopen').value;
-      S.addNews({
-        title: 'Vi holder lukket',
-        text: (msg || 'Vi holder lukket for madbestillinger i en periode.')
-          + (reopen ? ` Vi åbner for bestillinger igen ${S.formatDate(reopen)}.` : ''),
-        image: '', cta: false, orderable: false,
-      });
-      toast('Ferie-beskeden er lagt op som nyhed ✓');
-    });
   }
 
   /* ============================================================
