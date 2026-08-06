@@ -787,6 +787,7 @@
           ${showPill ? `<span class="kalcell__status ${st.cls}">${st.short}</span>` : ''}
           ${d.dishes.length ? `<span class="kalcell__dish">🍲 ${esc(d.dishes[0].title)}${d.dishes.length > 1 ? ` +${d.dishes.length - 1}` : ''}</span>` : ''}
           ${d.items ? `<span class="kalcell__count"><b>${d.items}</b> retter · 🥡 ${d.togo} · 🍽️ ${d.spise}</span>` : ''}`}
+        ${d.bookings.some((b) => b.status === 'ny') ? '<span class="kalcell__ny">⚠️ Ny booking – svar</span>' : ''}
         ${d.note ? `<span class="kalcell__note" title="${esc(d.note)}">📝 ${esc(noteSnip(d.note))}</span>` : ''}
         ${d.bookings.slice(0, 2).map((b) => `<span class="kalcell__bk ${b.kind === 'moede' ? 'kalcell__bk--moede' : ''}">${b.kind === 'moede' ? '📅' : '🎉'} ${esc(b.subject)}</span>`).join('')}
         ${d.bookings.length > 2 ? `<span class="kalcell__more">+ ${d.bookings.length - 2} mere</span>` : ''}
@@ -821,10 +822,74 @@
     document.body.classList.remove('dv-open');
   }
 
+  /* uge-strippen øverst i dag-vinduet – som i en rigtig kalender-app:
+     tryk på en dag og hop direkte derhen. Prikker viser hvad der sker. */
+  function dvStripHtml(iso, today) {
+    const ws = S.weekStart(iso);
+    let out = '';
+    for (let i = 0; i < 7; i++) {
+      const d2 = S.addDays(ws, i);
+      const bks = S.getBookings().filter((b) => b.date === d2 && b.status !== 'afvist');
+      const hasNy = bks.some((b) => b.status === 'ny');
+      const dots = [
+        hasNy ? '<i class="dvdot dvdot--ny"></i>' : (bks.length ? '<i class="dvdot dvdot--bk"></i>' : ''),
+        S.getOrders(d2).length ? '<i class="dvdot dvdot--o"></i>' : '',
+        (S.getNote(d2) || '').trim() ? '<i class="dvdot dvdot--n"></i>' : '',
+      ].join('');
+      out += `
+        <button class="dv__stripday ${d2 === iso ? 'is-sel' : ''} ${d2 === today ? 'is-today' : ''}" data-dv-day="${d2}">
+          <span class="dv__stripwd">${S.WEEKDAYS[i].slice(0, 3)}</span>
+          <span class="dv__stripnum">${Number(d2.slice(8))}</span>
+          <span class="dv__stripdots">${dots}</span>
+        </button>`;
+    }
+    return `<div class="dv__strip">${out}</div>`;
+  }
+
+  /* dagens program: åbningstider, aftaler og bestillinger i ÉN tidslinje */
+  function dvTimelineHtml(iso, d, st) {
+    const rows = [];
+    /* køkkenets tider som små mærker – kun når dagen reelt er åben for mad */
+    if (st.key === 'open' || st.key === 'arr-open') {
+      const s = S.getSettings();
+      const from = s.orderFrom || '16:00';
+      const toTogo = S.orderToFor('togo');
+      const toDine = S.orderToFor('spise');
+      rows.push({ t: from, sort: from + 'A', html: `<div class="dvtl__mark">🔓 Køkkenet åbner for bestillinger</div>` });
+      rows.push({ t: toTogo, sort: toTogo + 'Z', html: `<div class="dvtl__mark">🥡 Sidste to-go-tid</div>` });
+      if (toDine !== toTogo) rows.push({ t: toDine, sort: toDine + 'Z', html: `<div class="dvtl__mark">🍽️ Køkkenet lukker – sidste spis her-tid</div>` });
+    }
+    /* aftaler med ALLE knapper – tidløse ligger øverst som "hele dagen" */
+    d.bookings.forEach((b) => {
+      rows.push({ t: b.time || 'dag', sort: (b.time || '00:00') + 'B', html: bookingRow(b) });
+    });
+    /* bestillinger på deres afhentnings-/spisetid – tryk åbner Bestillinger */
+    d.orders.forEach((o) => {
+      const lines = foodLines(o);
+      const sum = lines.slice(0, 2).map((l) => `${l.qty} × ${esc(l.name)}`).join(' · ')
+        + (lines.length > 2 ? ` · +${lines.length - 2} mere` : '');
+      rows.push({ t: o.time || '–', sort: (o.time || '00:00') + 'C', html: `
+        <button class="dvtl__order ${o.status === 'ny' ? 'dvtl__order--ny' : 'dvtl__order--ok'}" data-act="goto-orders" data-iso="${iso}" title="Åbn dagens bestillinger">
+          <span class="dvtl__otitle">${o.type === 'togo' ? '🥡' : '🍽️'} ${esc(o.name)}${o.type !== 'togo' && personsOf(o) ? ` · ${personsOf(o)} pers.` : ''}</span>
+          <span class="dvtl__osub">${sum || '—'}</span>
+          <span class="dvtl__ostatus">${o.status === 'ny' ? '🔥 Mangler' : '✓ Kørt'}</span>
+        </button>` });
+    });
+    rows.sort((a, b) => a.sort.localeCompare(b.sort));
+    if (!d.bookings.length && !d.orders.length) {
+      rows.push({ t: '', sort: '99', html: `<div class="kalpanel__none">${d.noOrders && st.key !== 'arr-closed' ? '🚫 Dagen er lukket for madbestillinger' : 'Ingen aftaler eller bestillinger på dagen endnu'}</div>` });
+    }
+    return `<div class="dvtl">${rows.map((r) => `
+      <div class="dvtl__row">
+        <span class="dvtl__time">${r.t === 'dag' ? 'hele<br/>dagen' : esc(r.t)}</span>
+        <div class="dvtl__content">${r.html}</div>
+      </div>`).join('')}</div>`;
+  }
+
   function dvBodyHtml(iso, today) {
     const d = kalDayInfo(iso);
     const st = dayStatus(iso);
-    const totals = dishTotals(d.orders);
+    const nyCount = d.bookings.filter((b) => b.status === 'ny').length;
     /* handling til dagen: opret booking, luk/åbn – eller hop hen hvor det styres */
     let act = '';
     if (iso >= today) {
@@ -834,7 +899,14 @@
     }
     return `
       <div class="dv__status ${st.cls}">${st.full}</div>
+      ${nyCount ? `<div class="dv__alert">⚠️ ${nyCount === 1 ? 'Én booking venter' : `${nyCount} bookinger venter`} på jeres svar – den ligger i programmet herunder</div>` : ''}
       ${act ? `<div class="dv__act">${act}</div>` : ''}
+      <div class="dv__chips">
+        <span class="dvchip">🧾 <b>${d.orders.length}</b> bestillinger</span>
+        <span class="dvchip">🍲 <b>${d.items}</b> retter</span>
+        <span class="dvchip">🥡 <b>${d.togo}</b> · 🍽️ <b>${d.spise}</b></span>
+        ${d.bookings.length ? `<span class="dvchip">🎉 <b>${d.bookings.length}</b> aftale${d.bookings.length === 1 ? '' : 'r'}</span>` : ''}
+      </div>
       <div class="dv__notewrap">
         <div class="dv__notehead">
           <h3 class="kp__sub" style="margin:0;">📝 Dagens note</h3>
@@ -842,31 +914,20 @@
         </div>
         <textarea class="dv__note" id="dvNote" placeholder="Skriv løs – fx »Henning kommer kl. 18 med sin kone – dæk bord ved vinduet«.&#10;Gemmes helt af sig selv, mens du skriver."></textarea>
       </div>
-      ${d.bookings.length ? `
-      <h3 class="kp__sub">📅 Dagens aftaler &amp; arrangementer</h3>
-      <div class="rowlist dv__rows">
-        ${d.bookings.map(bookingRow).join('')}
-      </div>` : ''}
-      <div class="dv__cols">
-        <div>
-          <h3 class="kp__sub">🍲 Dagens ret${d.dishes.length > 1 ? 'ter' : ''}</h3>
-          ${d.dishes.length
-            ? d.dishes.map((dd) => {
-                const s = S.getSoldFor(iso, dd.title);
-                return `<div class="kalpanel__dish">${esc(dd.title)}
-                  ${dd.soldout ? '<span class="tag tag--red">🚫 Udsolgt</span>' : ''}
-                  ${!dd.soldout && dd.stock != null && dd.stock !== '' ? ` <span class="tag ${s >= dd.stock ? 'tag--red' : 'tag--accent'}">${s}/${dd.stock} solgt</span>` : (s ? ` <span class="tag">${s} solgt</span>` : '')}</div>`;
-              }).join('')
-            : '<div class="kalpanel__none">Ingen dagens ret sat endnu</div>'}
-        </div>
-        <div>
-          <h3 class="kp__sub">🧾 Bestillinger</h3>
-          ${d.orders.length ? `
-            <div class="kalpanel__stats"><span><b>${d.orders.length}</b> bestillinger</span><span><b>${d.items}</b> retter</span><span>🥡 <b>${d.togo}</b> · 🍽️ <b>${d.spise}</b></span></div>
-            ${totals.length ? `<div class="ugeday__top">${totals.slice(0, 4).map(([n, q]) => `${q} × ${esc(n)}`).join(' · ')}${totals.length > 4 ? ' · …' : ''}</div>` : ''}
-            <button class="abtn abtn--ghost" style="margin-top:8px;" data-act="goto-orders" data-iso="${iso}">Se dagens bestillinger →</button>`
-            : `<div class="kalpanel__none">${d.noOrders ? '🚫 Dagen er lukket for madbestillinger' : 'Ingen bestillinger på dagen endnu'}</div>`}
-        </div>
+      <h3 class="kp__sub">📋 Dagens program</h3>
+      ${dvTimelineHtml(iso, d, st)}
+      <h3 class="kp__sub">🍲 Dagens ret${d.dishes.length > 1 ? 'ter' : ''}</h3>
+      ${d.dishes.length
+        ? d.dishes.map((dd) => {
+            const s = S.getSoldFor(iso, dd.title);
+            return `<div class="kalpanel__dish">${esc(dd.title)}
+              ${dd.soldout ? '<span class="tag tag--red">🚫 Udsolgt</span>' : ''}
+              ${!dd.soldout && dd.stock != null && dd.stock !== '' ? ` <span class="tag ${s >= dd.stock ? 'tag--red' : 'tag--accent'}">${s}/${dd.stock} solgt</span>` : (s ? ` <span class="tag">${s} solgt</span>` : '')}</div>`;
+          }).join('')
+        : '<div class="kalpanel__none">Ingen dagens ret sat endnu</div>'}
+      <div class="dv__foot">
+        <button class="abtn abtn--ghost" data-act="goto-orders" data-iso="${iso}">Se dagens bestillinger →</button>
+        <button class="abtn abtn--ghost" data-goto="dagensret">Redigér dagens ret →</button>
       </div>`;
   }
 
@@ -877,10 +938,13 @@
     const iso = dvIso;
     mask.querySelector('.dv').innerHTML = `
       <div class="dv__head">
-        <button class="dv__navbtn" data-dv="prev" aria-label="Dagen før" title="Dagen før">←</button>
-        <h2 class="dv__title">${iso === today ? '🔴 ' : ''}${esc(S.formatDate(iso))}</h2>
-        <button class="dv__navbtn" data-dv="next" aria-label="Dagen efter" title="Dagen efter">→</button>
-        <button class="dv__close" data-dv="close" aria-label="Luk dagen">✕</button>
+        <div class="dv__headrow">
+          <button class="dv__navbtn" data-dv="prev" aria-label="Ugen før" title="Ugen før">←</button>
+          <h2 class="dv__title">${iso === today ? '🔴 ' : ''}${esc(S.formatDate(iso))}</h2>
+          <button class="dv__navbtn" data-dv="next" aria-label="Ugen efter" title="Ugen efter">→</button>
+          <button class="dv__close" data-dv="close" aria-label="Luk dagen">✕</button>
+        </div>
+        ${dvStripHtml(iso, today)}
       </div>
       <div class="dv__body">${dvBodyHtml(iso, today)}</div>`;
     /* noten sættes som value (aldrig som HTML) og editoren vokser med teksten */
@@ -910,11 +974,14 @@
       document.body.appendChild(mask);
       document.body.classList.add('dv-open');
       mask.addEventListener('click', (e) => {
+        /* uge-strippen: hop direkte til en dag */
+        const stripDay = e.target.closest('[data-dv-day]');
         const nav = e.target.closest('[data-dv]');
-        if (nav) {
-          if (nav.dataset.dv === 'close') { closeDayModal(); return; }
+        if (stripDay || nav) {
+          if (nav && nav.dataset.dv === 'close') { closeDayModal(); return; }
           dvFlushNote();
-          dvIso = S.addDays(dvIso, nav.dataset.dv === 'prev' ? -1 : 1);
+          if (stripDay) dvIso = stripDay.dataset.dvDay;
+          else dvIso = S.addDays(dvIso, nav.dataset.dv === 'prev' ? -7 : 7);
           kalSelected = dvIso;
           if (kalMode === 'maaned' && dvIso.slice(0, 7) !== kalMonth) kalMonth = dvIso.slice(0, 7);
           renderDayModal();
