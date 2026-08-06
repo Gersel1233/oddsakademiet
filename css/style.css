@@ -384,6 +384,52 @@ input:focus-visible, select:focus-visible, textarea:focus-visible {
   .award__badge { font-size: 1.6rem; }
   .award__cta { width: 100%; text-align: center; padding: 11px; }
 }
+
+/* ---------- Facebook-gruppen: fast lille banner, kun knappen er klikbar ---------- */
+.fbjoin {
+  position: relative;
+  width: min(1080px, calc(100% - 32px));
+  margin: 12px auto 0;
+  background: linear-gradient(135deg, #1877F2, #0E5FCB);
+  border: 1.5px solid #6FA8F5;
+  border-radius: 16px;
+  box-shadow: 0 12px 30px rgba(14, 95, 203, 0.2);
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 13px 18px;
+  color: #fff;
+}
+.fbjoin__badge {
+  flex: none;
+  display: grid; place-items: center;
+  width: 42px; height: 42px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.16);
+  color: #fff;
+}
+.fbjoin__text { flex: 1 1 auto; min-width: 0; }
+.fbjoin__text strong { display: block; font-weight: 700; font-size: 1rem; line-height: 1.3; }
+.fbjoin__text span { font-size: 0.86rem; color: rgba(255, 255, 255, 0.85); }
+.fbjoin__cta {
+  flex: none;
+  font-weight: 700;
+  font-size: 0.92rem;
+  color: #0E5FCB;
+  background: #fff;
+  padding: 9px 17px;
+  border-radius: 999px;
+  white-space: nowrap;
+  box-shadow: 0 3px 10px rgba(10, 40, 90, 0.25);
+  text-decoration: none;
+}
+.fbjoin__cta:hover { filter: brightness(0.96); }
+@media (max-width: 560px) {
+  .fbjoin { flex-wrap: wrap; padding: 13px 16px; gap: 10px 14px; }
+  .fbjoin__badge { width: 38px; height: 38px; }
+  .fbjoin__cta { width: 100%; text-align: center; padding: 11px; }
+}
 @media (max-width: 760px) {
   .news--big { flex-direction: column; align-items: stretch; }
   .news--big .news__media { flex: 0 0 auto; }
