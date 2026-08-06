@@ -1139,6 +1139,21 @@ body.dv-open { overflow: hidden; }
 
 .dv__foot { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 14px; }
 
+/* "Luk dage"-dialogen – mindre end dag-vinduet */
+.ld { width: min(560px, 100%); }
+.ld__grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.ld__count {
+  margin-top: 10px;
+  font-size: 0.92rem; color: var(--ink-soft);
+  background: #fff; border: 1.4px solid var(--line);
+  border-radius: 10px; padding: 8px 12px;
+}
+.ld__count strong { color: var(--ink); }
+.kalpanel__hint--closed { color: var(--red); }
+@media (max-width: 480px) {
+  .ld__grid { grid-template-columns: 1fr; }
+}
+
 /* rødt mærke i månedscellen når en booking venter på svar */
 .kalcell__ny {
   font-size: 0.7rem; font-weight: 800;
