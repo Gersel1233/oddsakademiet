@@ -737,9 +737,14 @@
      (de styres i Åbningstider). Blokerer/åbner både bestilling OG booking. */
   function dayCloseBtn(iso, today) {
     if (iso < today || !S.isOpenDay(iso) || S.isInClosure(iso)) return '';
-    return S.getBlockedDates().includes(iso)
-      ? `<button class="abtn abtn--green" data-act="kal-unblock" data-iso="${iso}">✅ Åbn dagen igen</button>`
-      : `<button class="abtn abtn--ghost" data-act="kal-block" data-iso="${iso}">🚫 Luk dagen for bestilling &amp; booking</button>`;
+    if (S.getBlockedDates().includes(iso))
+      return `<button class="abtn abtn--green" data-act="kal-unblock" data-iso="${iso}">✅ Åbn dagen igen</button>`;
+    /* er der ALLEREDE lukket for madbestillinger (arrangementets flueben),
+       skal det stå her – lige dér hvor man ellers ville lukke dagen */
+    const note = S.isOrderingClosed(iso)
+      ? '<span class="kalpanel__hint kalpanel__hint--closed">🚫 Der er allerede lukket for madbestillinger – det styres af arrangementet (ret eller afvis det for at åbne igen).</span>'
+      : '';
+    return `${note}<button class="abtn abtn--ghost" data-act="kal-block" data-iso="${iso}">🚫 Luk ${S.isOrderingClosed(iso) ? 'OGSÅ for booking' : 'dagen for bestilling &amp; booking'}</button>`;
   }
 
   /* fælles top: uge/måned-skifter + pile, der VIRKER begge veje */
@@ -756,6 +761,7 @@
             <button class="abtn abtn--ghost" data-kal="prev" title="${kalMode === 'maaned' ? 'Forrige måned' : 'Forrige uge'}">←</button>
             <button class="abtn" data-kal="today">I dag</button>
             <button class="abtn abtn--ghost" data-kal="next" title="${kalMode === 'maaned' ? 'Næste måned' : 'Næste uge'}">→</button>
+            <button class="abtn abtn--ghost" data-kal="lukdage" title="Luk en dag, flere dage eller en hel ferie på én gang">🚫 Luk dage</button>
           </div>
         </div>
         <p class="sub" style="color:var(--ink-soft);">${sub}</p>
@@ -895,7 +901,7 @@
     if (iso >= today) {
       if (!S.isOpenDay(iso)) act = `<span class="kalpanel__hint">🌙 Køkkenet er lukket på denne ugedag.</span><button class="abtn abtn--ghost" data-goto="tider">Redigér åbningstider →</button>`;
       else if (S.isInClosure(iso)) act = `<span class="kalpanel__hint">🌴 Dagen er en del af en ferieperiode.</span><button class="abtn abtn--ghost" data-goto="tider">Redigér ferie →</button>`;
-      else act = `<button class="abtn abtn--accent" data-act="kal-newbooking" data-iso="${iso}">➕ Opret booking denne dag</button>${dayCloseBtn(iso, today)}`;
+      else act = `<button class="abtn abtn--accent" data-act="kal-newbooking" data-iso="${iso}">➕ Opret booking denne dag</button>${dayCloseBtn(iso, today)}<button class="abtn abtn--ghost" data-act="kal-lukdage" data-iso="${iso}" title="Luk flere dage eller en hel ferie på én gang">🌴 Luk flere dage…</button>`;
     }
     return `
       <div class="dv__status ${st.cls}">${st.full}</div>
@@ -1007,8 +1013,124 @@
   }
 
   document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape' && dvIso) closeDayModal();
+    if (e.key !== 'Escape') return;
+    if (document.getElementById('ldMask')) { closeLukDialog(); return; }
+    if (dvIso) closeDayModal();
   });
+
+  /* ============================================================
+     LUK DAGE – ÉT samlet sted: luk en enkelt dag, flere dage
+     eller en hel ferie på én gang, direkte fra kalenderen.
+     (Før var det spredt mellem kalenderen og Åbningstider, og
+     ferie kunne kun være én periode ad gangen.)
+     ============================================================ */
+  function closeLukDialog() {
+    document.getElementById('ldMask')?.remove();
+    if (!document.getElementById('dvMask')) document.body.classList.remove('dv-open');
+  }
+
+  function openLukDialog(prefIso) {
+    closeLukDialog();
+    const today = S.todayISO();
+    const start = prefIso && prefIso >= today ? prefIso : today;
+    const mask = document.createElement('div');
+    mask.id = 'ldMask';
+    mask.className = 'dvmask';
+    mask.innerHTML = `
+      <div class="dv ld" role="dialog" aria-modal="true">
+        <div class="dv__head">
+          <div class="dv__headrow">
+            <h2 class="dv__title">🚫 Luk dage</h2>
+            <button class="dv__close" data-ld="close" aria-label="Luk">✕</button>
+          </div>
+        </div>
+        <div class="dv__body">
+          <p class="sub" style="color:var(--ink-soft);margin:0 0 14px;">Luk én dag, flere dage eller en hel ferie på én gang – fx personaledag, helligdage eller sommerferie. Lukkede dage bliver <strong>røde i kalenderen</strong>, og kunderne kan hverken bestille mad eller booke. I kan altid åbne dagene igen – her eller inde på den enkelte dag.</p>
+          <div class="ld__grid">
+            <label class="afield"><span>Fra dato</span><input type="date" id="ldFrom" value="${start}" min="${today}" /></label>
+            <label class="afield"><span>Til og med</span><input type="date" id="ldTo" value="${start}" min="${today}" /></label>
+          </div>
+          <div class="ld__count" id="ldCount"></div>
+          <label class="bkedit__check" style="margin:10px 0 0;">
+            <input type="checkbox" id="ldFerie" />
+            <span><strong>🌴 Vis ferie-besked på hjemmesiden i perioden</strong><br/>
+            <em>Kunderne ser beskeden som banner øverst på siden. Erstatter en evt. tidligere ferie-besked – der kan kun vises én ad gangen.</em></span>
+          </label>
+          <label class="afield afield--wide" id="ldMsgWrap" hidden style="margin-top:10px;"><span>Besked til kunderne</span>
+            <textarea id="ldMsg" class="inline-input" rows="3"></textarea></label>
+          <div class="dv__foot">
+            <button class="abtn abtn--accent" id="ldClose">🚫 Luk dagene</button>
+            <button class="abtn abtn--green" id="ldOpen">✅ Åbn dagene igen</button>
+          </div>
+        </div>
+      </div>`;
+    document.body.appendChild(mask);
+    document.body.classList.add('dv-open');
+
+    const range = () => {
+      const f = $('#ldFrom').value, t = $('#ldTo').value;
+      if (!f || !t || t < f) return null;
+      const out = [];
+      for (let d = f; d <= t && out.length < 90; d = S.addDays(d, 1)) out.push(d);
+      return out;
+    };
+    const updateCount = () => {
+      const days = range();
+      const el = $('#ldCount');
+      if (!days) { el.textContent = '⚠️ Vælg en periode – "til og med" skal være samme dag eller senere end "fra".'; return; }
+      const already = days.filter((d) => S.getBlockedDates().includes(d)).length;
+      el.innerHTML = `<strong>${days.length}</strong> dag${days.length === 1 ? '' : 'e'}: ${esc(S.formatDate(days[0], false))} – ${esc(S.formatDate(days[days.length - 1], false))}${already ? ` · ${already} er allerede lukket` : ''}`;
+      /* forslag til ferie-besked, der følger de valgte datoer */
+      const msg = $('#ldMsg');
+      if (msg && !msg.dataset.touched) {
+        const reopenTxt = S.formatDate(S.addDays(days[days.length - 1], 1));
+        msg.value = `Vi holder lukket fra ${S.formatDate(days[0], false)} til og med ${S.formatDate(days[days.length - 1], false)} og åbner igen ${reopenTxt.charAt(0).toLowerCase()}${reopenTxt.slice(1)}. I er velkomne til at sende en forespørgsel i mellemtiden.`;
+      }
+    };
+    updateCount();
+    $('#ldFrom').addEventListener('change', () => {
+      if ($('#ldTo').value < $('#ldFrom').value) $('#ldTo').value = $('#ldFrom').value;
+      updateCount();
+    });
+    $('#ldTo').addEventListener('change', updateCount);
+    $('#ldFerie').addEventListener('change', () => { $('#ldMsgWrap').hidden = !$('#ldFerie').checked; });
+    $('#ldMsg').addEventListener('input', () => { $('#ldMsg').dataset.touched = '1'; });
+
+    $('#ldClose').addEventListener('click', () => {
+      const days = range();
+      if (!days) { toast('Vælg først en periode ⚠️'); return; }
+      days.forEach((d) => S.blockDate(d));
+      if ($('#ldFerie').checked) {
+        S.setClosure({
+          active: true,
+          from: days[0],
+          reopen: S.addDays(days[days.length - 1], 1),
+          message: $('#ldMsg').value.trim(),
+        });
+      }
+      closeLukDialog();
+      renderUge();
+      refreshDayModal();
+      toast(`${days.length} dag${days.length === 1 ? '' : 'e'} lukket 🚫${$('#ldFerie')?.checked ? ' – ferie-beskeden vises på hjemmesiden 🌴' : ''}`);
+    });
+    $('#ldOpen').addEventListener('click', () => {
+      const days = range();
+      if (!days) { toast('Vælg først en periode ⚠️'); return; }
+      days.forEach((d) => S.unblockDate(d));
+      /* dækker perioden ferie-beskeden, slukkes den også */
+      const c = S.getClosure();
+      if (c.active && c.from >= days[0] && c.reopen && c.reopen <= S.addDays(days[days.length - 1], 1)) {
+        S.setClosure({ ...c, active: false });
+      }
+      closeLukDialog();
+      renderUge();
+      refreshDayModal();
+      toast(`${days.length} dag${days.length === 1 ? '' : 'e'} åbnet igen ✅`);
+    });
+    mask.addEventListener('click', (e) => {
+      if (e.target === mask || e.target.closest('[data-ld="close"]')) closeLukDialog();
+    });
+  }
 
   function renderKalMaaned(today) {
     const days = kalGridDays(kalMonth);
@@ -1136,6 +1258,7 @@
         ugeStart = S.weekStart(S.todayISO());
         kalSelected = S.todayISO();
       }
+      else if (k === 'lukdage') { openLukDialog(); return; }
       else if (k === 'day') {
         /* klik på en dag åbner den STORT oven på kalenderen */
         kalSelected = el.dataset.iso;
@@ -1909,6 +2032,8 @@
           </div>
         </div>
         <p class="sub" style="color:var(--ink-soft);margin-top:10px;">Mens ferien er aktiv, kan kunderne ikke bestille mad, men de kan stadig sende forespørgsler, booke møder og kontakte jer. Man kan godt forudbestille til dage efter I åbner igen.</p>
+        <p class="sub" style="color:var(--ink-soft);margin-top:8px;">💡 <strong>Nemmeste vej:</strong> Brug <strong>🚫 Luk dage</strong>-knappen i kalenderen – dér kan I lukke en enkelt dag, flere perioder OG sætte ferie-beskeden på ét sted.</p>
+        <button class="abtn abtn--ghost" data-goto="uge" style="margin-top:4px;">Åbn kalenderen →</button>
       </div>
 
       <div class="acard">
@@ -2160,6 +2285,11 @@
       if (dateEl) { dateEl.value = btn.dataset.iso; dateEl.dispatchEvent(new Event('change', { bubbles: true })); }
       document.getElementById('nbkName')?.focus({ preventScroll: true });
       toast(`Datoen ${S.formatDate(btn.dataset.iso)} er sat – udfyld resten og tryk Opret ✓`);
+      return;
+    }
+
+    if (act === 'kal-lukdage') {
+      openLukDialog(btn.dataset.iso);
       return;
     }
 
