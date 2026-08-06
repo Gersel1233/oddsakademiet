@@ -177,9 +177,12 @@ const SpiisDatepicker = (() => {
       if (day && !day.disabled) pick(day.dataset.iso);
     });
 
-    /* luk ved klik udenfor og på Escape */
+    /* luk ved klik udenfor og på Escape.
+       OBS: klik på ‹/› gen-tegner kalenderen, så knappen er "revet ud" af
+       siden, når klikket når hertil – en løsrevet knap må ALDRIG tælle som
+       "udenfor" (det lukkede kalenderen, hver gang man bladrede måned) */
     document.addEventListener('click', (e) => {
-      if (!pop.hidden && !wrap.contains(e.target)) close();
+      if (!pop.hidden && e.target.isConnected && !wrap.contains(e.target)) close();
     });
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') close();

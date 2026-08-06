@@ -1977,24 +1977,26 @@
   /* ---------- render ---------- */
   /* Gen-render kun liste-views automatisk – aldrig editor-views,
      så chefen ikke mister det, hun er i gang med at skrive. */
+  /* Er der "arbejde i gang", som en live-genopfriskning ville smadre?
+     – en åben datovælger (måneds-bladring!), en åben rediger-editor,
+       eller en halvt udfyldt "Opret booking selv"-formular */
+  function editingInProgress(viewSel) {
+    if (document.querySelector('.dp-pop:not([hidden])')) return true;
+    if (document.querySelector(`${viewSel} .bkedit:not([hidden])`)) return true;
+    const fold = document.getElementById('newBookingFold');
+    if (fold && fold.open) {
+      const val = (id) => { const el = document.getElementById(id); return el && el.value.trim(); };
+      if (val('nbkName') || val('nbkPhone') || val('nbkDate') || val('nbkPersons') || val('nbkNote')) return true;
+    }
+    const el = document.activeElement;
+    return !!(el && el.closest && el.closest(`${viewSel} textarea, ${viewSel} input, ${viewSel} select`));
+  }
+
   function renderListViews() {
-    /* Overblik følger med live – men aldrig midt i, at dagsnoten skrives */
-    if (activeView === 'overblik') {
-      const el = document.activeElement;
-      if (!el || !el.closest || !el.closest('#view-overblik textarea, #view-overblik input')) renderOverblik();
-    }
-    if (activeView === 'bestillinger') renderBestillinger();
-    /* bookinger følger også med live – men aldrig midt i, at der skrives
-       en note eller udfyldes en "Opret booking"/rediger-formular */
-    if (activeView === 'bookinger') {
-      const el = document.activeElement;
-      if (!el || !el.closest || !el.closest('#view-bookinger textarea, #view-bookinger input, #view-bookinger select')) renderBookinger();
-    }
-    /* ugeoverblikket følger også med live – men aldrig midt i, at der skrives en note */
-    if (activeView === 'uge') {
-      const el = document.activeElement;
-      if (!el || !el.closest || !el.closest('#view-uge textarea, #view-uge input')) renderUge();
-    }
+    if (activeView === 'overblik' && !editingInProgress('#view-overblik')) renderOverblik();
+    if (activeView === 'bestillinger' && !editingInProgress('#view-bestillinger')) renderBestillinger();
+    if (activeView === 'bookinger' && !editingInProgress('#view-bookinger')) renderBookinger();
+    if (activeView === 'uge' && !editingInProgress('#view-uge')) renderUge();
   }
 
   function renderAll() {
