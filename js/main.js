@@ -851,13 +851,16 @@
       fillTimes();
     }
     function updTotal() {
-      const n = Math.max(1, Number($('#tapasPersons').value) || 1);
-      const cava = $('#tapasCava').checked;
-      const total = n * price() + (cava ? cavaPrice() : 0);
+      const n = Math.max(0, Number($('#tapasPersons').value) || 0);
+      const cavaQty = Math.max(0, Math.min(20, Number($('#tapasCava').value) || 0));
+      const total = n * price() + cavaQty * cavaPrice();
+      $('#tapasCavaCard')?.classList.toggle('is-on', cavaQty > 0);
       /* lille ren kvittering, der regner med, mens man vælger */
-      $('#tapasSum').innerHTML = `
-        <div class="tsum__line"><span>${n} × Spiis Tapas</span><b>${n * price()} kr.</b></div>
-        ${cava ? `<div class="tsum__line"><span>1 × Cava Brut Nature</span><b>${cavaPrice()} kr.</b></div>` : ''}
+      $('#tapasSum').innerHTML = n === 0 && cavaQty === 0
+        ? '<div class="tsum__line"><span>Vælg antal personer, så regner vi prisen ud her</span></div>'
+        : `
+        ${n > 0 ? `<div class="tsum__line"><span>${n} × Spiis Tapas</span><b>${n * price()} kr.</b></div>` : ''}
+        ${cavaQty > 0 ? `<div class="tsum__line"><span>${cavaQty} × Cava Brut Nature</span><b>${cavaQty * cavaPrice()} kr.</b></div>` : ''}
         <div class="tsum__line tsum__line--total"><span>I alt</span><b>${total} kr.</b></div>`;
       $('#tapasPriceLabel').textContent = `${price()} kr.`;
       $('#tapasDuoLabel').textContent = `${2 * price() + cavaPrice()} kr.`;
@@ -876,12 +879,13 @@
       err.hidden = true;
       const iso = dateSel.value;
       const time = timeSel.value;
-      const n = Math.max(1, Number($('#tapasPersons').value) || 0);
+      const n = Math.max(0, Number($('#tapasPersons').value) || 0);
       const name = $('#tapasName').value.trim();
       const phone = $('#tapasPhone').value.trim();
       const problems = [];
       if (!iso) problems.push('vælg en dato');
       if (!time) problems.push('vælg et tidspunkt');
+      if (n < 1) problems.push('skriv hvor mange personer I er');
       if (!name) problems.push('skriv dit navn');
       if (!/^[\d+\s-]{6,}$/.test(phone)) problems.push('skriv et gyldigt telefonnummer');
       if (problems.length) {
@@ -889,8 +893,9 @@
         err.hidden = false;
         return;
       }
+      const cavaQty = Math.max(0, Math.min(20, Number($('#tapasCava').value) || 0));
       const items = [{ name: 'Spiis Tapas', qty: n, price: price(), kind: 'tapas' }];
-      if ($('#tapasCava').checked) items.push({ name: 'Cava Brut Nature', qty: 1, price: cavaPrice() });
+      if (cavaQty > 0) items.push({ name: 'Cava Brut Nature', qty: cavaQty, price: cavaPrice() });
       const btn = form.querySelector('button[type="submit"]');
       btn.disabled = true;
       btn.textContent = 'Sender…';

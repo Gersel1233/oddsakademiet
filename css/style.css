@@ -594,8 +594,11 @@ body.menupage { padding-bottom: 0 !important; }
   cursor: pointer;
   transition: border-color 0.2s ease, background 0.2s ease;
 }
-.tapas__cavacard:has(input:checked) { border-color: var(--accent); background: #FFF8F1; }
-.tapas__cavacard input { width: 19px; height: 19px; accent-color: var(--accent); flex: none; }
+.tapas__cavacard.is-on { border-color: var(--accent); background: #FFF8F1; }
+.tapas__cavaqty { display: flex; align-items: center; gap: 8px; font-size: 0.9rem; color: var(--ink-soft); white-space: nowrap; }
+.tapas__cavaqty input { width: 64px; text-align: center; font: inherit; padding: 8px; border: 1.4px solid var(--line, rgba(28,24,20,0.14)); border-radius: 10px; background: var(--cream); }
+.tapas__cavatxt em b { color: var(--accent-deep); font-weight: 800; }
+
 .tapas__cavatxt { flex: 1; display: grid; gap: 1px; }
 .tapas__cavatxt strong { font-size: 0.96rem; }
 .tapas__cavatxt em { font-style: normal; font-size: 0.84rem; color: var(--ink-soft); }
