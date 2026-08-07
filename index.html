@@ -327,8 +327,11 @@
                 <input type="number" id="tapasPersons" min="1" max="60" value="2" /></label>
               <label class="field"><span>Hvordan?</span>
                 <select id="tapasType"><option value="togo">🥡 To-go</option><option value="spise">🍽️ Spis her</option></select></label>
-              <label class="field field--full tapas__cava"><span></span>
-                <span class="tapas__cavarow"><input type="checkbox" id="tapasCava" /> 🥂 Tilføj en flaske Cava Brut Nature – <strong id="tapasCavaPrice">150 kr.</strong> <em>(anbefalet af vores vinmand)</em></span></label>
+              <label class="tapas__cavacard field--full">
+                <input type="checkbox" id="tapasCava" />
+                <span class="tapas__cavatxt"><strong>🥂 Tilføj Cava Brut Nature</strong><em>Anbefalet af vores vinmand</em></span>
+                <span class="tapas__cavapris" id="tapasCavaPrice">150 kr.</span>
+              </label>
               <label class="field"><span>Navn</span>
                 <input type="text" id="tapasName" placeholder="Dit fulde navn" autocomplete="name" /></label>
               <label class="field"><span>Telefonnummer</span>
@@ -336,7 +339,7 @@
               <label class="field field--full"><span>Besked <em>(valgfrit)</em></span>
                 <input type="text" id="tapasNote" placeholder="Fx allergier eller særlige ønsker" /></label>
             </div>
-            <p class="tapas__total" id="tapasTotal"></p>
+            <div class="tapas__sum" id="tapasSum" aria-live="polite"></div>
             <p class="form__error" id="tapasError" hidden></p>
             <button type="submit" class="btn btn--accent btn--big form__submit">🧀 Bestil tapas</button>
             <p class="form__note">Ryger direkte ind i køkkenets overblik – vi har det klar til jer.</p>

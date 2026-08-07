@@ -852,8 +852,13 @@
     }
     function updTotal() {
       const n = Math.max(1, Number($('#tapasPersons').value) || 1);
-      const total = n * price() + ($('#tapasCava').checked ? cavaPrice() : 0);
-      $('#tapasTotal').textContent = `I alt: ${total} kr. · ${n} × ${price()} kr.${$('#tapasCava').checked ? ` + Cava ${cavaPrice()} kr.` : ''}`;
+      const cava = $('#tapasCava').checked;
+      const total = n * price() + (cava ? cavaPrice() : 0);
+      /* lille ren kvittering, der regner med, mens man vælger */
+      $('#tapasSum').innerHTML = `
+        <div class="tsum__line"><span>${n} × Spiis Tapas</span><b>${n * price()} kr.</b></div>
+        ${cava ? `<div class="tsum__line"><span>1 × Cava Brut Nature</span><b>${cavaPrice()} kr.</b></div>` : ''}
+        <div class="tsum__line tsum__line--total"><span>I alt</span><b>${total} kr.</b></div>`;
       $('#tapasPriceLabel').textContent = `${price()} kr.`;
       $('#tapasDuoLabel').textContent = `${2 * price() + cavaPrice()} kr.`;
       $('#tapasCavaPrice').textContent = `${cavaPrice()} kr.`;
