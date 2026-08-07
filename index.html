@@ -293,19 +293,7 @@
         <div class="tapas">
           <div class="card tapas__info" data-reveal>
             <h3>Det får I</h3>
-            <ul class="tapas__items">
-              <li>5 forskellige oste</li>
-              <li>Chorizo</li>
-              <li>Lufttørret skinke</li>
-              <li>Paté</li>
-              <li>Lakserilette</li>
-              <li>Hummus</li>
-              <li>Pesto</li>
-              <li>Oliven</li>
-              <li>Cornichoner</li>
-              <li>Frugt</li>
-              <li class="tapas__item-wide">Vores hjemmelavede langtidshævede Spiis-brød</li>
-            </ul>
+            <ul class="tapas__items" id="tapasItems"><!-- js --></ul>
             <div class="tapas__prices">
               <div class="tapas__price"><strong id="tapasPriceLabel">199 kr.</strong><span>pr. person</span></div>
               <div class="tapas__price"><strong id="tapasDuoLabel">548 kr.</strong><span>for 2 personer inkl. en flaske Cava Brut Nature<br/>– anbefalet af vores vinmand 🥂</span></div>
@@ -327,10 +315,14 @@
                 <input type="number" id="tapasPersons" min="0" max="60" value="0" /></label>
               <label class="field"><span>Hvordan?</span>
                 <select id="tapasType"><option value="togo">🥡 To-go</option><option value="spise">🍽️ Spis her</option></select></label>
-              <label class="tapas__cavacard field--full" id="tapasCavaCard">
+              <div class="tapas__cavacard field--full" id="tapasCavaCard">
                 <span class="tapas__cavatxt"><strong>🥂 Cava Brut Nature</strong><em>Anbefalet af vores vinmand · <b id="tapasCavaPrice">150 kr.</b> pr. flaske</em></span>
-                <span class="tapas__cavaqty"><input type="number" id="tapasCava" min="0" max="20" value="0" /> flasker</span>
-              </label>
+                <span class="tapas__cavaqty">
+                  <button type="button" class="cavabtn" data-cava="-1" aria-label="Én flaske mindre">−</button>
+                  <input type="number" id="tapasCava" min="0" max="20" value="0" readonly aria-label="Antal flasker" />
+                  <button type="button" class="cavabtn" data-cava="1" aria-label="Én flaske mere">+</button>
+                </span>
+              </div>
               <label class="field"><span>Navn</span>
                 <input type="text" id="tapasName" placeholder="Dit fulde navn" autocomplete="name" /></label>
               <label class="field"><span>Telefonnummer</span>

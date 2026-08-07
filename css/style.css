@@ -595,8 +595,20 @@ body.menupage { padding-bottom: 0 !important; }
   transition: border-color 0.2s ease, background 0.2s ease;
 }
 .tapas__cavacard.is-on { border-color: var(--accent); background: #FFF8F1; }
-.tapas__cavaqty { display: flex; align-items: center; gap: 8px; font-size: 0.9rem; color: var(--ink-soft); white-space: nowrap; }
-.tapas__cavaqty input { width: 64px; text-align: center; font: inherit; padding: 8px; border: 1.4px solid var(--line, rgba(28,24,20,0.14)); border-radius: 10px; background: var(--cream); }
+.tapas__cavaqty { display: flex; align-items: center; gap: 6px; white-space: nowrap; }
+.tapas__cavaqty input { width: 46px; text-align: center; font: inherit; font-weight: 700; padding: 8px 2px; border: none; background: none; color: var(--ink); -moz-appearance: textfield; }
+.tapas__cavaqty input::-webkit-outer-spin-button, .tapas__cavaqty input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+.cavabtn {
+  width: 36px; height: 36px; flex: none;
+  border-radius: 50%;
+  border: 1.4px solid var(--line, rgba(28, 24, 20, 0.16));
+  background: var(--cream);
+  font-size: 1.15rem; font-weight: 700; color: var(--ink);
+  cursor: pointer; line-height: 1;
+  transition: transform 0.15s ease, border-color 0.15s ease;
+  touch-action: manipulation; -webkit-tap-highlight-color: transparent;
+}
+.cavabtn:active { transform: scale(0.9); border-color: var(--accent); }
 .tapas__cavatxt em b { color: var(--accent-deep); font-weight: 800; }
 
 .tapas__cavatxt { flex: 1; display: grid; gap: 1px; }
@@ -692,6 +704,9 @@ body.menupage { padding-bottom: 0 !important; }
   overflow: hidden;
 }
 .selsk__foto--a { grid-row: span 2; font-size: 4rem; }
+.selsk__foto { position: relative; }
+.selsk__foto img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0; transition: opacity 0.9s ease; }
+.selsk__foto img.is-show { opacity: 1; }
 .selsk__foto img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .selsk__cta {
   max-width: 640px;

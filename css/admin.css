@@ -1596,3 +1596,13 @@ body.dv-open { overflow: hidden; }
 
   .belldrop { position: fixed; left: 12px; right: 12px; top: calc(74px + env(safe-area-inset-top)); width: auto; }
 }
+
+/* Luk dage: vælg type med emoji */
+.ld__types { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+.ldtype {
+  font: inherit; font-size: 0.88rem; font-weight: 700;
+  padding: 8px 13px; border-radius: 999px;
+  border: 1.4px solid var(--line); background: #fff; color: var(--ink-soft);
+  cursor: pointer;
+}
+.ldtype.is-on { background: var(--accent-soft); border-color: var(--accent); color: var(--accent-deep); }

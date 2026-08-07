@@ -705,6 +705,12 @@
   function dayStatus(iso) {
     if (!S.isOpenDay(iso))
       return { key: 'kitchen', cls: 'ds--kitchen', short: 'Køkken lukket', full: '🌙 Køkkenet holder lukket denne dag' };
+    /* har dagen sin egen forklaring (personaledag, privat fest …), vises DEN
+       – i stedet for at alt lukket ligner ferie */
+    const mark = S.getDayMark(iso);
+    if (mark && (S.getBlockedDates().includes(iso) || S.isInClosure(iso)))
+      return { key: 'blocked', cls: mark.e === '🌴' ? 'ds--ferie' : 'ds--blocked',
+        short: `${mark.e} ${mark.t}`, full: `${mark.e} ${mark.t} – lukket for bestilling og booking` };
     if (S.isInClosure(iso))
       return { key: 'ferie', cls: 'ds--ferie', short: '🌴 Ferie', full: '🌴 Ferielukket – ingen madbestillinger (booking & kontakt er åben)' };
     if (S.getBlockedDates().includes(iso))
@@ -1052,6 +1058,14 @@
             <label class="afield"><span>Fra dato</span><input type="date" id="ldFrom" value="${start}" min="${today}" /></label>
             <label class="afield"><span>Til og med</span><input type="date" id="ldTo" value="${start}" min="${today}" /></label>
           </div>
+          <div class="ld__types" id="ldTypes">
+            <button type="button" class="ldtype is-on" data-e="🔒" data-t="Lukket">🔒 Lukket</button>
+            <button type="button" class="ldtype" data-e="👥" data-t="Personaledag">👥 Personaledag</button>
+            <button type="button" class="ldtype" data-e="🌴" data-t="Ferie">🌴 Ferie</button>
+            <button type="button" class="ldtype" data-e="🎉" data-t="Privat arrangement">🎉 Privat arrangement</button>
+          </div>
+          <label class="afield afield--wide" style="margin-top:8px;"><span>Hvorfor? <em>(valgfrit – vises i kalenderen)</em></span>
+            <input id="ldReason" placeholder="Fx personaledag kl. 14-15" /></label>
           <div class="ld__count" id="ldCount"></div>
           <label class="bkedit__check" style="margin:10px 0 0;">
             <input type="checkbox" id="ldFerie" />
@@ -1098,10 +1112,18 @@
     $('#ldFerie').addEventListener('change', () => { $('#ldMsgWrap').hidden = !$('#ldFerie').checked; });
     $('#ldMsg').addEventListener('input', () => { $('#ldMsg').dataset.touched = '1'; });
 
+    $('#ldTypes').addEventListener('click', (e) => {
+      const btn = e.target.closest('.ldtype');
+      if (!btn) return;
+      $$('#ldTypes .ldtype').forEach((b) => b.classList.remove('is-on'));
+      btn.classList.add('is-on');
+    });
     $('#ldClose').addEventListener('click', () => {
       const days = range();
       if (!days) { toast('Vælg først en periode ⚠️'); return; }
-      days.forEach((d) => S.blockDate(d));
+      const typeBtn = $('#ldTypes .ldtype.is-on');
+      const mark = { e: typeBtn.dataset.e, t: $('#ldReason').value.trim() || typeBtn.dataset.t };
+      days.forEach((d) => { S.blockDate(d); S.setDayMark(d, mark); });
       if ($('#ldFerie').checked) {
         S.setClosure({
           active: true,
@@ -1827,7 +1849,25 @@
      ============================================================ */
   function renderMenuEditor() {
     const menu = S.getMenu();
+    const st = S.getSettings();
+    const tapasItems = (Array.isArray(st.tapasItems) && st.tapasItems.length ? st.tapasItems : S.DEFAULT_TAPAS_ITEMS).join('\n');
     $('#view-menukort').innerHTML = `
+      <div class="acard">
+        <div class="acard__head">
+          <h2>🧀 Spiis Tapas</h2>
+          <span class="sub">bestilles altid senest dagen før – alt her styrer tapas-delen på hjemmesiden</span>
+        </div>
+        <div class="formgrid">
+          <label class="afield"><span>Pris pr. person (kr.)</span>
+            <input id="tapasPrice" type="number" min="0" value="${esc(st.tapasPrice ?? 199)}" /></label>
+          <label class="afield"><span>Cava pr. flaske (kr.)</span>
+            <input id="tapasCavaPrice" type="number" min="0" value="${esc(st.tapasCavaPrice ?? 150)}" /></label>
+          <label class="afield afield--full"><span>Det får I – én linje pr. punkt</span>
+            <textarea id="tapasItems" class="inline-input" rows="6">${esc(tapasItems)}</textarea></label>
+        </div>
+        <p class="sub" style="color:var(--ink-soft);margin-top:8px;">Gemmes automatisk – prisen for 2 personer inkl. Cava regnes selv ud på hjemmesiden.</p>
+      </div>
+
       <div class="acard">
         <div class="acard__head">
           <h2>📖 Fast sortiment</h2>
@@ -1928,6 +1968,19 @@
         savedToast();
       }
     };
+    /* tapas gemmer sig selv, mens der skrives */
+    const saveTapas = debounce(() => {
+      S.updateSettings({
+        tapasPrice: Number($('#tapasPrice').value) || 199,
+        tapasCavaPrice: Number($('#tapasCavaPrice').value) || 150,
+        tapasItems: $('#tapasItems').value.split('\n').map((l) => l.trim()).filter(Boolean),
+      });
+      savedToast();
+    }, 800);
+    ['#tapasPrice', '#tapasCavaPrice', '#tapasItems'].forEach((sel) => {
+      $(sel)?.addEventListener('input', saveTapas);
+    });
+
     $('#menuAddCat').addEventListener('click', () => {
       const menu2 = collectCurrent();
       menu2.categories.push({ id: 'ny', name: '', items: [{ name: '', desc: '', price: null }] });
@@ -2062,15 +2115,6 @@
           </div>
           <span></span><span></span>
         </div>
-        <div class="hoursrow" style="margin-bottom:14px;">
-          <strong>🧀 Spiis Tapas</strong>
-          <span class="sub" style="color:var(--ink-soft);font-size:0.85rem;">Bestilles altid senest dagen før – priserne styrer tapas-bestillingen på hjemmesiden.</span>
-          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-            <label style="display:flex;align-items:center;gap:6px;">pr. person <input class="inline-input" id="tapasPrice" type="number" min="0" style="width:80px;" value="${esc(S.getSettings().tapasPrice ?? 199)}" /> kr.</label>
-            <label style="display:flex;align-items:center;gap:6px;">Cava <input class="inline-input" id="tapasCavaPrice" type="number" min="0" style="width:80px;" value="${esc(S.getSettings().tapasCavaPrice ?? 150)}" /> kr.</label>
-          </div>
-          <span></span><span></span>
-        </div>
         <div class="hoursgrid">
           ${hours.map((h, i) => `
             <div class="hoursrow ${h.closed ? 'hoursrow--closed' : ''}" data-day="${i}">
@@ -2115,8 +2159,6 @@
         orderFrom: $('#orderFrom').value || '16:00',
         orderToTogo: $('#orderToTogo').value || '19:00',
         orderToDine: $('#orderToDine').value || '20:30',
-        tapasPrice: Number($('#tapasPrice').value) || 199,
-        tapasCavaPrice: Number($('#tapasCavaPrice').value) || 150,
       });
       savedToast();
     }
@@ -2437,6 +2479,8 @@
   let liveSeen = null;
 
   function ping() {
+    /* aldrig lyd fra en gemt baggrundsfane – fx mens man kigger på hjemmesiden */
+    if (document.visibilityState !== 'visible') return;
     try {
       const ac = new (window.AudioContext || window.webkitAudioContext)();
       [[880, 0], [1318, 0.12]].forEach(([freq, delay]) => {
