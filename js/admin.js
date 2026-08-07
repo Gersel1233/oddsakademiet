@@ -255,6 +255,7 @@
         const summary = lines.slice(0, 3).map((l) => `${l.qty} × ${l.name}`).join(' · ') + (lines.length > 3 ? ' · …' : '');
         return {
           icon: '🥡',
+          go: { view: 'bestillinger', date: o.date },
           title: `Ny bestilling: ${summary}`,
           sub: `${o.name} · ${S.formatDate(o.date)} kl. ${o.time} · ${o.type === 'togo' ? 'To-go' : 'Spiser her'}${o.persons ? ` · ${o.persons} pers.` : ''}`,
           at: o.createdAt,
@@ -262,6 +263,7 @@
       }),
       ...unread.bookings.map((b) => ({
         icon: b.kind === 'moede' ? '📅' : '🎉',
+        go: { view: 'bookinger' },
         title: `${b.kind === 'moede' ? 'Ny mødebooking' : 'Ny arrangement-forespørgsel'}: ${b.subject}`,
         sub: `${b.name} · ${b.date ? `${S.formatDate(b.date)}${b.time ? ` kl. ${b.time}` : ''}` : 'dato ikke fastlagt'}`,
         at: b.createdAt,
@@ -270,12 +272,23 @@
 
     $('#bellList').innerHTML = items.length
       ? items.map((n) => `
-          <div class="notif notif--unread">
+          <button type="button" class="notif notif--unread" data-go-view="${n.go.view}" ${n.go.date ? `data-go-date="${n.go.date}"` : ''}>
             <span class="notif__icon">${n.icon}</span>
             <div class="notif__text"><strong>${esc(n.title)}</strong><small>${esc(n.sub)}</small></div>
-          </div>`).join('')
+            <span class="notif__arrow" aria-hidden="true">→</span>
+          </button>`).join('')
       : '<div class="belldrop__empty">Ingen nye notifikationer 🎉</div>';
   }
+
+  /* tryk på en notifikation → hop direkte til bestillingen/bookingen,
+     også når den ligger på en anden dag end i dag */
+  $('#bellList').addEventListener('click', (e) => {
+    const btn = e.target.closest('[data-go-view]');
+    if (!btn) return;
+    bellDrop.hidden = true;
+    if (btn.dataset.goDate) ordersDate = btn.dataset.goDate;
+    switchView(btn.dataset.goView);
+  });
 
   $('#bellBtn').addEventListener('click', (e) => {
     e.stopPropagation();
@@ -1312,6 +1325,17 @@
 
   function renderBestillinger() {
     const orders = S.getOrders(ordersDate);
+    /* nye bestillinger til andre dage må ALDRIG blive væk, bare fordi
+       man står på i dag – de får deres egen linje med genveje */
+    const elsewhere = S.getOrders()
+      .filter((o) => o.status === 'ny' && o.date !== ordersDate)
+      .reduce((m, o) => m.set(o.date, (m.get(o.date) || 0) + 1), new Map());
+    const elsewhereHtml = elsewhere.size ? `
+      <div class="otherdays">
+        <span class="otherdays__txt">🔔 Der er også nye bestillinger til andre dage:</span>
+        ${[...elsewhere.entries()].sort().map(([d, n]) =>
+          `<button class="abtn abtn--ghost" data-act="goto-orders" data-iso="${d}">${esc(S.formatDate(d, false))} · ${n} ny${n === 1 ? '' : 'e'}</button>`).join('')}
+      </div>` : '';
     const itemsTotal = orders.reduce((s, o) => s + itemsOf(o), 0);
     const persons = orders.reduce((s, o) => s + personsOf(o), 0);
     const dish = S.getDagensRet(ordersDate);
@@ -1330,6 +1354,7 @@
         <p class="sub" style="color:var(--ink-soft);margin-bottom:14px;">
           ${esc(S.formatDate(ordersDate))} · ${dish ? `Dagens ret: <strong>${esc(dish.title)}</strong> · ` : ''}${orders.length} bestillinger · ${itemsTotal} retter · ${persons} personer
         </p>
+        ${elsewhereHtml}
         ${orders.length ? `<div class="prodlist" style="margin-bottom:16px;">${dishTotals(orders).map(([n, q]) => `<span class="prod"><b>${q}</b>${esc(n)}</span>`).join('')}</div>` : ''}
         ${(() => {
           const pending = orders.filter((o) => o.status === 'ny');
@@ -2071,7 +2096,25 @@
   function renderHoursEditor() {
     const hours = S.getHours();
     const c = S.getClosure();
+    const paused = !!S.getSettings().ordersPaused;
     $('#view-tider').innerHTML = `
+      <div class="acard pausecard ${paused ? 'is-off' : ''}">
+        <div class="acard__head">
+          <h2>${paused ? '🛑 Online bestilling er SLUKKET' : '🟢 Online bestilling er tændt'}</h2>
+          <span class="sub">nødbremsen – slukker alle bestillinger på hjemmesiden med det samme</span>
+        </div>
+        <p class="sub" style="color:var(--ink-soft);margin-bottom:12px;">
+          ${paused
+            ? 'Kunderne kan ikke bestille online lige nu. De ser jeres besked og opfordres til at ringe. Menukort, åbningstider og kontakt er stadig synlige.'
+            : 'Alt kører normalt. Skru fra her, hvis I fx er underbemandede, har travlt eller udstyret driller – det virker med det samme på hjemmesiden.'}
+        </p>
+        <label class="afield afield--wide"><span>Besked til kunderne <em>(valgfrit)</em></span>
+          <input id="pausedMsg" placeholder="Fx: Vi har ekstra travlt i dag – ring til os, så finder vi ud af det" value="${esc(S.getSettings().ordersPausedMsg || '')}" /></label>
+        <button class="abtn ${paused ? 'abtn--green' : 'abtn--danger'} abtn--big" id="pauseToggle" style="margin-top:12px;">
+          ${paused ? '🟢 Tænd for online bestilling igen' : '🛑 Sluk for online bestilling'}
+        </button>
+      </div>
+
       <div class="acard">
         <div class="acard__head">
           <h2>🌴 Ferie / luk for bestillinger</h2>
@@ -2181,6 +2224,22 @@
     $('#closureFrom').addEventListener('change', saveClosure);
     $('#closureReopen').addEventListener('change', saveClosure);
     $('#closureMessage').addEventListener('input', debounce(saveClosure, 800));
+
+    /* nødbremsen – med en bekræftelse, så den aldrig rammes ved et uheld */
+    $('#pausedMsg')?.addEventListener('input', debounce(() => {
+      S.updateSettings({ ordersPausedMsg: $('#pausedMsg').value.trim() });
+      savedToast();
+    }, 800));
+    $('#pauseToggle')?.addEventListener('click', () => {
+      const nowOff = !S.getSettings().ordersPaused;
+      if (nowOff && !confirm('Sluk for ALLE online bestillinger nu?\n\nKunderne kan ikke bestille, før I tænder igen.')) return;
+      S.updateSettings({
+        ordersPaused: nowOff,
+        ordersPausedMsg: $('#pausedMsg').value.trim(),
+      });
+      renderHoursEditor();
+      toast(nowOff ? '🛑 Online bestilling er slukket' : '🟢 Online bestilling er tændt igen');
+    });
   }
 
   /* ============================================================
@@ -2509,8 +2568,9 @@
     const freshBookings = bookings.filter((b) => !liveSeen.has('b' + b.id));
     liveSeen = ids;
     if (!freshOrders.length && !freshBookings.length) return;
+    const dayTxt = (o) => (o.date === S.todayISO() ? '' : ` · ${S.formatDate(o.date, false)}`);
     const first = freshOrders.length
-      ? `🍲 Ny bestilling: ${freshOrders[0].name}${freshOrders[0].time ? ' · kl. ' + freshOrders[0].time : ''}`
+      ? `🍲 Ny bestilling: ${freshOrders[0].name}${freshOrders[0].time ? ' · kl. ' + freshOrders[0].time : ''}${dayTxt(freshOrders[0])}`
       : `${freshBookings[0].kind === 'moede' ? '📅 Ny mødebooking' : '🎉 Ny arrangement-forespørgsel'}: ${freshBookings[0].subject}`;
     const extra = freshOrders.length + freshBookings.length - 1;
     toast(extra > 0 ? `${first} (+${extra} mere)` : first);

@@ -1606,3 +1606,20 @@ body.dv-open { overflow: hidden; }
   cursor: pointer;
 }
 .ldtype.is-on { background: var(--accent-soft); border-color: var(--accent); color: var(--accent-deep); }
+
+/* nødbremse: online bestilling helt slukket */
+.pausecard.is-off { border: 2px solid var(--red); background: var(--red-soft); }
+.abtn--big { font-size: 1rem; padding: 13px 22px; }
+
+/* notifikationer er klikbare genveje */
+.notif { width: 100%; text-align: left; font: inherit; cursor: pointer; border: none; background: none; }
+.notif:hover { background: var(--cream-2); }
+.notif__arrow { margin-left: auto; color: var(--ink-soft); font-weight: 700; align-self: center; }
+
+/* nye bestillinger på andre dage – aldrig usynlige */
+.otherdays {
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  background: #FFF8F1; border: 1.5px solid var(--accent);
+  border-radius: 12px; padding: 10px 14px; margin-bottom: 14px;
+}
+.otherdays__txt { font-weight: 700; font-size: 0.92rem; color: #A9500D; }

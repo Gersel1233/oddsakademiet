@@ -86,6 +86,11 @@ begin
 
   select data into v_cfg from config where id = 1 for update;
 
+  -- chefens nødbremse: online bestilling slukket helt
+  if coalesce((v_cfg->'settings'->>'ordersPaused')::boolean, false) then
+    return jsonb_build_object('ok', false, 'reason', 'pauset');
+  end if;
+
   if coalesce(v_cfg->'blockedDates' ? to_char(p_date, 'YYYY-MM-DD'), false)
      or coalesce(v_cfg->'orderClosedDates' ? to_char(p_date, 'YYYY-MM-DD'), false) then
     return jsonb_build_object('ok', false, 'reason', 'lukket');
@@ -313,3 +318,29 @@ drop trigger if exists trg_tapas_dayahead on orders;
 create trigger trg_tapas_dayahead
   before insert on orders
   for each row execute function public.enforce_tapas_dayahead();
+
+-- ============================================================
+-- NØDBREMSE (august 2026): slukker HELT for online bestillinger,
+-- når chefen slår den til i admin → Åbningstider.
+-- ============================================================
+create or replace function public.spiis_orders_paused()
+returns boolean
+language sql stable security definer set search_path = public as $$
+  select coalesce((data->'settings'->>'ordersPaused')::boolean, false)
+    from config where id = 1
+$$;
+
+create or replace function public.enforce_orders_paused()
+returns trigger
+language plpgsql security definer set search_path = public as $$
+begin
+  if public.spiis_orders_paused() then
+    raise exception 'pauset';
+  end if;
+  return new;
+end $$;
+
+drop trigger if exists trg_orders_paused on orders;
+create trigger trg_orders_paused
+  before insert on orders
+  for each row execute function public.enforce_orders_paused();

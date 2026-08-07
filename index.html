@@ -246,6 +246,7 @@
           </div>
           <p class="form__error" id="orderError" hidden></p>
           <p class="form__error" id="orderOffline" hidden></p>
+          <p class="pausenote" id="orderPausedNote" hidden></p>
           <button type="submit" class="btn btn--accent btn--big form__submit">Send bestilling</button>
           <p class="form__note">Din bestilling ryger direkte ind i vores køkken-overblik – ingen mails, ingen ventetid.</p>
           <p class="form__note form__note--allergi">Allergi? Spørg personalet ift. allergener.</p>
@@ -331,6 +332,7 @@
                 <input type="text" id="tapasNote" placeholder="Fx allergier eller særlige ønsker" /></label>
             </div>
             <div class="tapas__sum" id="tapasSum" aria-live="polite"></div>
+            <p class="pausenote" id="tapasPausedNote" hidden></p>
             <p class="form__error" id="tapasError" hidden></p>
             <button type="submit" class="btn btn--accent btn--big form__submit">🧀 Bestil tapas</button>
             <p class="form__note">Ryger direkte ind i køkkenets overblik – vi har det klar til jer.</p>

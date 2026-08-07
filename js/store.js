@@ -667,6 +667,8 @@ const SpiisStore = (() => {
     if (!Number.isFinite(q) || q < 0 || q > 100) return { ok: false, reason: 'ugyldig' };
     if (q === 0 && nItems === 0) return { ok: false, reason: 'tom' };
     if (!String(order.name || '').trim() || !String(order.phone || '').trim()) return { ok: false, reason: 'mangler' };
+    /* chefen kan slukke HELT for online bestillinger med én kontakt */
+    if (data.settings.ordersPaused) return { ok: false, reason: 'pauset' };
     /* dage med privat arrangement (eller lukkede dage) tager ikke imod bestillinger */
     if (isOrderingClosed(order.date)) return { ok: false, reason: 'lukket' };
     /* bestillingsvinduet er forskelligt pr. type: to-go til kl. 19,

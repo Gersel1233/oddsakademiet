@@ -926,7 +926,9 @@
       if (!res.ok) {
         err.textContent = res.reason === 'tapas-dato'
           ? 'Tapas skal bestilles senest dagen før – vælg en dato fra i morgen.'
-          : 'Bestillingen kunne ikke sendes lige nu – prøv igen eller ring til os.';
+          : res.reason === 'pauset'
+            ? 'Vi tager ikke imod online bestillinger lige nu – ring til os, så finder vi ud af det.'
+            : 'Bestillingen kunne ikke sendes lige nu – prøv igen eller ring til os.';
         err.hidden = false;
         return;
       }
@@ -1037,7 +1039,9 @@
     if (down) {
       $('#orderOffline').textContent = `⚠️ Online-bestilling er nede i øjeblikket. Ring til os på ${phone}, så klarer vi det over telefonen.`;
     }
-    $('#orderForm button[type="submit"]').disabled = down;
+    /* nødbremsen må ALDRIG blive overskrevet her – ellers kunne knappen
+       blive tændt igen, selvom chefen har slukket for online bestilling */
+    $('#orderForm button[type="submit"]').disabled = down || !!S.getSettings().ordersPaused;
   }
 
   /* ---------- footer ---------- */
@@ -1068,6 +1072,26 @@
   }
   window.addEventListener('hashchange', fixAnchorScroll);
   window.addEventListener('load', fixAnchorScroll);
+
+  /* ---------- online bestilling slukket helt (chefens nødbremse) ---------- */
+  function renderPause() {
+    const s2 = S.getSettings();
+    const off = !!s2.ordersPaused;
+    document.body.classList.toggle('orders-paused', off);
+    const msg = (s2.ordersPausedMsg || '').trim()
+      || 'Vi tager ikke imod online bestillinger lige nu – ring til os, så finder vi ud af det. Vi har stadig åbent som normalt.';
+    ['#orderPausedNote', '#tapasPausedNote'].forEach((sel) => {
+      const el = $(sel);
+      if (!el) return;
+      el.hidden = !off;
+      el.innerHTML = off ? `🛑 <strong>${esc(msg)}</strong><br/><a href="tel:+45${String(s2.phone || '').replace(/\s/g, '')}">📞 Ring på ${esc(s2.phone || '')}</a>` : '';
+    });
+    /* selve formularerne slås fra, så ingen kan sende alligevel */
+    $$('#orderForm, #tapasForm').forEach((f) => {
+      f.querySelectorAll('button[type="submit"]').forEach((b) => { b.disabled = off; });
+      f.classList.toggle('is-paused', off);
+    });
+  }
 
   /* ---------- ferie / luk-periode banner ---------- */
   function renderClosure() {
@@ -1244,6 +1268,7 @@
 
   /* ---------- render alt (og gen-render hvis admin ændrer data) ---------- */
   function renderAll() {
+    renderPause();
     renderClosure();
     renderNews();
     renderToday();
@@ -1256,6 +1281,7 @@
   renderAll();
 
   S.subscribe(() => {
+    renderPause();
     renderClosure();
     renderNews();
     renderToday();

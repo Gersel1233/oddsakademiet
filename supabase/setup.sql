@@ -168,6 +168,11 @@ begin
 
   -- manuelt lukkede dage – og arrangement-dage hvor chefen har valgt at
   -- lukke for madbestillinger – tager ikke imod bestillinger
+  -- chefens nødbremse: online bestilling slukket helt
+  if coalesce((v_cfg->'settings'->>'ordersPaused')::boolean, false) then
+    return jsonb_build_object('ok', false, 'reason', 'pauset');
+  end if;
+
   if coalesce(v_cfg->'blockedDates' ? to_char(p_date, 'YYYY-MM-DD'), false)
      or coalesce(v_cfg->'orderClosedDates' ? to_char(p_date, 'YYYY-MM-DD'), false) then
     return jsonb_build_object('ok', false, 'reason', 'lukket');

@@ -1998,3 +1998,22 @@ a, button, select, .daytab, .choice, .segmented label, .stepper button {
   .contactcard__row { padding: 15px 16px; }
   .success { padding: 40px 22px; }
 }
+
+/* ---------- online bestilling slukket helt (chefens nødbremse) ---------- */
+.pausenote {
+  background: var(--accent-soft);
+  border: 1.5px solid rgba(217, 108, 44, 0.35);
+  border-radius: 14px;
+  padding: 14px 16px;
+  margin: 4px 0 14px;
+  line-height: 1.5;
+  font-size: 0.95rem;
+}
+.pausenote a { color: var(--accent-deep); font-weight: 700; text-decoration: underline; text-underline-offset: 3px; }
+/* felterne tones ned, så det er tydeligt at der ikke kan sendes */
+.form.is-paused .form__grid,
+.form.is-paused .builder,
+.form.is-paused .daytabs { opacity: 0.5; pointer-events: none; }
+.form.is-paused button[type="submit"] { opacity: 0.5; cursor: not-allowed; }
+body.orders-paused .mobilecta,
+body.orders-paused .nav__cta { display: none !important; }
