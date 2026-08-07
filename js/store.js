@@ -682,6 +682,10 @@ const SpiisStore = (() => {
         return { ok: false, reason: 'forbi' };
       }
     }
+    /* Spiis Tapas skal bestilles senest dagen FØR – aldrig samme dag */
+    if ((order.items || []).some((l) => l && l.kind === 'tapas') && order.date <= tToday) {
+      return { ok: false, reason: 'tapas-dato' };
+    }
     /* udsolgte varer og "få tilbage"-antal stoppes før afsendelse
        – databasen tjekker og tæller også selv (kapløbs-sikkert) */
     const soldout = soldoutNames();

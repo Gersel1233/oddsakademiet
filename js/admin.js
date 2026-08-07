@@ -442,6 +442,8 @@
           <div class="row__title">${esc(o.name)}
             ${personsOf(o) ? `<span class="tag">👥 ${personsOf(o)} pers.</span>` : ''}
             <span class="tag ${o.type === 'togo' ? 'tag--accent' : 'tag--ink'}">${o.type === 'togo' ? '🥡 To-go' : '🍽️ Spiser her'}</span>
+            ${all.some((l) => l.kind === 'tapas') ? '<span class="tag tag--accent">🧀 Tapas</span>' : ''}
+            ${o.type !== 'togo' && itemsOf(o) > 0 && personsOf(o) > itemsOf(o) ? `<span class="tag tag--wait">⚠️ ${personsOf(o)} pers. – mad til ${itemsOf(o)}</span>` : ''}
             ${done ? '' : '<span class="tag tag--red">Ny</span>'}
           </div>
           ${food.length ? `<ul class="olist">${food.map(li).join('')}</ul>` : ''}
@@ -2060,6 +2062,15 @@
           </div>
           <span></span><span></span>
         </div>
+        <div class="hoursrow" style="margin-bottom:14px;">
+          <strong>🧀 Spiis Tapas</strong>
+          <span class="sub" style="color:var(--ink-soft);font-size:0.85rem;">Bestilles altid senest dagen før – priserne styrer tapas-bestillingen på hjemmesiden.</span>
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+            <label style="display:flex;align-items:center;gap:6px;">pr. person <input class="inline-input" id="tapasPrice" type="number" min="0" style="width:80px;" value="${esc(S.getSettings().tapasPrice ?? 199)}" /> kr.</label>
+            <label style="display:flex;align-items:center;gap:6px;">Cava <input class="inline-input" id="tapasCavaPrice" type="number" min="0" style="width:80px;" value="${esc(S.getSettings().tapasCavaPrice ?? 150)}" /> kr.</label>
+          </div>
+          <span></span><span></span>
+        </div>
         <div class="hoursgrid">
           ${hours.map((h, i) => `
             <div class="hoursrow ${h.closed ? 'hoursrow--closed' : ''}" data-day="${i}">
@@ -2104,6 +2115,8 @@
         orderFrom: $('#orderFrom').value || '16:00',
         orderToTogo: $('#orderToTogo').value || '19:00',
         orderToDine: $('#orderToDine').value || '20:30',
+        tapasPrice: Number($('#tapasPrice').value) || 199,
+        tapasCavaPrice: Number($('#tapasCavaPrice').value) || 150,
       });
       savedToast();
     }
