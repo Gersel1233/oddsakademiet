@@ -305,7 +305,7 @@
       /* én ret: som altid. Flere retter: en linje pr. ret med eget udsolgt/få-tilbage-mærke */
       let dishHtml;
       if (!dishes.length) {
-        dishHtml = '<div class="dayplan__dish">Følger snart…</div>';
+        dishHtml = '<div class="dayplan__dish">Dagens ret følger snart…</div>';
       } else if (dishes.length === 1) {
         const d0 = dishes[0];
         const rem = S.getRemainingFor(day.iso, d0.title);
@@ -816,6 +816,121 @@
     const body = ['Hej Spiis', '', 'Vi vil gerne holde et selskab hos jer 🎉', '', ''].join('\n');
     btn.href = `mailto:${s.email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
   }
+
+  /* ---------- Spiis Tapas: skal bestilles senest dagen FØR ----------
+     Dato-listen starter i morgen, butikken tjekker igen, og databasen
+     afviser også selv samme-dags tapas – skudsikkert i tre lag. */
+  (function initTapas() {
+    const form = $('#tapasForm');
+    if (!form) return;
+    const price = () => Number(S.getSettings().tapasPrice) || 199;
+    const cavaPrice = () => Number(S.getSettings().tapasCavaPrice) || 150;
+    const dateSel = $('#tapasDate');
+    const timeSel = $('#tapasTime');
+    const typeSel = $('#tapasType');
+
+    function fillTimes() {
+      const iso = dateSel.value;
+      const slots = iso ? S.orderSlots(iso, 30, typeSel.value) : [];
+      const prev = timeSel.value;
+      timeSel.innerHTML = slots.length
+        ? slots.map((t) => `<option value="${t}">kl. ${t}</option>`).join('')
+        : '<option value="">–</option>';
+      if (prev && [...timeSel.options].some((o) => o.value === prev)) timeSel.value = prev;
+    }
+    function fillDates() {
+      const opts = [];
+      for (let i = 1; i <= 14; i++) {
+        const iso = S.addDays(S.todayISO(), i);
+        if (!S.isOpenDay(iso) || S.isOrderingClosed(iso)) continue;
+        opts.push(`<option value="${iso}">${esc(S.formatDate(iso))}</option>`);
+      }
+      const prev = dateSel.value;
+      dateSel.innerHTML = opts.join('') || '<option value="">Ingen ledige dage lige nu</option>';
+      if (prev && [...dateSel.options].some((o) => o.value === prev)) dateSel.value = prev;
+      fillTimes();
+    }
+    function updTotal() {
+      const n = Math.max(1, Number($('#tapasPersons').value) || 1);
+      const total = n * price() + ($('#tapasCava').checked ? cavaPrice() : 0);
+      $('#tapasTotal').textContent = `I alt: ${total} kr. · ${n} × ${price()} kr.${$('#tapasCava').checked ? ` + Cava ${cavaPrice()} kr.` : ''}`;
+      $('#tapasPriceLabel').textContent = `${price()} kr.`;
+      $('#tapasDuoLabel').textContent = `${2 * price() + cavaPrice()} kr.`;
+      $('#tapasCavaPrice').textContent = `${cavaPrice()} kr.`;
+    }
+    dateSel.addEventListener('change', fillTimes);
+    typeSel.addEventListener('change', fillTimes);
+    form.addEventListener('input', updTotal);
+    fillDates();
+    updTotal();
+    S.subscribe(() => { fillDates(); updTotal(); });
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const err = $('#tapasError');
+      err.hidden = true;
+      const iso = dateSel.value;
+      const time = timeSel.value;
+      const n = Math.max(1, Number($('#tapasPersons').value) || 0);
+      const name = $('#tapasName').value.trim();
+      const phone = $('#tapasPhone').value.trim();
+      const problems = [];
+      if (!iso) problems.push('vælg en dato');
+      if (!time) problems.push('vælg et tidspunkt');
+      if (!name) problems.push('skriv dit navn');
+      if (!/^[\d+\s-]{6,}$/.test(phone)) problems.push('skriv et gyldigt telefonnummer');
+      if (problems.length) {
+        err.textContent = `Hov! Du mangler at: ${problems.join(', ')}.`;
+        err.hidden = false;
+        return;
+      }
+      const items = [{ name: 'Spiis Tapas', qty: n, price: price(), kind: 'tapas' }];
+      if ($('#tapasCava').checked) items.push({ name: 'Cava Brut Nature', qty: 1, price: cavaPrice() });
+      const btn = form.querySelector('button[type="submit"]');
+      btn.disabled = true;
+      btn.textContent = 'Sender…';
+      const res = await S.addOrder({
+        date: iso, time, qty: n, type: typeSel.value,
+        name, phone, note: $('#tapasNote').value.trim(),
+        dish: '', price: null, items, persons: n,
+      });
+      btn.disabled = false;
+      btn.textContent = '🧀 Bestil tapas';
+      if (!res.ok) {
+        err.textContent = res.reason === 'tapas-dato'
+          ? 'Tapas skal bestilles senest dagen før – vælg en dato fra i morgen.'
+          : 'Bestillingen kunne ikke sendes lige nu – prøv igen eller ring til os.';
+        err.hidden = false;
+        return;
+      }
+      form.hidden = true;
+      const suc = $('#tapasSuccess');
+      suc.hidden = false;
+      $('#tapasSuccessText').textContent = `Jeres tapas til ${n} ${n === 1 ? 'person' : 'personer'} er bestilt til ${S.formatDate(iso).toLowerCase()} kl. ${time}. Vi glæder os! 🧀`;
+      suc.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    });
+  })();
+
+  /* ---------- personer vs. retter: luk hullet venligt ----------
+     4 personer men mad til 2? Kunden får et blidt hint med det samme,
+     og køkkenet ser samme advarsel på bestillingen i admin. */
+  function updatePersonsHint() {
+    const el = $('#personsHint');
+    if (!el) return;
+    const persons = Number($('#orderPersons')?.value) || 0;
+    const foodQty = orderSendLines()
+      .filter((l) => l.kind !== 'emballage' && !(l.cat && /drik/i.test(l.cat)))
+      .reduce((s, l) => s + Number(l.qty || 0), 0);
+    if (currentType() === 'spise' && foodQty > 0 && persons > foodQty) {
+      el.textContent = `I er ${persons}, men har valgt mad til ${foodQty} – deler I, er det helt fint. Ellers husk lige flere retter 😊`;
+      el.className = 'field__hint is-bad';
+    } else {
+      el.textContent = '';
+      el.className = 'field__hint';
+    }
+  }
+  $('#orderForm')?.addEventListener('input', updatePersonsHint);
+  $('#orderForm')?.addEventListener('click', () => setTimeout(updatePersonsHint, 50));
 
   /* ---------- kontakt fra indstillinger ---------- */
   function renderContact() {

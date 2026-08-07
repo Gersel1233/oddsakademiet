@@ -488,3 +488,23 @@ begin
 end $$;
 
 grant execute on function public.place_news_order to anon, authenticated;
+
+-- Spiis Tapas: skal altid bestilles senest dagen før (trigger)
+create or replace function public.enforce_tapas_dayahead()
+returns trigger
+language plpgsql security definer set search_path = public as $$
+begin
+  if exists (
+       select 1 from jsonb_array_elements(coalesce(new.items, '[]'::jsonb)) it
+        where it->>'kind' = 'tapas'
+     )
+     and new.date <= (now() at time zone 'Europe/Copenhagen')::date then
+    raise exception 'tapas-dato';
+  end if;
+  return new;
+end $$;
+
+drop trigger if exists trg_tapas_dayahead on orders;
+create trigger trg_tapas_dayahead
+  before insert on orders
+  for each row execute function public.enforce_tapas_dayahead();

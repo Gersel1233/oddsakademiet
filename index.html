@@ -68,6 +68,7 @@
       <nav class="nav__links" id="navLinks" aria-label="Hovedmenu">
         <a href="#dagensret">Dagens ret</a>
         <a href="menu.html">Menukort</a>
+        <a href="#tapas">Tapas</a>
         <a href="#om">Om Spiis</a>
         <a href="#selskaber">Selskab &amp; catering</a>
         <a href="#kontakt">Kontakt</a>
@@ -180,7 +181,7 @@
         </div>
 
         <div class="weekplan" data-reveal>
-          <h3 class="weekplan__title">Ugen der kommer</h3>
+          <h3 class="weekplan__title">Dagens ret – ugen der kommer</h3>
           <div class="weekplan__grid" id="weekPlan"><!-- js --></div>
         </div>
       </div>
@@ -215,6 +216,7 @@
             <label class="field">
               <span>Antal personer</span>
               <input type="number" id="orderPersons" min="1" max="100" value="2" required />
+              <small class="field__hint" id="personsHint"></small>
             </label>
             <div class="field field--full">
               <span>Hvordan vil I spise?</span>
@@ -274,6 +276,79 @@
           <div class="menuteaser__icons" aria-hidden="true"><span>🍲</span><span>🍔</span><span>🥗</span><span>🥤</span></div>
           <a href="menu.html" class="btn btn--accent btn--big">📖 Se hele menukortet</a>
           <p class="menuteaser__note">🥜 Allergi? Spørg personalet ift. allergener – vi hjælper gerne.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ====== SPIIS TAPAS – bestilles senest dagen før ====== -->
+    <section class="section section--tint" id="tapas">
+      <div class="container">
+        <div class="section__head" data-reveal>
+          <p class="eyebrow">Nyhed · bestilles senest dagen før</p>
+          <h2>Spiis Tapas</h2>
+          <span class="dotline" aria-hidden="true"></span>
+          <p class="section__lead">Vores nye stolthed 🧀 En overdådig tapas med alt det gode – perfekt til hyggeaftener, gæster eller bare fordi I fortjener det.</p>
+        </div>
+
+        <div class="tapas">
+          <div class="card tapas__info" data-reveal>
+            <h3>Det får I</h3>
+            <ul class="tapas__items">
+              <li>5 forskellige oste</li>
+              <li>Chorizo</li>
+              <li>Lufttørret skinke</li>
+              <li>Paté</li>
+              <li>Lakserilette</li>
+              <li>Hummus</li>
+              <li>Pesto</li>
+              <li>Oliven</li>
+              <li>Cornichoner</li>
+              <li>Frugt</li>
+              <li class="tapas__item-wide">Vores hjemmelavede langtidshævede Spiis-brød</li>
+            </ul>
+            <div class="tapas__prices">
+              <div class="tapas__price"><strong id="tapasPriceLabel">199 kr.</strong><span>pr. person</span></div>
+              <div class="tapas__price"><strong id="tapasDuoLabel">548 kr.</strong><span>for 2 personer inkl. en flaske Cava Brut Nature<br/>– anbefalet af vores vinmand 🥂</span></div>
+            </div>
+            <ul class="tapas__facts">
+              <li>📅 Skal bestilles senest dagen før</li>
+              <li>🍽️ Kan anrettes på porcelænsfade, så det hele er klar til servering</li>
+            </ul>
+          </div>
+
+          <form class="card form tapas__form" id="tapasForm" novalidate data-reveal>
+            <h3>Bestil tapas</h3>
+            <div class="form__grid">
+              <label class="field"><span>Dato <em>(tidligst i morgen)</em></span>
+                <select id="tapasDate"></select></label>
+              <label class="field"><span>Tidspunkt</span>
+                <select id="tapasTime"></select></label>
+              <label class="field"><span>Antal personer</span>
+                <input type="number" id="tapasPersons" min="1" max="60" value="2" /></label>
+              <label class="field"><span>Hvordan?</span>
+                <select id="tapasType"><option value="togo">🥡 To-go</option><option value="spise">🍽️ Spis her</option></select></label>
+              <label class="field field--full tapas__cava"><span></span>
+                <span class="tapas__cavarow"><input type="checkbox" id="tapasCava" /> 🥂 Tilføj en flaske Cava Brut Nature – <strong id="tapasCavaPrice">150 kr.</strong> <em>(anbefalet af vores vinmand)</em></span></label>
+              <label class="field"><span>Navn</span>
+                <input type="text" id="tapasName" placeholder="Dit fulde navn" autocomplete="name" /></label>
+              <label class="field"><span>Telefonnummer</span>
+                <input type="tel" id="tapasPhone" placeholder="12 34 56 78" autocomplete="tel" /></label>
+              <label class="field field--full"><span>Besked <em>(valgfrit)</em></span>
+                <input type="text" id="tapasNote" placeholder="Fx allergier eller særlige ønsker" /></label>
+            </div>
+            <p class="tapas__total" id="tapasTotal"></p>
+            <p class="form__error" id="tapasError" hidden></p>
+            <button type="submit" class="btn btn--accent btn--big form__submit">🧀 Bestil tapas</button>
+            <p class="form__note">Ryger direkte ind i køkkenets overblik – vi har det klar til jer.</p>
+          </form>
+
+          <div class="card success tapas__success" id="tapasSuccess" hidden>
+            <div class="success__check" aria-hidden="true">
+              <svg viewBox="0 0 52 52"><circle cx="26" cy="26" r="24" fill="none"/><path fill="none" d="M14 27l8 8 16-17"/></svg>
+            </div>
+            <h3>Tak for jeres bestilling! 🧀</h3>
+            <p id="tapasSuccessText"></p>
+          </div>
         </div>
       </div>
     </section>
@@ -349,10 +424,7 @@
           <h3>Skal vi tage snakken?</h3>
           <p>Klik på knappen herunder og fortæl os om jeres arrangement – dato, antal og ønsker. Vi glæder os allerede til at høre fra jer.</p>
           <a class="btn btn--accent btn--big" id="selskabMail" href="mailto:spiis.bestilling@gmail.com">✉️ Book jeres selskab</a>
-          <div class="selsk__contactrows">
-            <a class="contactcard__row" id="contactPhone" href="tel:+4593995858"><span class="contactcard__icon">📞</span><span>93 99 58 58</span></a>
-            <a class="contactcard__row" id="contactEmail" href="mailto:spiis.bestilling@gmail.com"><span class="contactcard__icon">✉️</span><span>spiis.bestilling@gmail.com</span></a>
-          </div>
+          <p class="selsk__ring">…eller ring til os på <a id="contactPhone" href="tel:+4593995858"><span>93 99 58 58</span></a> 📞</p>
         </div>
       </div>
     </section>
@@ -458,6 +530,7 @@
       <nav class="footer__links" aria-label="Sidefod">
         <a href="#dagensret">Dagens ret</a>
         <a href="menu.html">Menukort</a>
+        <a href="#tapas">Tapas</a>
         <a href="#selskaber">Selskab &amp; catering</a>
         <a href="#kontakt">Kontakt</a>
       </nav>
@@ -467,6 +540,7 @@
           <span class="smileybadge__text">Kontrolleret af Fødevarestyrelsen<em>Se vores smiley-rapport</em></span>
         </a>
         <p>© <span id="year"></span> Spiis · Karlslunde</p>
+        <p class="footer__lesreg">made by Lesreg</p>
         <a href="admin.html" class="footer__admin">Personale-login</a>
       </div>
     </div>
