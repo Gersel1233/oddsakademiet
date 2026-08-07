@@ -142,6 +142,7 @@ const SpiisStore = (() => {
       notes: {},        /* chefens egne noter pr. dag { 'YYYY-MM-DD': tekst } */
       news: [],         /* nyheder på forsiden { id, title, text, image, cta, active, createdAt } */
       closure: { active: false, from: '', reopen: '', message: '' }, /* ferie/luk-periode */
+      dayMarks: {},     /* hvorfor en dag er lukket { 'YYYY-MM-DD': { e: '👥', t: 'Personaledag' } } */
       log: [],
     };
 
@@ -173,6 +174,7 @@ const SpiisStore = (() => {
       if (!parsed.orderClosedDates) parsed.orderClosedDates = [];
       if (!parsed.news) parsed.news = [];
       if (!parsed.closure) parsed.closure = { active: false, from: '', reopen: '', message: '' };
+      if (!parsed.dayMarks) parsed.dayMarks = {};
       return parsed;
     } catch {
       return null;
@@ -237,7 +239,7 @@ const SpiisStore = (() => {
     return res;
   }
 
-  const CONFIG_KEYS = ['settings', 'hours', 'dagensRet', 'menu', 'blockedDates', 'arrangementDates', 'orderClosedDates', 'news', 'closure'];
+  const CONFIG_KEYS = ['settings', 'hours', 'dagensRet', 'menu', 'blockedDates', 'arrangementDates', 'orderClosedDates', 'news', 'closure', 'dayMarks'];
 
   function mergeConfig(remote) {
     if (!remote) return;
@@ -258,6 +260,7 @@ const SpiisStore = (() => {
       blockedDates: data.blockedDates,
       arrangementDates: data.arrangementDates || [],
       orderClosedDates: data.orderClosedDates || [],
+      dayMarks: data.dayMarks || {},
       news: data.news || [],
       closure: data.closure || { active: false, from: '', reopen: '', message: '' },
     };
@@ -991,6 +994,13 @@ const SpiisStore = (() => {
     pushConfig();
   }
 
+  /* det fysiske tapas-korts indhold – kan rettes i admin → Menukort */
+  const DEFAULT_TAPAS_ITEMS = [
+    '5 forskellige oste', 'Chorizo', 'Lufttørret skinke', 'Paté', 'Lakserilette',
+    'Hummus', 'Pesto', 'Oliven', 'Cornichoner', 'Frugt',
+    'Vores hjemmelavede langtidshævede Spiis-brød',
+  ];
+
   const isOrderingClosed = (iso) =>
     data.blockedDates.includes(iso) || (data.orderClosedDates || []).includes(iso) || isInClosure(iso);
   function blockDate(iso) {
@@ -1003,6 +1013,15 @@ const SpiisStore = (() => {
   }
   function unblockDate(iso) {
     data.blockedDates = data.blockedDates.filter((d) => d !== iso);
+    if (data.dayMarks && data.dayMarks[iso]) delete data.dayMarks[iso];
+    save();
+    pushConfig();
+  }
+  const getDayMark = (iso) => (data.dayMarks || {})[iso] || null;
+  function setDayMark(iso, mark) {
+    if (!data.dayMarks) data.dayMarks = {};
+    if (mark && mark.e) data.dayMarks[iso] = { e: mark.e, t: mark.t || '' };
+    else delete data.dayMarks[iso];
     save();
     pushConfig();
   }
@@ -1236,6 +1255,7 @@ const SpiisStore = (() => {
     addOrder, getOrders, updateOrder, deleteOrder,
     addBooking, getBookings, updateBooking, deleteBooking,
     getBlockedDates, getArrangementDates, isOrderingClosed, blockDate, unblockDate, isDateAvailable,
+    getDayMark, setDayMark, DEFAULT_TAPAS_ITEMS,
     getClosure, setClosure, isClosureNow, isInClosure,
     timeslotsFor, orderSlots, orderToFor,
     getNews, addNews, updateNews, deleteNews, uploadNewsImage, placeNewsOrder,

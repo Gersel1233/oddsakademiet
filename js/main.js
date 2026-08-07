@@ -866,12 +866,29 @@
       $('#tapasDuoLabel').textContent = `${2 * price() + cavaPrice()} kr.`;
       $('#tapasCavaPrice').textContent = `${cavaPrice()} kr.`;
     }
+    /* "Det får I"-listen kommer fra admin → Menukort, så den altid passer */
+    function renderTapasItems() {
+      const el = $('#tapasItems');
+      if (!el) return;
+      const st = S.getSettings();
+      const items = (Array.isArray(st.tapasItems) && st.tapasItems.length) ? st.tapasItems : S.DEFAULT_TAPAS_ITEMS;
+      el.innerHTML = items.map((t) => `<li${String(t).length > 28 ? ' class="tapas__item-wide"' : ''}>${esc(t)}</li>`).join('');
+    }
+    /* − / + på flasker */
+    $('#tapasCavaCard').addEventListener('click', (e) => {
+      const btn = e.target.closest('[data-cava]');
+      if (!btn) return;
+      const inp = $('#tapasCava');
+      inp.value = Math.max(0, Math.min(20, (Number(inp.value) || 0) + Number(btn.dataset.cava)));
+      inp.dispatchEvent(new Event('input', { bubbles: true }));
+    });
     dateSel.addEventListener('change', fillTimes);
     typeSel.addEventListener('change', fillTimes);
     form.addEventListener('input', updTotal);
     fillDates();
+    renderTapasItems();
     updTotal();
-    S.subscribe(() => { fillDates(); updTotal(); });
+    S.subscribe(() => { fillDates(); renderTapasItems(); updTotal(); });
 
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
@@ -919,6 +936,36 @@
       $('#tapasSuccessText').textContent = `Jeres tapas til ${n} ${n === 1 ? 'person' : 'personer'} er bestilt til ${S.formatDate(iso).toLowerCase()} kl. ${time}. Vi glæder os! 🧀`;
       suc.scrollIntoView({ behavior: 'smooth', block: 'center' });
     });
+  })();
+
+  /* ---------- selskabs-billeder: rolig karrusel ----------
+     Læg billederne i assets/ og skriv filnavnene her – felterne skifter
+     så billede med et blødt fade. Tom liste = de pæne emoji-felter. */
+  const SELSKAB_FOTOS = []; /* fx 'assets/selskab-1.jpg', 'assets/selskab-2.jpg', ... */
+  (function initSelskFotos() {
+    if (!SELSKAB_FOTOS.length) return;
+    const tiles = $$('.selsk__foto');
+    if (!tiles.length) return;
+    tiles.forEach((tile, ti) => {
+      tile.textContent = '';
+      SELSKAB_FOTOS.forEach((src, i) => {
+        const img = document.createElement('img');
+        img.src = src;
+        img.alt = '';
+        img.loading = 'lazy';
+        if (i === ti % SELSKAB_FOTOS.length) img.classList.add('is-show');
+        tile.appendChild(img);
+      });
+    });
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    let step = 0;
+    setInterval(() => {
+      step++;
+      tiles.forEach((tile, ti) => {
+        const imgs = tile.querySelectorAll('img');
+        imgs.forEach((img, i) => img.classList.toggle('is-show', i === (ti + step) % imgs.length));
+      });
+    }, 4200);
   })();
 
   /* ---------- personer vs. retter: luk hullet venligt ----------
