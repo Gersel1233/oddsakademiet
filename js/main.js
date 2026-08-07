@@ -939,33 +939,54 @@
   })();
 
   /* ---------- selskabs-billeder: rolig karrusel ----------
-     Læg billederne i assets/ og skriv filnavnene her – felterne skifter
-     så billede med et blødt fade. Tom liste = de pæne emoji-felter. */
-  const SELSKAB_FOTOS = []; /* fx 'assets/selskab-1.jpg', 'assets/selskab-2.jpg', ... */
+     Billederne findes SELV: læg dem i assets/ som selskab-1.jpg,
+     selskab-2.jpg … (jpg, jpeg, png eller webp). De billeder der
+     findes, kommer med – resten af felterne beholder deres emoji. */
   (function initSelskFotos() {
-    if (!SELSKAB_FOTOS.length) return;
     const tiles = $$('.selsk__foto');
     if (!tiles.length) return;
-    tiles.forEach((tile, ti) => {
-      tile.textContent = '';
-      SELSKAB_FOTOS.forEach((src, i) => {
-        const img = document.createElement('img');
-        img.src = src;
-        img.alt = '';
-        img.loading = 'lazy';
-        if (i === ti % SELSKAB_FOTOS.length) img.classList.add('is-show');
-        tile.appendChild(img);
-      });
+
+    const load = (src) => new Promise((res) => {
+      const img = new Image();
+      img.onload = () => res(src);
+      img.onerror = () => res(null);
+      img.src = src;
     });
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-    let step = 0;
-    setInterval(() => {
-      step++;
+
+    (async () => {
+      const found = [];
+      for (let n = 1; n <= 8; n++) {
+        const hit = (await Promise.all(
+          ['jpg', 'jpeg', 'png', 'webp'].map((ext) => load(`assets/selskab-${n}.${ext}`))
+        )).find(Boolean);
+        if (hit) found.push(hit);
+      }
+      if (!found.length) return; /* ingen billeder endnu – de pæne emoji-felter bliver stående */
+
       tiles.forEach((tile, ti) => {
-        const imgs = tile.querySelectorAll('img');
-        imgs.forEach((img, i) => img.classList.toggle('is-show', i === (ti + step) % imgs.length));
+        tile.textContent = '';
+        tile.classList.add('selsk__foto--has');
+        found.forEach((src, i) => {
+          const img = document.createElement('img');
+          img.src = src;
+          img.alt = 'Mad fra et af vores arrangementer';
+          img.loading = 'lazy';
+          if (i === ti % found.length) img.classList.add('is-show');
+          tile.appendChild(img);
+        });
       });
-    }, 4200);
+
+      if (found.length < 2) return;
+      if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+      let step = 0;
+      setInterval(() => {
+        step++;
+        tiles.forEach((tile, ti) => {
+          const imgs = tile.querySelectorAll('img');
+          imgs.forEach((img, i) => img.classList.toggle('is-show', i === (ti + step) % imgs.length));
+        });
+      }, 4200);
+    })();
   })();
 
   /* ---------- personer vs. retter: luk hullet venligt ----------
