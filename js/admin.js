@@ -255,6 +255,7 @@
         const summary = lines.slice(0, 3).map((l) => `${l.qty} × ${l.name}`).join(' · ') + (lines.length > 3 ? ' · …' : '');
         return {
           icon: '🥡',
+          kind: 'order', id: o.id, date: o.date,
           go: { view: 'bestillinger', date: o.date },
           title: `Ny bestilling: ${summary}`,
           sub: `${o.name} · ${S.formatDate(o.date)} kl. ${o.time} · ${o.type === 'togo' ? 'To-go' : 'Spiser her'}${o.persons ? ` · ${o.persons} pers.` : ''}`,
@@ -263,22 +264,79 @@
       }),
       ...unread.bookings.map((b) => ({
         icon: b.kind === 'moede' ? '📅' : '🎉',
+        kind: 'booking', id: b.id, date: b.date,
         go: { view: 'bookinger' },
         title: `${b.kind === 'moede' ? 'Ny mødebooking' : 'Ny arrangement-forespørgsel'}: ${b.subject}`,
         sub: `${b.name} · ${b.date ? `${S.formatDate(b.date)}${b.time ? ` kl. ${b.time}` : ''}` : 'dato ikke fastlagt'}`,
         at: b.createdAt,
       })),
-    ].sort((a, b) => (b.at || '').localeCompare(a.at || ''));
+    ].sort((a, b) => (a.date || '9999').localeCompare(b.date || '9999')
+      || (b.at || '').localeCompare(a.at || ''));
+
+    /* samlet ét sted og grupperet pr. dag – nærmeste dag øverst */
+    const today = S.todayISO();
+    const groups = new Map();
+    items.forEach((n) => {
+      const key = n.date || '';
+      if (!groups.has(key)) groups.set(key, []);
+      groups.get(key).push(n);
+    });
+    const dayLabel = (d) => (!d ? '📆 Dato ikke fastlagt'
+      : d === today ? '🔴 I dag'
+      : d === S.addDays(today, 1) ? 'I morgen'
+      : S.formatDate(d, false));
 
     $('#bellList').innerHTML = items.length
-      ? items.map((n) => `
-          <button type="button" class="notif notif--unread" data-go-view="${n.go.view}" ${n.go.date ? `data-go-date="${n.go.date}"` : ''}>
-            <span class="notif__icon">${n.icon}</span>
-            <div class="notif__text"><strong>${esc(n.title)}</strong><small>${esc(n.sub)}</small></div>
-            <span class="notif__arrow" aria-hidden="true">→</span>
-          </button>`).join('')
+      ? [...groups.entries()].map(([d, list]) => `
+          <div class="notifday">${dayLabel(d)} <em>${list.length}</em></div>
+          ${list.map((n) => `
+          <div class="notifrow" data-kind="${n.kind}" data-id="${esc(n.id)}">
+            <button type="button" class="notif notif--unread" data-go-view="${n.go.view}" ${n.go.date ? `data-go-date="${n.go.date}"` : ''}>
+              <span class="notif__icon">${n.icon}</span>
+              <div class="notif__text"><strong>${esc(n.title)}</strong><small>${esc(n.sub)}</small></div>
+              <span class="notif__arrow" aria-hidden="true">→</span>
+            </button>
+            <button type="button" class="notif__x" data-dismiss aria-label="Fjern notifikationen">✕</button>
+          </div>`).join('')}`).join('')
       : '<div class="belldrop__empty">Ingen nye notifikationer 🎉</div>';
   }
+
+  /* swipe en notifikation væk (telefon) – eller tryk ✕ (alle enheder).
+     Notifikationerne bliver ellers HÆNGENDE, til de bevidst fjernes. */
+  function dismissNotif(row) {
+    if (!row) return;
+    row.classList.add('is-gone');
+    setTimeout(() => {
+      S.markRead(row.dataset.kind, row.dataset.id);
+      renderBell();
+    }, 180);
+  }
+  (function initNotifSwipe() {
+    const list = $('#bellList');
+    let startX = 0, row = null;
+    list.addEventListener('touchstart', (e) => {
+      row = e.target.closest('.notifrow');
+      startX = e.touches[0].clientX;
+    }, { passive: true });
+    list.addEventListener('touchmove', (e) => {
+      if (!row) return;
+      const dx = e.touches[0].clientX - startX;
+      if (dx < 0) row.style.transform = `translateX(${Math.max(dx, -140)}px)`;
+    }, { passive: true });
+    list.addEventListener('touchend', (e) => {
+      if (!row) return;
+      const dx = e.changedTouches[0].clientX - startX;
+      row.style.transform = '';
+      if (dx < -70) dismissNotif(row);
+      row = null;
+    });
+    list.addEventListener('click', (e) => {
+      if (e.target.closest('[data-dismiss]')) {
+        e.stopPropagation();
+        dismissNotif(e.target.closest('.notifrow'));
+      }
+    });
+  })();
 
   /* tryk på en notifikation → hop direkte til bestillingen/bookingen,
      også når den ligger på en anden dag end i dag */
@@ -286,7 +344,7 @@
     const btn = e.target.closest('[data-go-view]');
     if (!btn) return;
     bellDrop.hidden = true;
-    if (btn.dataset.goDate) ordersDate = btn.dataset.goDate;
+    if (btn.dataset.goDate) { ordersAllDays = false; ordersDate = btn.dataset.goDate; }
     switchView(btn.dataset.goView);
   });
 
@@ -1322,8 +1380,10 @@
      BESTILLINGER
      ============================================================ */
   let ordersDate = S.todayISO();
+  let ordersAllDays = false; /* "Alle dage"-visning: alt samlet ét sted */
 
   function renderBestillinger() {
+    if (ordersAllDays) { renderAlleDage(); return; }
     const orders = S.getOrders(ordersDate);
     /* nye bestillinger til andre dage må ALDRIG blive væk, bare fordi
        man står på i dag – de får deres egen linje med genveje */
@@ -1345,10 +1405,11 @@
         <div class="acard__head">
           <h2>Bestillinger</h2>
           <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
-            <button class="abtn abtn--ghost" id="ordersPrev">←</button>
-            <input type="date" class="inline-input" id="ordersDate" value="${ordersDate}" style="width:170px;" />
-            <button class="abtn abtn--ghost" id="ordersNext">→</button>
-            <button class="abtn" id="ordersToday">I dag</button>
+            <button class="abtn abtn--ghost" id="ordersPrev" ${ordersAllDays ? 'disabled' : ''}>←</button>
+            <input type="date" class="inline-input" id="ordersDate" value="${ordersDate}" style="width:170px;" ${ordersAllDays ? 'disabled' : ''} />
+            <button class="abtn abtn--ghost" id="ordersNext" ${ordersAllDays ? 'disabled' : ''}>→</button>
+            <button class="abtn" id="ordersToday" ${ordersAllDays ? 'disabled' : ''}>I dag</button>
+            <button class="abtn ${ordersAllDays ? 'abtn--accent' : 'abtn--ghost'}" id="ordersAll">${ordersAllDays ? '📅 Vis én dag' : '📚 Alle dage'}</button>
           </div>
         </div>
         <p class="sub" style="color:var(--ink-soft);margin-bottom:14px;">
@@ -1385,6 +1446,61 @@
     $('#ordersPrev').addEventListener('click', () => { ordersDate = S.addDays(ordersDate, -1); renderBestillinger(); });
     $('#ordersNext').addEventListener('click', () => { ordersDate = S.addDays(ordersDate, 1); renderBestillinger(); });
     $('#ordersToday').addEventListener('click', () => { ordersDate = S.todayISO(); renderBestillinger(); });
+    $('#ordersAll').addEventListener('click', () => { ordersAllDays = true; renderBestillinger(); });
+  }
+
+  /* ALLE bestillinger samlet ét sted – grupperet og sorteret på dato,
+     så intet nogensinde gemmer sig på en dag, man ikke står på. */
+  function renderAlleDage() {
+    const today = S.todayISO();
+    const all = S.getOrders()
+      .slice()
+      .sort((a, b) => (a.date || '').localeCompare(b.date || '') || (a.time || '').localeCompare(b.time || ''));
+    const kommende = all.filter((o) => o.date >= today);
+    const tidligere = all.filter((o) => o.date < today).reverse();
+    const nyIalt = all.filter((o) => o.status === 'ny').length;
+
+    const groupHtml = (list) => {
+      const days = new Map();
+      list.forEach((o) => { if (!days.has(o.date)) days.set(o.date, []); days.get(o.date).push(o); });
+      return [...days.entries()].map(([d, os]) => {
+        const nye = os.filter((o) => o.status === 'ny').length;
+        return `
+        <div class="alldag">
+          <div class="alldag__head">
+            <strong>${d === today ? '🔴 I dag' : esc(S.formatDate(d))}</strong>
+            <span>${os.length} bestilling${os.length === 1 ? '' : 'er'} · ${os.reduce((s2, o) => s2 + itemsOf(o), 0)} retter${nye ? ` · <b class="alldag__new">🔥 ${nye} mangler</b>` : ' · ✅ alle kørt'}</span>
+            <button class="abtn abtn--ghost" data-act="goto-orders" data-iso="${d}">Åbn dagen →</button>
+          </div>
+          <div class="rowlist">${os.map((o) => orderRow(o, false)).join('')}</div>
+        </div>`;
+      }).join('');
+    };
+
+    $('#view-bestillinger').innerHTML = `
+      <div class="acard">
+        <div class="acard__head">
+          <h2>Bestillinger</h2>
+          <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+            <button class="abtn abtn--ghost" id="ordersPrev" disabled>←</button>
+            <input type="date" class="inline-input" id="ordersDate" value="${ordersDate}" style="width:170px;" disabled />
+            <button class="abtn abtn--ghost" id="ordersNext" disabled>→</button>
+            <button class="abtn" id="ordersToday" disabled>I dag</button>
+            <button class="abtn abtn--accent" id="ordersAll">📅 Vis én dag</button>
+          </div>
+        </div>
+        <p class="sub" style="color:var(--ink-soft);margin-bottom:12px;">
+          Alle bestillinger samlet – sorteret efter dato. ${all.length} i alt${nyIalt ? ` · <strong>${nyIalt}</strong> mangler at blive kørt` : ' · alle er kørt ✅'}
+        </p>
+        ${kommende.length ? `<h3 class="kp__sub">📅 I dag og fremad</h3>${groupHtml(kommende)}` : '<p class="sub" style="color:var(--ink-soft);">Ingen kommende bestillinger.</p>'}
+        ${tidligere.length ? `
+        <details class="donefold" style="margin-top:18px;">
+          <summary>🕓 Tidligere dage (${tidligere.length}) <em>· tryk for at se</em></summary>
+          <div style="margin-top:10px;">${groupHtml(tidligere)}</div>
+        </details>` : ''}
+      </div>`;
+
+    $('#ordersAll').addEventListener('click', () => { ordersAllDays = false; renderBestillinger(); });
   }
 
   /* ============================================================
@@ -2370,6 +2486,7 @@
 
     if (act === 'goto-orders') {
       closeDayModal();
+      ordersAllDays = false;
       ordersDate = btn.dataset.iso;
       $('.navitem[data-view="bestillinger"]')?.click();
       return;

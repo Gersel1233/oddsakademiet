@@ -1121,6 +1121,22 @@ const SpiisStore = (() => {
     const bookings = data.bookings.filter((b) => !b.read);
     return { orders, bookings, count: orders.length + bookings.length };
   }
+  /* markér ÉN som læst – bruges når man swiper en notifikation væk */
+  function markRead(kind, id) {
+    const list = kind === 'booking' ? data.bookings : data.orders;
+    const row = list.find((x) => x.id === id);
+    if (!row || row.read) return;
+    row.read = true;
+    save();
+    if (cloud) {
+      const table = kind === 'booking' ? 'bookings' : 'orders';
+      const op = notePending(table, id, { read: true });
+      sbFetch(`/rest/v1/${table}?id=eq.${encodeURIComponent(id)}`, {
+        method: 'PATCH', auth: true, headers: { Prefer: 'return=minimal' },
+        body: JSON.stringify({ read: true }),
+      }).then((res) => { if (res.ok) donePending(op); }).catch(() => {});
+    }
+  }
   function markAllRead() {
     data.orders.forEach((o) => { o.read = true; });
     data.bookings.forEach((b) => { b.read = true; });
@@ -1261,7 +1277,7 @@ const SpiisStore = (() => {
     getClosure, setClosure, isClosureNow, isInClosure,
     timeslotsFor, orderSlots, orderToFor,
     getNews, addNews, updateNews, deleteNews, uploadNewsImage, placeNewsOrder,
-    getUnread, markAllRead,
+    getUnread, markRead, markAllRead,
     exportData, resetData,
     subscribe,
     /* sky */
