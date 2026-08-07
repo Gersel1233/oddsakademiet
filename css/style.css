@@ -707,6 +707,8 @@ body.menupage { padding-bottom: 0 !important; }
 .selsk__foto { position: relative; }
 .selsk__foto img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0; transition: opacity 0.9s ease; }
 .selsk__foto img.is-show { opacity: 1; }
+/* med rigtige billeder skal feltet ikke have den lyse "emoji"-baggrund */
+.selsk__foto--has { background: var(--cream-2); }
 .selsk__foto img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .selsk__cta {
   max-width: 640px;
