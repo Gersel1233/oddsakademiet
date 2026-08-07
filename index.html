@@ -215,7 +215,7 @@
             </label>
             <label class="field">
               <span>Antal personer</span>
-              <input type="number" id="orderPersons" min="1" max="100" value="2" required />
+              <input type="number" id="orderPersons" min="0" max="100" value="0" required />
               <small class="field__hint" id="personsHint"></small>
             </label>
             <div class="field field--full">
@@ -324,13 +324,12 @@
               <label class="field"><span>Tidspunkt</span>
                 <select id="tapasTime"></select></label>
               <label class="field"><span>Antal personer</span>
-                <input type="number" id="tapasPersons" min="1" max="60" value="2" /></label>
+                <input type="number" id="tapasPersons" min="0" max="60" value="0" /></label>
               <label class="field"><span>Hvordan?</span>
                 <select id="tapasType"><option value="togo">🥡 To-go</option><option value="spise">🍽️ Spis her</option></select></label>
-              <label class="tapas__cavacard field--full">
-                <input type="checkbox" id="tapasCava" />
-                <span class="tapas__cavatxt"><strong>🥂 Tilføj Cava Brut Nature</strong><em>Anbefalet af vores vinmand</em></span>
-                <span class="tapas__cavapris" id="tapasCavaPrice">150 kr.</span>
+              <label class="tapas__cavacard field--full" id="tapasCavaCard">
+                <span class="tapas__cavatxt"><strong>🥂 Cava Brut Nature</strong><em>Anbefalet af vores vinmand · <b id="tapasCavaPrice">150 kr.</b> pr. flaske</em></span>
+                <span class="tapas__cavaqty"><input type="number" id="tapasCava" min="0" max="20" value="0" /> flasker</span>
               </label>
               <label class="field"><span>Navn</span>
                 <input type="text" id="tapasName" placeholder="Dit fulde navn" autocomplete="name" /></label>
