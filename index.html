@@ -3,12 +3,23 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Spiis – Hjemmelavet mad, når hverdagen er travl</title>
-  <meta name="description" content="Spiis laver smagfulde, hjemmelavede måltider til dig, der ikke altid har tid til at lave mad fra bunden. Se dagens ret, bestil nemt og book arrangementer." />
+  <title>Spiis – Hjemmelavet mad i Karlslunde | Dagens ret &amp; catering</title>
+  <meta name="description" content="Spiis i Karlslunde laver hjemmelavet mad fra bunden. Se dagens ret, bestil takeaway eller spis her, prøv vores tapas – og lad os holde jeres næste selskab. Kongens Enge 42, 2690 Karlslunde." />
   <meta name="theme-color" content="#FAF6F0" />
-  <meta property="og:title" content="Spiis – Hjemmelavet mad, når hverdagen er travl" />
-  <meta property="og:description" content="Velsmag og kvalitet i hver en bid – nemt, hurtigt og altid en fornøjelse!" />
-  <meta property="og:type" content="website" />
+  <meta property="og:title" content="Spiis – Hjemmelavet mad i Karlslunde" />
+  <meta property="og:description" content="Dagens ret, tapas og catering fra Spiis i Karlslunde Idrætsforening. Hjemmelavet fra bunden, hver eneste dag." />
+  <meta property="og:type" content="restaurant.restaurant" />
+  <meta property="og:url" content="https://spiis.dk/" />
+  <meta property="og:site_name" content="Spiis" />
+  <meta property="og:locale" content="da_DK" />
+  <meta property="og:image" content="https://spiis.dk/assets/selskab-3.jpg" />
+  <meta property="og:image:width" content="1440" />
+  <meta property="og:image:height" content="1080" />
+  <meta property="og:image:alt" content="Hjemmelavet mad fra Spiis i Karlslunde" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Spiis – Hjemmelavet mad i Karlslunde" />
+  <meta name="twitter:description" content="Dagens ret, tapas og catering fra Spiis i Karlslunde Idrætsforening." />
+  <meta name="twitter:image" content="https://spiis.dk/assets/selskab-3.jpg" />
   <link rel="icon" href="assets/favicon.svg" type="image/svg+xml" />
   <link rel="icon" href="assets/favicon-96.png" type="image/png" sizes="96x96" />
   <link rel="icon" href="assets/favicon-48.png" type="image/png" sizes="48x48" />
@@ -27,11 +38,21 @@
       },
       {
         "@type": "Restaurant",
+        "@id": "https://spiis.dk/#restaurant",
         "name": "Spiis",
+        "legalName": "Spiis ApS",
+        "description": "Spiis laver hjemmelavet mad fra bunden i Karlslunde – dagens ret, takeaway, tapas og catering til selskaber.",
         "url": "https://spiis.dk/",
-        "image": "https://spiis.dk/assets/favicon-96.png",
+        "image": [
+          "https://spiis.dk/assets/selskab-3.jpg",
+          "https://spiis.dk/assets/selskab-2.jpg"
+        ],
         "logo": "https://spiis.dk/assets/favicon-96.png",
         "servesCuisine": "Dansk",
+        "priceRange": "$$",
+        "currenciesAccepted": "DKK",
+        "hasMenu": "https://spiis.dk/menu.html",
+        "vatID": "DK46303717",
         "telephone": "+45 93 99 58 58",
         "email": "spiis.bestilling@gmail.com",
         "address": {
@@ -39,7 +60,22 @@
           "streetAddress": "Kongens Enge 42",
           "postalCode": "2690",
           "addressLocality": "Karlslunde",
+          "addressRegion": "Region Sjælland",
           "addressCountry": "DK"
+        },
+        "containedInPlace": {
+          "@type": "Place",
+          "name": "Karlslunde Idrætsforening"
+        },
+        "areaServed": [
+          { "@type": "City", "name": "Karlslunde" },
+          { "@type": "City", "name": "Greve" },
+          { "@type": "City", "name": "Solrød" }
+        ],
+        "potentialAction": {
+          "@type": "OrderAction",
+          "target": "https://spiis.dk/#bestil",
+          "deliveryMethod": "http://purl.org/goodrelations/v1#PickUp"
         }
       }
     ]
@@ -88,7 +124,7 @@
       <div class="hero__overlay"></div>
     </div>
     <div class="hero__content">
-      <p class="hero__kicker" data-hero="1">Hjemmelavet · Friskt · Med kærlighed</p>
+      <p class="hero__kicker" data-hero="1">Hjemmelavet · Friskt · Karlslunde</p>
       <h1 class="hero__title">
         <span class="hero__line" data-hero="2"><span>Hjemmelavet mad,</span></span>
         <span class="hero__line" data-hero="3"><span>når hverdagen er <em>travl</em></span></span>
@@ -271,7 +307,7 @@
           <p class="eyebrow">Altid noget godt</p>
           <h2>Menukort</h2>
           <span class="dotline" aria-hidden="true"></span>
-          <p class="section__lead">Dagens retter for hele ugen og vores faste sortiment – samlet ét sted, nemt at bladre i.</p>
+          <p class="section__lead">Dagens retter for hele ugen og vores faste sortiment – burgere, salater, panini og sandwich, nachos og friturens klassikere. Samlet ét sted, nemt at bladre i.</p>
         </div>
         <div class="menuteaser card" data-reveal>
           <div class="menuteaser__icons" aria-hidden="true"><span>🍲</span><span>🍔</span><span>🥗</span><span>🥤</span></div>
@@ -357,7 +393,8 @@
             <p class="eyebrow eyebrow--light">Hvem er vi?</p>
             <h2>Mad med nærvær,<br/>lavet fra bunden</h2>
             <span class="dotline dotline--light" aria-hidden="true"></span>
-            <p>Hos Spiis laver vi smagfulde, hjemmelavede måltider til dig, der ikke altid har tid til at lave mad fra bunden. Vi tror på kvalitet, nærvær og god smag – og vores menu skifter løbende, så du altid får varieret og frisk mad lavet med kærlighed.</p>
+            <p>Hos Spiis i Karlslunde laver vi smagfulde, hjemmelavede måltider til dig, der ikke altid har tid til at lave mad fra bunden. Vi tror på kvalitet, nærvær og god smag – og vores menu skifter løbende, så du altid får varieret og frisk mad lavet med kærlighed.</p>
+            <p>Du finder os i Karlslunde Idrætsforening på Kongens Enge 42, hvor vi hver dag serverer dagens ret, takeaway, tapas og mad til selskaber – for alle i og omkring Karlslunde, Greve og Solrød.</p>
             <p>Perfekt til børnefamilien, den travle hverdag – eller bare når du vil forkæles lidt ekstra.</p>
             <p class="about__sign">Velbekomme – fra hele holdet hos Spiis! 👋</p>
           </div>
@@ -446,6 +483,7 @@
             <p class="infocard__address" id="addressText">
               Karlslunde Idrætsforening<br/>Kongens Enge 42<br/>2690 Karlslunde
             </p>
+            <p class="infocard__where">Vi holder til i cafeteriet i Karlslunde Idrætsforening – der er gratis parkering lige uden for døren, og der er kun få minutters kørsel fra Greve, Solrød og Mosede.</p>
             <a class="btn btn--ghost-dark" href="https://maps.google.com/?q=Kongens+Enge+42,+2690+Karlslunde" target="_blank" rel="noopener">Åbn i Google Maps</a>
             <div class="infocard__contact">
               <a href="tel:+4593995858">📞 93 99 58 58</a>
@@ -535,6 +573,7 @@
           <span class="smileybadge__face" aria-hidden="true">😊</span>
           <span class="smileybadge__text">Kontrolleret af Fødevarestyrelsen<em>Se vores smiley-rapport</em></span>
         </a>
+        <p class="footer__nap">Spiis · Kongens Enge 42, 2690 Karlslunde · <a href="tel:+4593995858">93 99 58 58</a></p>
         <p>© <span id="year"></span> Spiis · Karlslunde</p>
         <p class="footer__lesreg">made by Lesreg</p>
         <a href="admin.html" class="footer__admin">Personale-login</a>

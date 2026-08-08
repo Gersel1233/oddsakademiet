@@ -1,0 +1,9 @@
+# Spiis – spiis.dk
+# Google og de andre søgemaskiner må gerne læse hele siden.
+User-agent: *
+Allow: /
+
+# Personale-login har intet at gøre i søgeresultaterne
+Disallow: /admin.html
+
+Sitemap: https://spiis.dk/sitemap.xml
