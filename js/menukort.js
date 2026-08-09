@@ -100,8 +100,53 @@
   /* på menu-siden vises alt med det samme – ingen fade-ind at vente på */
   document.querySelectorAll('[data-reveal]').forEach((el) => el.classList.add('is-visible'));
 
+  /* Hvad står der på en lukket dag – køkkenets egen forklaring vinder */
+  function lukketTekst(iso) {
+    const mark = S.getDayMark && S.getDayMark(iso);
+    if (mark && mark.e) return `${mark.e} ${mark.t || 'Lukket'}`;
+    if (S.isInClosure && S.isInClosure(iso)) return '🌴 Ferielukket';
+    if ((S.getArrangementDates() || []).includes(iso)) return '🎉 Privat arrangement';
+    return '🚫 Lukket';
+  }
+
+  /* Ugens dagens ret – samme oversigt som den seddel der hænger i caféen */
+  function renderUge() {
+    const el = $('#ugeMenu');
+    const titel = $('#ugeTitle');
+    if (!el) return;
+    const plan = S.getPlan(7);
+    const iDag = S.todayISO();
+    const noget = plan.some((d) => (d.dishes || []).length);
+    el.hidden = !noget;
+    if (titel) titel.hidden = !noget;
+    if (!noget) { el.innerHTML = ''; return; }
+
+    el.innerHTML = plan.map((day) => {
+      const lukket = !day.open || S.isOrderingClosed(day.iso);
+      const dishes = day.dishes || [];
+      let højre;
+      if (lukket) højre = `<span class="ugerow__lukket">${esc(lukketTekst(day.iso))}</span>`;
+      else if (!dishes.length) højre = '<span class="ugerow__tom">Følger snart…</span>';
+      else højre = dishes.map((d, i) => `
+        ${i ? '<span class="ugerow__eller">eller</span>' : ''}
+        <div class="ugerow__ret">
+          <span class="ugerow__navn">${esc(d.title)}</span>
+          ${d.desc ? `<span class="ugerow__desc">${descHtml(d.desc)}</span>` : ''}
+          ${d.price ? `<span class="ugerow__pris">${kr(d.price)}</span>` : ''}
+        </div>`).join('');
+      return `<div class="ugerow ${lukket ? 'ugerow--lukket' : ''} ${day.iso === iDag ? 'ugerow--idag' : ''}">
+        <div class="ugerow__dag">
+          <strong>${esc(day.weekday)}${day.iso === iDag ? ' · i dag' : ''}</strong>
+          <small>${esc(S.formatDate(day.iso, false))}</small>
+        </div>
+        <div class="ugerow__body">${højre}</div>
+      </div>`;
+    }).join('');
+  }
+
   function renderAll() {
     renderToday();
+    renderUge();
     renderCategories();
   }
   renderAll();

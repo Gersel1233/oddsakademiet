@@ -244,6 +244,26 @@ input:focus-visible, select:focus-visible, textarea:focus-visible {
   width: 100%; height: 100%;
   object-fit: cover; display: block;
 }
+/* højformat (fx en plakat): vis den hel, med sløret bagtæppe bag */
+.news__media--plakat { aspect-ratio: 4 / 5; overflow: hidden; }
+.news__media--plakat::before {
+  content: '';
+  position: absolute; inset: -12%;
+  background: var(--plakat) center / cover no-repeat;
+  filter: blur(26px) saturate(1.15) brightness(0.92);
+  transform: scale(1.08);
+}
+.news__media--plakat img {
+  object-fit: contain;
+  padding: 14px;
+  filter: drop-shadow(0 10px 24px rgba(28, 24, 20, 0.28));
+}
+/* en plakat skal kunne LÆSES – den får lov at fylde i det store kort */
+.news--big .news__media--plakat {
+  aspect-ratio: auto;
+  align-self: stretch;
+  min-height: clamp(380px, 40vw, 560px);
+}
 .news__body {
   flex: 1 1 45%;
   padding: 26px 28px;
@@ -1458,6 +1478,42 @@ body.menupage { padding-bottom: 0 !important; }
   background: var(--ink);
   border-color: var(--ink);
   color: var(--cream);
+}
+
+/* ugens dagens ret på menusiden – samme oversigt som sedlen i caféen */
+.ugemenu { max-width: 760px; margin: 0 auto 34px; padding: 6px 24px; }
+.ugerow {
+  display: grid;
+  grid-template-columns: 148px 1fr;
+  gap: 16px;
+  align-items: baseline;
+  padding: 15px 0;
+}
+.ugerow + .ugerow { border-top: 1px solid rgba(28, 24, 20, 0.07); }
+.ugerow__dag { display: grid; gap: 2px; }
+.ugerow__dag strong { font-weight: 700; letter-spacing: 0.01em; }
+.ugerow__dag small { color: var(--ink-soft); font-size: 0.84rem; }
+.ugerow__ret { display: grid; gap: 2px; }
+.ugerow__navn { font-weight: 600; }
+.ugerow__desc { color: var(--ink-soft); font-size: 0.92rem; }
+.ugerow__pris { color: var(--accent-deep); font-weight: 700; font-size: 0.92rem; }
+.ugerow__eller {
+  display: block;
+  margin: 8px 0 6px;
+  font-size: 0.8rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+.ugerow__lukket { font-weight: 600; color: var(--ink-soft); }
+.ugerow__tom { color: var(--ink-soft); font-size: 0.94rem; }
+.ugerow--lukket .ugerow__dag strong { color: var(--ink-soft); }
+.ugerow--idag { background: #FFF7EF; margin-inline: -24px; padding-inline: 24px; border-radius: 12px; }
+@media (max-width: 620px) {
+  .ugemenu { padding: 6px 18px; }
+  .ugerow { grid-template-columns: 1fr; gap: 4px; }
+  .ugerow__dag { display: flex; gap: 8px; align-items: baseline; }
+  .ugerow--idag { margin-inline: -18px; padding-inline: 18px; }
 }
 
 .daymenu { max-width: 760px; margin-inline: auto; }

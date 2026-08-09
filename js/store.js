@@ -669,6 +669,12 @@ const SpiisStore = (() => {
     if (!String(order.name || '').trim() || !String(order.phone || '').trim()) return { ok: false, reason: 'mangler' };
     /* chefen kan slukke HELT for online bestillinger med én kontakt */
     if (data.settings.ordersPaused) return { ok: false, reason: 'pauset' };
+    /* Spiis Tapas skal bestilles senest dagen FØR – aldrig samme dag.
+       Tjekkes tidligt, så kunden får DEN forklaring og ikke bare
+       "tidspunktet er passeret", som ikke hjælper nogen. */
+    if ((order.items || []).some((l) => l && l.kind === 'tapas') && order.date <= todayISO()) {
+      return { ok: false, reason: 'tapas-dato' };
+    }
     /* dage med privat arrangement (eller lukkede dage) tager ikke imod bestillinger */
     if (isOrderingClosed(order.date)) return { ok: false, reason: 'lukket' };
     /* bestillingsvinduet er forskelligt pr. type: to-go til kl. 19,
@@ -686,10 +692,6 @@ const SpiisStore = (() => {
       if (oh * 60 + om < n.getHours() * 60 + n.getMinutes() + 20) {
         return { ok: false, reason: 'forbi' };
       }
-    }
-    /* Spiis Tapas skal bestilles senest dagen FØR – aldrig samme dag */
-    if ((order.items || []).some((l) => l && l.kind === 'tapas') && order.date <= tToday) {
-      return { ok: false, reason: 'tapas-dato' };
     }
     /* udsolgte varer og "få tilbage"-antal stoppes før afsendelse
        – databasen tjekker og tæller også selv (kapløbs-sikkert) */

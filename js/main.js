@@ -280,6 +280,17 @@
     return `<ul class="descpoints">${lines.map((l) => `<li>${esc(l)}</li>`).join('')}</ul>`;
   }
 
+  /* Hvad står der på en lukket dag? Har køkkenet sat sin egen forklaring
+     i kalenderen (fx 👥 Personaletur), er DEN sandheden – ellers gætter
+     vi så præcist som de offentlige data tillader. */
+  function lukketTekst(iso) {
+    const mark = S.getDayMark && S.getDayMark(iso);
+    if (mark && mark.e) return `${mark.e} ${mark.t || 'Lukket'}`;
+    if (S.isInClosure(iso)) return '🌴 Ferielukket';
+    if ((S.getArrangementDates() || []).includes(iso)) return '🎉 Privat arrangement';
+    return '🚫 Lukket';
+  }
+
   function renderWeekPlan() {
     const grid = $('#weekPlan');
     const plan = S.getPlan(7);
@@ -293,11 +304,10 @@
         </div>`;
       }
       if (S.isOrderingClosed(day.iso)) {
-        const ferie = S.isInClosure(day.iso);
         return `<div class="dayplan dayplan--closed">
           <div class="dayplan__day">${day.weekday}${isToday ? ' · i dag' : ''}</div>
           <div class="dayplan__date">${esc(S.formatDate(day.iso, false))}</div>
-          <div class="dayplan__dish">${ferie ? '🌴 Ferielukket' : '🎉 Privat arrangement'}</div>
+          <div class="dayplan__dish">${esc(lukketTekst(day.iso))}</div>
           <div class="dayplan__desc">Lukket for bestillinger denne dag.</div>
         </div>`;
       }
@@ -753,7 +763,7 @@
       if (result.error === 'net') {
         error.textContent = 'Bestillingen kunne ikke sendes lige nu – prøv igen, eller ring til os.';
       } else if (result.reason === 'lukket') {
-        error.textContent = 'Denne dag er netop blevet lukket for bestillinger (privat arrangement) – vælg venligst en anden dag.';
+        error.textContent = `Denne dag er netop blevet lukket for bestillinger (${lukketTekst(o.iso).replace(/^\S+\s/, '').toLowerCase()}) – vælg venligst en anden dag.`;
         if (S.isCloud()) S.refreshPublic();
       } else if (result.reason === 'tid') {
         error.textContent = `Bestillinger kan kun vælges mellem kl. ${orderFrom()} og ${orderTo()} – vælg et tidspunkt i det vindue.`;
@@ -924,11 +934,23 @@
       btn.disabled = false;
       btn.textContent = '🧀 Bestil tapas';
       if (!res.ok) {
-        err.textContent = res.reason === 'tapas-dato'
-          ? 'Tapas skal bestilles senest dagen før – vælg en dato fra i morgen.'
-          : res.reason === 'pauset'
-            ? 'Vi tager ikke imod online bestillinger lige nu – ring til os, så finder vi ud af det.'
-            : 'Bestillingen kunne ikke sendes lige nu – prøv igen eller ring til os.';
+        /* kunden skal ALTID have at vide hvorfor – aldrig bare
+           "noget gik galt", som man ikke kan gøre noget ved */
+        const grunde = {
+          'tapas-dato': 'Tapas skal bestilles senest dagen før – vælg en dato fra i morgen.',
+          pauset: 'Vi tager ikke imod online bestillinger lige nu – ring til os på 93 99 58 58, så finder vi ud af det.',
+          lukket: `Vi holder lukket den dag (${lukketTekst(iso).replace(/^\S+\s/, '').toLowerCase()}) – vælg en anden dag.`,
+          dag: 'Køkkenet holder lukket den ugedag – vælg en anden dag.',
+          tid: 'Vælg et afhentningstidspunkt inden for åbningstiden.',
+          forbi: 'Tidspunktet er passeret, mens siden stod åben – vælg en ny tid.',
+          dato: 'Vælg en dato fra i morgen og frem.',
+          tom: 'Udfyld antal personer, navn og telefon.',
+          mangler: 'Udfyld antal personer, navn og telefon.',
+          ugyldig: 'Tjek lige antal personer, navn og telefonnummer.',
+        };
+        err.textContent = (res.error === 'net')
+          ? 'Bestillingen kunne ikke sendes lige nu – tjek nettet, prøv igen, eller ring til os på 93 99 58 58.'
+          : (grunde[res.reason] || 'Bestillingen kunne ikke sendes lige nu – ring til os på 93 99 58 58, så hjælper vi.');
         err.hidden = false;
         return;
       }
@@ -957,11 +979,20 @@
 
     (async () => {
       const found = [];
-      for (let n = 1; n <= 8; n++) {
-        const hit = (await Promise.all(
-          ['jpg', 'jpeg', 'png', 'webp'].map((ext) => load(`assets/selskab-${n}.${ext}`))
-        )).find(Boolean);
-        if (hit) found.push(hit);
+      let stop = false;
+      for (let n = 1; n <= 8 && !stop; n++) {
+        /* jpg først – det er langt det almindeligste. Kun hvis den ikke
+           findes, prøver vi de andre. Ellers ville hver sideindlæsning
+           fyre 32 forespørgsler af, hvor de 28 er blindgyder. */
+        let hit = await load(`assets/selskab-${n}.jpg`);
+        if (!hit) {
+          hit = (await Promise.all(
+            ['jpeg', 'png', 'webp'].map((ext) => load(`assets/selskab-${n}.${ext}`))
+          )).find(Boolean);
+        }
+        /* første hul = der er ikke flere billeder. Så holder vi op med at
+           lede i stedet for at fyre forespørgsler af på alle 8 numre. */
+        if (hit) found.push(hit); else stop = true;
       }
       if (!found.length) return; /* ingen billeder endnu – de pæne emoji-felter bliver stående */
 
@@ -1172,6 +1203,20 @@
         </div>
       </article>`;
     }).join('');
+
+    /* En plakat i højformat må ALDRIG skæres midt over. Er billedet
+       højere end bredt, viser vi det helt – med et blødt, sløret
+       bagtæppe af samme billede, så kortet stadig ser færdigt ud. */
+    grid.querySelectorAll('.news__media > img').forEach((img) => {
+      const tilpas = () => {
+        if (!img.naturalWidth || img.naturalHeight <= img.naturalWidth * 1.15) return;
+        const boks = img.parentElement;
+        boks.classList.add('news__media--plakat');
+        boks.style.setProperty('--plakat', `url("${img.currentSrc || img.src}")`);
+      };
+      if (img.complete) tilpas();
+      else img.addEventListener('load', tilpas, { once: true });
+    });
   }
 
   /* "Læs mere" på lange nyheder – folder teksten ud og ind */
