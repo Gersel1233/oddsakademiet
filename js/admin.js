@@ -2717,6 +2717,65 @@
   /* databasen sagde nej – sig det højt, aldrig i stilhed */
   S.onWriteFail((hvad) => toast(`⚠️ ${hvad}. Tjek nettet og prøv igen.`, true));
 
+  /* ============================================================
+     ALDRIG EN GAMMEL APP I KØKKENET
+     En telefon kan have appen liggende i sin cache og blive ved
+     med at køre en gammel udgave – nye knapper og rettelser når
+     aldrig frem. Vi tjekker versionsnummeret mod serveren og
+     henter appen forfra, når den er blevet forældet.
+     ============================================================ */
+  (function versionsvagt() {
+    const meta = document.querySelector('meta[name="spiis-version"]');
+    const min = meta ? meta.content.trim() : '';
+    /* '__V__' betyder at filen ikke er kommet gennem udgivelsen (lokal test) */
+    if (!min || min.includes('__V__')) return;
+    let fundet = null;
+
+    /* vi henter kun forfra ÉN gang pr. version – ellers kunne appen
+       ende i en løkke, hvis serveren et øjeblik svarer usammenhængende */
+    const NØGLE = 'spiis_opdateret_til';
+    const alleredePrøvet = (v) => sessionStorage.getItem(NØGLE) === v;
+    const hent = (v) => {
+      try { sessionStorage.setItem(NØGLE, v); } catch { /* privat browsing */ }
+      location.replace(`${location.pathname}?v=${encodeURIComponent(v)}${location.hash}`);
+    };
+    /* er nogen midt i at skrive eller rette? så venter vi med at hoppe */
+    const optaget = () => {
+      const el = document.activeElement;
+      if (el && el.closest && el.closest('input, textarea, select')) return true;
+      if (document.querySelector('.dp-pop:not([hidden])')) return true;
+      if (document.querySelector('.bkedit:not([hidden])')) return true;
+      const dv = document.getElementById('dayModal');
+      return !!(dv && !dv.hidden);
+    };
+
+    async function tjek() {
+      if (fundet || document.visibilityState !== 'visible') return;
+      try {
+        const res = await fetch(`version.txt?t=${Date.now()}`, { cache: 'no-store' });
+        if (!res.ok) return;
+        const ny = (await res.text()).trim();
+        if (!ny || ny === min) return;
+        fundet = ny;
+        $('#updateBar').hidden = false;
+        if (alleredePrøvet(ny)) {
+          $('#updateSub').textContent = 'Tryk for at hente den – luk evt. appen helt og åbn igen';
+          return;
+        }
+        const prøv = () => {
+          if (optaget()) { $('#updateSub').textContent = 'Tryk her, når du er færdig'; return; }
+          hent(ny);
+        };
+        setTimeout(prøv, 3000);
+        setInterval(prøv, 15000);
+      } catch { /* offline – vi prøver igen senere */ }
+    }
+    $('#updateNow').addEventListener('click', () => hent(fundet || Date.now()));
+    document.addEventListener('visibilitychange', tjek);
+    tjek();
+    setInterval(tjek, 5 * 60 * 1000);
+  })();
+
   S.subscribe(() => {
     syncLoginMode();
     if (app.hidden) {

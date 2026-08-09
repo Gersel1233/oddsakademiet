@@ -5,6 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title>Spiis Admin – Dashboard</title>
   <meta name="robots" content="noindex" />
+  <!-- hvilken udgave af appen kører vi? Bruges til at fange en telefon,
+       der stadig sidder med en gammel version i cachen -->
+  <meta name="spiis-version" content="__V__" />
   <meta name="theme-color" content="#D96C2C" />
   <link rel="manifest" href="manifest.webmanifest" />
   <link rel="icon" href="assets/favicon.svg" type="image/svg+xml" />
@@ -127,6 +130,12 @@
   </div>
 
   <div class="toast" id="toast" hidden></div>
+
+  <!-- telefonen sidder med en gammel udgave af appen -->
+  <div class="updatebar" id="updateBar" hidden>
+    <span class="updatebar__txt">🔄 <strong>Der er en nyere udgave af appen</strong><em id="updateSub">Opdaterer om et øjeblik…</em></span>
+    <button type="button" id="updateNow">Opdatér nu</button>
+  </div>
 
   <!-- realtime: nye bestillinger lander i appen med det samme -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>

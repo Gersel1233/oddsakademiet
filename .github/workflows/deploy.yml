@@ -33,6 +33,10 @@ jobs:
         run: |
           V="${GITHUB_SHA::8}"
           sed -i "s/__V__/${V}/g" index.html admin.html menu.html
+          # samme nummer i en lillebitte fil, som appen kan tjekke imod.
+          # Så opdager en telefon med en gammel udgave sig selv og henter
+          # den nye – køkkenet må aldrig sidde med forældet kode.
+          printf '%s' "$V" > version.txt
 
       - name: Setup Pages
         uses: actions/configure-pages@v5

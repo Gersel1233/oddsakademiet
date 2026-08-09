@@ -1466,6 +1466,41 @@ body.dv-open { overflow: hidden; }
   from { opacity: 0; transform: translate(-50%, 16px); }
   to { opacity: 1; transform: translate(-50%, 0); }
 }
+/* appen er forældet – vises indtil den er hentet forfra */
+.updatebar {
+  position: fixed;
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: 26px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  max-width: min(560px, 94vw);
+  background: var(--ink);
+  color: var(--cream);
+  border-radius: 16px;
+  padding: 12px 14px 12px 18px;
+  box-shadow: 0 20px 40px -14px rgba(28, 24, 20, 0.55);
+  z-index: 220;
+  animation: toastIn 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.updatebar__txt { display: grid; gap: 2px; font-size: 0.94rem; line-height: 1.35; }
+.updatebar__txt em { font-style: normal; font-size: 0.82rem; color: rgba(250, 246, 240, 0.7); }
+.updatebar button {
+  flex: none;
+  background: var(--accent);
+  color: #fff;
+  border: 0;
+  border-radius: 999px;
+  padding: 10px 18px;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+@media (max-width: 900px) {
+  .updatebar { bottom: calc(92px + env(safe-area-inset-bottom)); left: 12px; right: 12px; transform: none; max-width: none; }
+}
+
 /* noget blev IKKE gemt – det skal man ikke kunne overse */
 .toast--fejl {
   background: #B3372B;
