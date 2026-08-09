@@ -14,12 +14,13 @@
 
   /* ---------- toast ---------- */
   let toastTimer;
-  function toast(msg) {
+  function toast(msg, fejl = false) {
     const el = $('#toast');
     el.textContent = msg;
+    el.classList.toggle('toast--fejl', !!fejl);
     el.hidden = false;
     clearTimeout(toastTimer);
-    toastTimer = setTimeout(() => { el.hidden = true; }, 2600);
+    toastTimer = setTimeout(() => { el.hidden = true; }, fejl ? 7000 : 2600);
   }
 
   /* alt gemmes automatisk – den lille kvittering vises højst hvert 2,5 sek. */
@@ -307,7 +308,9 @@
     if (!row) return;
     row.classList.add('is-gone');
     setTimeout(() => {
-      S.markRead(row.dataset.kind, row.dataset.id);
+      /* kom den ikke i hus i databasen, dukker den op igen med det samme
+         – så man opdager det nu og ikke først i morgen tidlig */
+      Promise.resolve(S.markRead(row.dataset.kind, row.dataset.id)).then(() => renderBell());
       renderBell();
     }, 180);
   }
@@ -346,6 +349,17 @@
     bellDrop.hidden = true;
     if (btn.dataset.goDate) { ordersAllDays = false; ordersDate = btn.dataset.goDate; }
     switchView(btn.dataset.goView);
+  });
+
+  /* "hvor havner alt henne?" – to knapper der altid fører til hele listen */
+  $('#bellAllOrders').addEventListener('click', () => {
+    bellDrop.hidden = true;
+    ordersAllDays = true;
+    switchView('bestillinger');
+  });
+  $('#bellAllBookings').addEventListener('click', () => {
+    bellDrop.hidden = true;
+    switchView('bookinger');
   });
 
   $('#bellBtn').addEventListener('click', (e) => {
@@ -1386,9 +1400,11 @@
     if (ordersAllDays) { renderAlleDage(); return; }
     const orders = S.getOrders(ordersDate);
     /* nye bestillinger til andre dage må ALDRIG blive væk, bare fordi
-       man står på i dag – de får deres egen linje med genveje */
+       man står på i dag – de får deres egen linje med genveje.
+       Både "ikke kørt endnu" OG "ikke set endnu" tælles med, så tallet
+       på klokken og i menuen altid har et sted man kan trykke hen. */
     const elsewhere = S.getOrders()
-      .filter((o) => o.status === 'ny' && o.date !== ordersDate)
+      .filter((o) => (o.status === 'ny' || !o.read) && o.date !== ordersDate)
       .reduce((m, o) => m.set(o.date, (m.get(o.date) || 0) + 1), new Map());
     const elsewhereHtml = elsewhere.size ? `
       <div class="otherdays">
@@ -1491,6 +1507,10 @@
         </div>
         <p class="sub" style="color:var(--ink-soft);margin-bottom:12px;">
           Alle bestillinger samlet – sorteret efter dato. ${all.length} i alt${nyIalt ? ` · <strong>${nyIalt}</strong> mangler at blive kørt` : ' · alle er kørt ✅'}
+        </p>
+        <p class="sub" style="color:var(--ink-soft);margin-bottom:14px;">
+          Selskaber, arrangementer og møder ligger for sig
+          <button class="abtn abtn--ghost" data-goto="bookinger">📅 Åbn bookinger →</button>
         </p>
         ${kommende.length ? `<h3 class="kp__sub">📅 I dag og fremad</h3>${groupHtml(kommende)}` : '<p class="sub" style="color:var(--ink-soft);">Ingen kommende bestillinger.</p>'}
         ${tidligere.length ? `
@@ -2693,6 +2713,9 @@
     toast(extra > 0 ? `${first} (+${extra} mere)` : first);
     ping();
   }
+
+  /* databasen sagde nej – sig det højt, aldrig i stilhed */
+  S.onWriteFail((hvad) => toast(`⚠️ ${hvad}. Tjek nettet og prøv igen.`, true));
 
   S.subscribe(() => {
     syncLoginMode();

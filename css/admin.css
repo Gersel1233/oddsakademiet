@@ -356,6 +356,27 @@ button { font-family: var(--font-body); }
   cursor: pointer;
 }
 .belldrop__list { max-height: 340px; overflow-y: auto; }
+/* altid en vej hen til DEN FULDE liste – så man aldrig står og
+   leder efter en bestilling der ikke er på den dag man kigger på */
+.belldrop__foot {
+  display: flex;
+  gap: 8px;
+  padding: 10px 12px;
+  border-top: 1px solid var(--line);
+  background: rgba(28, 24, 20, 0.03);
+}
+.belldrop__foot button {
+  flex: 1;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 9px 8px;
+  font-weight: 600;
+  font-size: 0.82rem;
+  color: var(--ink);
+  cursor: pointer;
+}
+.belldrop__foot button:hover { border-color: var(--accent); color: var(--accent-deep); }
 .notif {
   display: flex;
   gap: 12px;
@@ -1444,6 +1465,15 @@ body.dv-open { overflow: hidden; }
 @keyframes toastIn {
   from { opacity: 0; transform: translate(-50%, 16px); }
   to { opacity: 1; transform: translate(-50%, 0); }
+}
+/* noget blev IKKE gemt – det skal man ikke kunne overse */
+.toast--fejl {
+  background: #B3372B;
+  color: #fff;
+  border-radius: 16px;
+  max-width: min(520px, 92vw);
+  text-align: center;
+  line-height: 1.4;
 }
 
 /* ---------- responsivt ---------- */

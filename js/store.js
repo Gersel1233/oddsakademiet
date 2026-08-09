@@ -784,6 +784,10 @@ const SpiisStore = (() => {
        så en hentning, der allerede var i gang, ikke ruller den tilbage. */
     op.until = Date.now() + 5000;
   }
+  function dropPending(op) {
+    const i = pendingOps.indexOf(op);
+    if (i >= 0) pendingOps.splice(i, 1);
+  }
   function applyPending() {
     const now = Date.now();
     for (let i = pendingOps.length - 1; i >= 0; i--) {
@@ -798,27 +802,69 @@ const SpiisStore = (() => {
     }
   }
 
-  function updateOrder(id, patch) {
-    const o = data.orders.find((x) => x.id === id);
-    if (!o) return;
-    Object.assign(o, patch);
-    save();
-    if (cloud) {
-      const op = notePending('orders', id, patch);
-      sbFetch(`/rest/v1/orders?id=eq.${encodeURIComponent(id)}`, {
+  /* ============================================================
+     INGEN TAVSE FEJL
+     Alt hvad køkkenet og chefen trykker på skal enten LANDE i
+     databasen – eller sige tydeligt fra. Før kunne fx "✓ Færdig"
+     eller en fjernet notifikation se ud til at virke, mens den i
+     virkeligheden aldrig blev gemt, og så kom den tilbage næste
+     gang appen blev åbnet. Nu ruller vi ændringen tilbage med det
+     samme og råber op, så man kan prøve igen.
+     ============================================================ */
+  const writeFailListeners = [];
+  const onWriteFail = (fn) => { writeFailListeners.push(fn); };
+  function reportWriteFail(what) {
+    writeFailListeners.forEach((fn) => { try { fn(what); } catch { /* ignorér */ } });
+  }
+  const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+
+  /* Skriver én ændring til skyen. patch === null betyder sletning.
+     Ét ekstra forsøg, hvis nettet blinker (dårligt wifi i køkkenet). */
+  async function cloudWrite({ table, id, patch, undo, what, quiet }) {
+    if (!cloud) return true;
+    const op = notePending(table, id, patch);
+    const url = `/rest/v1/${table}?id=eq.${encodeURIComponent(id)}`;
+    const send = () => (patch === null
+      ? sbFetch(url, { method: 'DELETE', auth: true })
+      : sbFetch(url, {
         method: 'PATCH', auth: true, headers: { Prefer: 'return=minimal' },
         body: JSON.stringify(patch),
-      }).then((res) => { if (res.ok) donePending(op); }).catch(() => {});
+      }));
+    for (let forsoeg = 0; forsoeg < 2; forsoeg++) {
+      if (forsoeg) await wait(1500);
+      try {
+        const res = await send();
+        if (res.ok) { donePending(op); return true; }
+      } catch { /* prøv igen */ }
     }
+    dropPending(op);
+    if (undo) { undo(); save(); }
+    if (!quiet) reportWriteFail(what);
+    return false;
+  }
+
+  function updateOrder(id, patch) {
+    const o = data.orders.find((x) => x.id === id);
+    if (!o) return Promise.resolve(false);
+    const foer = {};
+    Object.keys(patch).forEach((k) => { foer[k] = o[k]; });
+    Object.assign(o, patch);
+    save();
+    return cloudWrite({
+      table: 'orders', id, patch,
+      undo: () => { const row = data.orders.find((x) => x.id === id); if (row) Object.assign(row, foer); },
+      what: 'Ændringen på bestillingen blev ikke gemt',
+    }).then((ok) => { if (!ok) emit(); return ok; });
   }
   function deleteOrder(id) {
+    const foer = data.orders.find((x) => x.id === id);
     data.orders = data.orders.filter((x) => x.id !== id);
     save();
-    if (cloud) {
-      const op = notePending('orders', id, null);
-      sbFetch(`/rest/v1/orders?id=eq.${encodeURIComponent(id)}`, { method: 'DELETE', auth: true })
-        .then((res) => { if (res.ok) donePending(op); }).catch(() => {});
-    }
+    return cloudWrite({
+      table: 'orders', id, patch: null,
+      undo: () => { if (foer && !data.orders.some((x) => x.id === id)) data.orders.push(foer); },
+      what: 'Bestillingen blev ikke slettet',
+    }).then((ok) => { if (!ok) emit(); return ok; });
   }
 
   /* ---------- bookinger (arrangementer & møder) ---------- */
@@ -892,40 +938,43 @@ const SpiisStore = (() => {
   }
   function updateBooking(id, patch) {
     const b = data.bookings.find((x) => x.id === id);
-    if (!b) return;
+    if (!b) return Promise.resolve(false);
+    const foer = {};
+    Object.keys(patch).forEach((k) => { foer[k] = b[k]; });
     Object.assign(b, patch);
     save();
-    if (cloud) {
-      const op = notePending('bookings', id, patch);
-      sbFetch(`/rest/v1/bookings?id=eq.${encodeURIComponent(id)}`, {
-        method: 'PATCH', auth: true, headers: { Prefer: 'return=minimal' },
-        body: JSON.stringify(patch),
-      }).then((res) => {
-        if (res.ok) { donePending(op); return; }
-        /* kender databasen ikke block_orders-kolonnen endnu (SQL ikke kørt),
-           gemmes resten af ændringen alligevel – intet må gå tabt */
-        if ('block_orders' in patch) {
-          const { block_orders, ...rest } = patch;
-          if (Object.keys(rest).length) {
-            sbFetch(`/rest/v1/bookings?id=eq.${encodeURIComponent(id)}`, {
-              method: 'PATCH', auth: true, headers: { Prefer: 'return=minimal' },
-              body: JSON.stringify(rest),
-            }).then((r2) => { if (r2.ok) donePending(op); }).catch(() => {});
-          }
-        }
-      }).catch(() => {});
-    }
+    /* kender databasen ikke block_orders-kolonnen endnu (SQL ikke kørt),
+       gemmes resten af ændringen alligevel – intet må gå tabt */
+    const { block_orders, ...uden } = patch;
+    const reserve = ('block_orders' in patch && Object.keys(uden).length) ? uden : null;
+    const p = cloudWrite({
+      table: 'bookings', id, patch, what: 'Ændringen på bookingen blev ikke gemt',
+      quiet: !!reserve,
+      undo: reserve ? null : () => {
+        const row = data.bookings.find((x) => x.id === id);
+        if (row) Object.assign(row, foer);
+      },
+    }).then((ok) => {
+      if (ok || !reserve) { if (!ok) emit(); return ok; }
+      return cloudWrite({
+        table: 'bookings', id, patch: reserve, what: 'Ændringen på bookingen blev ikke gemt',
+        undo: () => { const row = data.bookings.find((x) => x.id === id); if (row) Object.assign(row, foer); },
+      }).then((ok2) => { if (!ok2) emit(); return ok2; });
+    });
     syncArrangementDates();
+    return p;
   }
   function deleteBooking(id) {
+    const foer = data.bookings.find((x) => x.id === id);
     data.bookings = data.bookings.filter((x) => x.id !== id);
     save();
-    if (cloud) {
-      const op = notePending('bookings', id, null);
-      sbFetch(`/rest/v1/bookings?id=eq.${encodeURIComponent(id)}`, { method: 'DELETE', auth: true })
-        .then((res) => { if (res.ok) donePending(op); }).catch(() => {});
-    }
+    const p = cloudWrite({
+      table: 'bookings', id, patch: null,
+      undo: () => { if (foer && !data.bookings.some((x) => x.id === id)) data.bookings.push(foer); },
+      what: 'Bookingen blev ikke slettet',
+    }).then((ok) => { if (!ok) emit(); return ok; });
     syncArrangementDates();
+    return p;
   }
 
   /* Dage med et aftalt arrangement blokeres automatisk for nye
@@ -1121,36 +1170,42 @@ const SpiisStore = (() => {
     const bookings = data.bookings.filter((b) => !b.read);
     return { orders, bookings, count: orders.length + bookings.length };
   }
-  /* markér ÉN som læst – bruges når man swiper en notifikation væk */
+  /* markér ÉN som læst – bruges når man swiper en notifikation væk.
+     Lykkes det ikke i databasen, kommer notifikationen tilbage med
+     det samme i stedet for at "forsvinde" og dukke op igen i morgen. */
   function markRead(kind, id) {
-    const list = kind === 'booking' ? data.bookings : data.orders;
-    const row = list.find((x) => x.id === id);
-    if (!row || row.read) return;
+    const table = kind === 'booking' ? 'bookings' : 'orders';
+    const row = data[table].find((x) => x.id === id);
+    if (!row || row.read) return Promise.resolve(true);
     row.read = true;
     save();
-    if (cloud) {
-      const table = kind === 'booking' ? 'bookings' : 'orders';
-      const op = notePending(table, id, { read: true });
-      sbFetch(`/rest/v1/${table}?id=eq.${encodeURIComponent(id)}`, {
-        method: 'PATCH', auth: true, headers: { Prefer: 'return=minimal' },
-        body: JSON.stringify({ read: true }),
-      }).then((res) => { if (res.ok) donePending(op); }).catch(() => {});
-    }
+    return cloudWrite({
+      table, id, patch: { read: true },
+      undo: () => { const r = data[table].find((x) => x.id === id); if (r) r.read = false; },
+      what: 'Notifikationen kunne ikke fjernes – den kommer igen',
+    }).then((ok) => { if (!ok) emit(); return ok; });
   }
   function markAllRead() {
+    const foerO = data.orders.filter((o) => !o.read).map((o) => o.id);
+    const foerB = data.bookings.filter((b) => !b.read).map((b) => b.id);
+    if (!foerO.length && !foerB.length) return Promise.resolve(true);
     data.orders.forEach((o) => { o.read = true; });
     data.bookings.forEach((b) => { b.read = true; });
     save();
-    if (cloud) {
-      sbFetch('/rest/v1/orders?read=eq.false', {
-        method: 'PATCH', auth: true, headers: { Prefer: 'return=minimal' },
-        body: JSON.stringify({ read: true }),
-      }).catch(() => {});
-      sbFetch('/rest/v1/bookings?read=eq.false', {
-        method: 'PATCH', auth: true, headers: { Prefer: 'return=minimal' },
-        body: JSON.stringify({ read: true }),
-      }).catch(() => {});
-    }
+    if (!cloud) return Promise.resolve(true);
+    const alle = (tabel) => sbFetch(`/rest/v1/${tabel}?read=eq.false`, {
+      method: 'PATCH', auth: true, headers: { Prefer: 'return=minimal' },
+      body: JSON.stringify({ read: true }),
+    }).then((res) => res.ok).catch(() => false);
+    return Promise.all([alle('orders'), alle('bookings')]).then(([o, b]) => {
+      if (o && b) return true;
+      /* rul de rækker tilbage der ikke kom igennem, så skærmen ikke lyver */
+      if (!o) data.orders.forEach((r) => { if (foerO.includes(r.id)) r.read = false; });
+      if (!b) data.bookings.forEach((r) => { if (foerB.includes(r.id)) r.read = false; });
+      save();
+      reportWriteFail('Notifikationerne kunne ikke fjernes – de kommer igen');
+      return false;
+    });
   }
 
   /* ---------- nyheder på forsiden ---------- */
@@ -1277,7 +1332,7 @@ const SpiisStore = (() => {
     getClosure, setClosure, isClosureNow, isInClosure,
     timeslotsFor, orderSlots, orderToFor,
     getNews, addNews, updateNews, deleteNews, uploadNewsImage, placeNewsOrder,
-    getUnread, markRead, markAllRead,
+    getUnread, markRead, markAllRead, onWriteFail,
     exportData, resetData,
     subscribe,
     /* sky */

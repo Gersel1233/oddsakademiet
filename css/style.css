@@ -576,6 +576,25 @@ body.menupage { padding-bottom: 0 !important; }
 }
 
 /* ---------- Spiis Tapas ---------- */
+/* det rigtige billede af fadene – det sælger bedre end nogen tekst */
+.tapasfoto { margin: 0 0 26px; }
+.tapasfoto img {
+  display: block;
+  width: 100%;
+  height: auto; /* uden den vinder height-attributten over aspect-ratio */
+  aspect-ratio: 16 / 7;
+  object-fit: cover;
+  object-position: center 42%;
+  border-radius: var(--radius);
+  box-shadow: 0 26px 50px -26px rgba(28, 24, 20, 0.45);
+}
+.tapasfoto figcaption {
+  margin-top: 10px;
+  text-align: center;
+  font-size: 0.9rem;
+  color: var(--ink-soft);
+}
+
 .tapas { display: grid; grid-template-columns: 1fr 1fr; gap: 26px; align-items: start; }
 .tapas__info { padding: 26px 26px 22px; }
 .tapas__info h3, .tapas__form h3 { font-family: var(--font-body); font-weight: 700; letter-spacing: -0.01em; font-size: 1.2rem; margin-bottom: 14px; }
@@ -641,6 +660,8 @@ body.menupage { padding-bottom: 0 !important; }
 .tapas__success { max-width: 560px; margin: 0 auto; }
 @media (max-width: 900px) {
   .tapas { grid-template-columns: 1fr; }
+  /* på telefonen får fadene lov at fylde mere – billedet er højformat */
+  .tapasfoto img { aspect-ratio: 4 / 3; object-position: center 45%; }
 }
 
 /* ---------- selskaber & catering ---------- */
