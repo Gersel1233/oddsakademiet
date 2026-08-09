@@ -505,6 +505,17 @@
   <a href="#bestil" class="mobilecta" id="mobileCta">🍲 Bestil dagens ret</a>
 
   <!-- bestil en special direkte fra en nyhed (fx juleplatter) -->
+  <!-- hele dagen i et vindue: alle retter med fuld beskrivelse -->
+  <div class="confirm" id="dayInfoWrap" hidden>
+    <div class="confirm__card daycard" role="dialog" aria-modal="true" aria-labelledby="dayInfoTitle">
+      <button type="button" class="confirm__x" id="dayInfoClose" aria-label="Luk">✕</button>
+      <p class="confirm__kicker" id="dayInfoKicker">Dagens ret</p>
+      <h3 class="confirm__title" id="dayInfoTitle">Dagen</h3>
+      <div id="dayInfoBody"></div>
+      <button type="button" class="btn btn--accent btn--big daycard__cta" id="dayInfoOrder" hidden>🍲 Bestil til denne dag</button>
+    </div>
+  </div>
+
   <div class="confirm" id="newsOrderWrap" hidden>
     <div class="confirm__card" role="dialog" aria-modal="true" aria-labelledby="newsOrderTitle">
       <button type="button" class="confirm__x" id="newsOrderClose" aria-label="Luk">✕</button>

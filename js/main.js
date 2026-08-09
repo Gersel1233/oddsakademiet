@@ -297,34 +297,34 @@
     grid.innerHTML = plan.map((day) => {
       const isToday = day.iso === S.todayISO();
       if (!day.open) {
-        return `<div class="dayplan dayplan--closed">
-          <div class="dayplan__day">${day.weekday}${isToday ? ' · i dag' : ''}</div>
-          <div class="dayplan__date">${esc(S.formatDate(day.iso, false))}</div>
-          <div class="dayplan__dish">Lukket</div>
-        </div>`;
+        return `<button type="button" class="dayplan dayplan--closed" data-day="${day.iso}">
+          <span class="dayplan__day">${day.weekday}${isToday ? ' · i dag' : ''}</span>
+          <span class="dayplan__date">${esc(S.formatDate(day.iso, false))}</span>
+          <span class="dayplan__dish">Lukket</span>
+        </button>`;
       }
       if (S.isOrderingClosed(day.iso)) {
-        return `<div class="dayplan dayplan--closed">
-          <div class="dayplan__day">${day.weekday}${isToday ? ' · i dag' : ''}</div>
-          <div class="dayplan__date">${esc(S.formatDate(day.iso, false))}</div>
-          <div class="dayplan__dish">${esc(lukketTekst(day.iso))}</div>
-          <div class="dayplan__desc">Lukket for bestillinger denne dag.</div>
-        </div>`;
+        return `<button type="button" class="dayplan dayplan--closed" data-day="${day.iso}">
+          <span class="dayplan__day">${day.weekday}${isToday ? ' · i dag' : ''}</span>
+          <span class="dayplan__date">${esc(S.formatDate(day.iso, false))}</span>
+          <span class="dayplan__dish">${esc(lukketTekst(day.iso))}</span>
+          <span class="dayplan__desc">Lukket for bestillinger denne dag.</span>
+        </button>`;
       }
       const dishes = day.dishes || [];
       /* én ret: som altid. Flere retter: en linje pr. ret med eget udsolgt/få-tilbage-mærke */
       let dishHtml;
       if (!dishes.length) {
-        dishHtml = '<div class="dayplan__dish">Dagens ret følger snart…</div>';
+        dishHtml = '<span class="dayplan__dish">Dagens ret følger snart…</span>';
       } else if (dishes.length === 1) {
         const d0 = dishes[0];
         const rem = S.getRemainingFor(day.iso, d0.title);
         let stockTag = '';
         if (rem !== null && rem <= 0) stockTag = '<span class="dayplan__tag dayplan__tag--soldout">Udsolgt</span>';
         else if (rem !== null && rem <= 5) stockTag = `<span class="dayplan__tag">Kun ${rem} tilbage</span>`;
-        dishHtml = `<div class="dayplan__dish">${esc(d0.title)}</div>
-          ${d0.desc ? `<div class="dayplan__desc">${descHtml(d0.desc)}</div>` : ''}
-          ${d0.price ? `<div class="dayplan__price">${kr(d0.price)}</div>` : ''}
+        dishHtml = `<span class="dayplan__dish">${esc(d0.title)}</span>
+          ${d0.desc ? `<span class="dayplan__desc">${descHtml(d0.desc)}</span>` : ''}
+          ${d0.price ? `<span class="dayplan__price">${kr(d0.price)}</span>` : ''}
           ${stockTag}`;
       } else {
         dishHtml = dishes.map((d) => {
@@ -332,16 +332,90 @@
           const tag = rem !== null && rem <= 0
             ? ' <span class="dayplan__tag dayplan__tag--soldout">Udsolgt</span>'
             : (rem !== null && rem <= 5 ? ` <span class="dayplan__tag">Kun ${rem} tilbage</span>` : '');
-          return `<div class="dayplan__dish dayplan__dish--multi">${esc(d.title)}${d.price ? ` <em class="dayplan__inlineprice">${kr(d.price)}</em>` : ''}${tag}</div>`;
+          return `<span class="dayplan__dish dayplan__dish--multi">${esc(d.title)}${d.price ? ` <em class="dayplan__inlineprice">${kr(d.price)}</em>` : ''}${tag}</span>`;
         }).join('');
       }
-      return `<div class="dayplan">
-        <div class="dayplan__day">${day.weekday}${isToday ? ' · i dag' : ''}</div>
-        <div class="dayplan__date">${esc(S.formatDate(day.iso, false))}</div>
+      return `<button type="button" class="dayplan" data-day="${day.iso}">
+        <span class="dayplan__day">${day.weekday}${isToday ? ' · i dag' : ''}</span>
+        <span class="dayplan__date">${esc(S.formatDate(day.iso, false))}</span>
         ${dishHtml}
-      </div>`;
+        <span class="dayplan__mere">Se hele dagen →</span>
+      </button>`;
     }).join('');
   }
+
+  /* ============================================================
+     HELE DAGEN I ET VINDUE
+     Kortene i ugeoversigten er små, så en lang beskrivelse bliver
+     klippet af. Tryk på en dag og få det hele at læse – og en genvej
+     direkte til bestillingen for netop den dag.
+     ============================================================ */
+  const dayInfoWrap = $('#dayInfoWrap');
+  let dayInfoIso = null;
+
+  function closeDayInfo() {
+    dayInfoWrap.hidden = true;
+    document.body.style.overflow = '';
+    dayInfoIso = null;
+  }
+
+  function openDayInfo(iso) {
+    dayInfoIso = iso;
+    const åben = S.isOpenDay(iso) && !S.isOrderingClosed(iso);
+    const dishes = S.getDagensRetList(iso);
+    const timer = S.getHours()[S.weekdayIndex(iso)];
+
+    $('#dayInfoKicker').textContent = iso === S.todayISO() ? 'I dag' : 'Dagens ret';
+    $('#dayInfoTitle').textContent = S.formatDate(iso);
+
+    let krop;
+    if (!åben) {
+      krop = `<p class="daycard__lukket">${esc(lukketTekst(iso))}</p>
+        <p class="daycard__note">Vi tager ikke imod bestillinger denne dag – vælg en anden dag, så er vi klar. 💛</p>`;
+    } else if (!dishes.length) {
+      krop = '<p class="daycard__note">Dagens ret er ikke lagt ind endnu – kig forbi igen, eller ring til os på 93 99 58 58.</p>';
+    } else {
+      krop = dishes.map((d) => {
+        const rem = S.getRemainingFor(iso, d.title);
+        const tag = rem !== null && rem <= 0
+          ? '<span class="dayplan__tag dayplan__tag--soldout">Udsolgt</span>'
+          : (rem !== null && rem <= 5 ? `<span class="dayplan__tag">Kun ${rem} tilbage</span>` : '');
+        return `<div class="daycard__ret">
+          <div class="daycard__navn">${esc(d.title)}${d.price ? `<span class="daycard__pris">${kr(d.price)}</span>` : ''}</div>
+          ${d.desc ? `<div class="daycard__desc">${descHtml(d.desc)}</div>` : ''}
+          ${tag}
+        </div>`;
+      }).join(dishes.length > 1 ? '<div class="daycard__eller">eller</div>' : '');
+      krop += `<p class="daycard__note">🕐 Afhentning kl. ${esc(orderFrom())}–${esc(orderTo())}${timer && !timer.closed ? ` · køkkenet har åbent ${esc(timer.open)}–${esc(timer.close)}` : ''}</p>`;
+    }
+    $('#dayInfoBody').innerHTML = krop;
+
+    const cta = $('#dayInfoOrder');
+    cta.hidden = !(åben && dishes.length);
+    dayInfoWrap.hidden = false;
+    document.body.style.overflow = 'hidden';
+    $('#dayInfoClose').focus();
+  }
+
+  $('#weekPlan').addEventListener('click', (e) => {
+    const kort = e.target.closest('[data-day]');
+    if (kort) openDayInfo(kort.dataset.day);
+  });
+  $('#dayInfoClose').addEventListener('click', closeDayInfo);
+  dayInfoWrap.addEventListener('click', (e) => { if (e.target === dayInfoWrap) closeDayInfo(); });
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && !dayInfoWrap.hidden) closeDayInfo();
+  });
+  $('#dayInfoOrder').addEventListener('click', () => {
+    const iso = dayInfoIso;
+    closeDayInfo();
+    const sel = $('#orderDate');
+    if (sel && [...sel.options].some((o) => o.value === iso)) {
+      sel.value = iso;
+      sel.dispatchEvent(new Event('change', { bubbles: true }));
+    }
+    document.getElementById('bestil').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
 
   /* ---------- åbningstider ---------- */
   function renderHours() {

@@ -1178,7 +1178,16 @@ body.menupage { padding-bottom: 0 !important; }
   grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
   gap: 14px;
 }
+/* hvert kort er en knap: tryk og læs hele dagen */
 .dayplan {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  width: 100%;
+  text-align: left;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
   background: #fff;
   border: 1px solid rgba(28, 24, 20, 0.07);
   border-radius: 16px;
@@ -1186,7 +1195,22 @@ body.menupage { padding-bottom: 0 !important; }
   transition: transform 0.25s ease, box-shadow 0.25s ease;
 }
 .dayplan:hover { transform: translateY(-4px); box-shadow: var(--shadow); border-color: rgba(217, 108, 44, 0.35); }
-.dayplan--closed { opacity: 0.55; background: transparent; border-style: dashed; }
+.dayplan:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
+.dayplan__mere {
+  margin-top: auto;
+  padding-top: 10px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--accent-deep);
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+.dayplan:hover .dayplan__mere, .dayplan:focus-visible .dayplan__mere { opacity: 1; }
+/* på touch er der ingen hover – så vis genvejen hele tiden */
+@media (hover: none) {
+  .dayplan__mere { opacity: 0.75; }
+}
+.dayplan--closed { opacity: 0.7; background: transparent; border-style: dashed; }
 .dayplan__day {
   font-size: 0.78rem;
   font-weight: 700;
@@ -1207,6 +1231,41 @@ body.menupage { padding-bottom: 0 !important; }
   overflow: hidden;
 }
 .dayplan__price { color: var(--ink-soft); font-size: 0.88rem; margin-top: 6px; }
+
+/* ---------- hele dagen i et vindue ---------- */
+.daycard__ret { padding: 4px 0; }
+.daycard__navn {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 14px;
+  font-weight: 700;
+  font-size: 1.08rem;
+}
+.daycard__pris { color: var(--accent-deep); white-space: nowrap; }
+.daycard__desc { color: var(--ink-soft); margin-top: 6px; line-height: 1.55; }
+.daycard__eller {
+  margin: 16px 0;
+  text-align: center;
+  font-size: 0.78rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+  position: relative;
+}
+.daycard__eller::before, .daycard__eller::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  width: calc(50% - 34px);
+  height: 1px;
+  background: rgba(28, 24, 20, 0.12);
+}
+.daycard__eller::before { left: 0; }
+.daycard__eller::after { right: 0; }
+.daycard__lukket { font-size: 1.15rem; font-weight: 700; margin-bottom: 8px; }
+.daycard__note { color: var(--ink-soft); font-size: 0.92rem; margin-top: 18px; line-height: 1.55; }
+.daycard__cta { width: 100%; margin-top: 22px; }
 .dayplan__tag {
   display: inline-block;
   margin-top: 8px;
