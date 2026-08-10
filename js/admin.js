@@ -999,7 +999,8 @@
         <span class="kalcell__num">${Number(iso.slice(8))}</span>
         ${d.closed ? '<span class="kalcell__closed">Køkken lukket</span>' : `
           ${showPill ? `<span class="kalcell__status ${st.cls}">${st.short}</span>` : ''}
-          ${d.dishes.length ? `<span class="kalcell__dish">🍲 ${esc(d.dishes[0].title)}${d.dishes.length > 1 ? ` +${d.dishes.length - 1}` : ''}</span>` : ''}
+          ${d.dishes.length ? `<span class="kalcell__dish" title="${esc(d.dishes.map((x) => x.title).join(' eller '))}">🍲 ${esc(d.dishes[0].title)}</span>
+          ${d.dishes.length > 1 ? `<span class="kalcell__flere">+ ${d.dishes.length - 1} ret${d.dishes.length > 2 ? 'ter' : ''} mere</span>` : ''}` : ''}
           ${d.items ? `<span class="kalcell__count"><b>${d.items}</b> retter · 🥡 ${d.togo} · 🍽️ ${d.spise}</span>` : ''}`}
         ${d.bookings.some((b) => b.status === 'ny') ? '<span class="kalcell__ny">⚠️ Ny booking – svar</span>' : ''}
         ${d.note ? `<span class="kalcell__note" title="${esc(d.note)}">📝 ${esc(noteSnip(d.note))}</span>` : ''}

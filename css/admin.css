@@ -838,7 +838,9 @@ button { font-family: var(--font-body); }
 }
 .kaltoggle button.is-on { background: var(--ink); color: #fff; }
 .kalcard { padding: 18px; }
-.kalgrid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; }
+/* minmax(0, 1fr) – ellers kan en lang ret-titel i én dag skubbe hele
+   kalenderen bredere end skærmen, så den sidste søjle hænger udenfor */
+.kalgrid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 6px; }
 .kalgrid--head { margin-bottom: 6px; }
 .kalwd {
   text-align: center;
@@ -854,6 +856,8 @@ button { font-family: var(--font-body); }
   flex-direction: column;
   align-items: flex-start;
   gap: 4px;
+  min-width: 0;      /* må gerne klemmes sammen, når skærmen er smal */
+  overflow: hidden;
   min-height: 112px;
   padding: 9px 10px;
   border: 1.6px solid rgba(28, 24, 20, 0.07);
@@ -879,6 +883,17 @@ button { font-family: var(--font-body); }
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+/* "+ 1 ret mere" – tydeligere end bare "+1", som lige så godt kunne
+   betyde én bestilling eller én person */
+.kalcell__flere {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--accent-deep);
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 .kalcell__count { font-size: 0.74rem; color: var(--ink-soft); }
 .kalcell__count b { color: var(--ink); }
 .kalcell__closed {
@@ -887,6 +902,10 @@ button { font-family: var(--font-body); }
   color: var(--ink-soft);
   text-transform: uppercase;
   letter-spacing: 0.05em;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .kalcell__block { font-size: 0.72rem; color: var(--red); font-weight: 600; }
 .kalcell__bk {
