@@ -720,11 +720,17 @@
       const t = Math.round(min / 60);
       return `for ${t} time${t === 1 ? '' : 'r'} siden`;
     };
-    const nyligtHtml = `
+    /* Er der intet nyt, må kortet ikke stjæle en halv telefonskærm.
+       Så skrumper det til én stille linje. */
+    const nyligtHtml = !nyligt.length ? `
+      <div class="acard nyecard nyecard--tom">
+        <span>🆕 <strong>Lige modtaget</strong> · ingen nye bestillinger det seneste døgn</span>
+      </div>`
+      : `
       <div class="acard nyecard">
         <div class="acard__head">
           <h2>🆕 Lige modtaget</h2>
-          <span class="sub">alt der er tikket ind det seneste døgn – uanset hvilken dag maden skal hentes</span>
+          <span class="sub">tikket ind det seneste døgn – uanset hvilken dag maden skal hentes</span>
         </div>
         ${nyligt.length ? `
         <div class="rowlist">

@@ -1526,7 +1526,18 @@ body.dv-open { overflow: hidden; }
 }
 
 /* ---------- "Lige modtaget" – første kort på overblikket ---------- */
-.nyecard { border: 2px solid var(--accent); }
+/* ".acard + .acard" giver kun luft mellem to kort – her følger stat-
+   fliserne efter, så afstanden skal sættes her. Ellers støder kortet
+   direkte op i fliserne nedenunder. */
+.nyecard { border: 2px solid var(--accent); margin-bottom: 18px; }
+/* ingen nyheder: én stille linje i stedet for en halv skærm */
+.nyecard--tom {
+  border: 1px solid var(--line);
+  padding: 13px 18px;
+  font-size: 0.92rem;
+  color: var(--ink-soft);
+}
+.nyecard--tom strong { color: var(--ink); font-weight: 700; }
 .nyrow {
   display: grid;
   gap: 3px;
