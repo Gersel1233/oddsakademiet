@@ -1483,6 +1483,33 @@ body.dv-open { overflow: hidden; }
   from { opacity: 0; transform: translate(-50%, 16px); }
   to { opacity: 1; transform: translate(-50%, 0); }
 }
+/* ---------- bekræftelse før noget slettes for altid ---------- */
+.farligmask { align-items: center; }
+.farlig {
+  background: #fff;
+  width: min(440px, 100%);
+  border-radius: 20px;
+  padding: 26px;
+  box-shadow: 0 30px 70px -25px rgba(28, 24, 20, 0.55);
+  animation: dvUp 0.18s ease-out;
+}
+.farlig__titel { font-family: var(--font-display); font-size: 1.35rem; font-weight: 600; margin-bottom: 14px; }
+.farlig__hvad {
+  display: grid;
+  gap: 3px;
+  padding: 14px 16px;
+  border-radius: 12px;
+  background: #FDF3F1;
+  border: 1.4px dashed rgba(179, 55, 43, 0.35);
+}
+.farlig__hvad span:first-child { font-weight: 700; font-size: 1.05rem; }
+.farlig__hvad span { font-size: 0.94rem; color: var(--ink-soft); }
+.farlig__note { margin-top: 14px; font-size: 0.9rem; color: var(--ink-soft); line-height: 1.5; }
+.farlig__knapper { display: flex; gap: 10px; margin-top: 20px; }
+.farlig__nej { flex: 2; }          /* den sikre knap er den STORE */
+.farlig__ja  { flex: 1; }
+.farlig__ja[disabled] { opacity: 0.4; cursor: not-allowed; }
+
 /* ryd op i overståede dage med ét tryk */
 .ryddop {
   display: flex;

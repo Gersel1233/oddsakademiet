@@ -514,6 +514,60 @@
      lukker panelet, mens man står med fingeren på skærmen */
   const aabneRaekker = new Set();
 
+  /* ============================================================
+     BEKRÆFTELSE DER IKKE KAN TRYKKES VÆK VED ET UHELD
+     Browserens egen confirm() kan besejres af en hurtig dobbelt-
+     berøring: dialogen når at komme frem, og det tryk man allerede
+     var i gang med lander på "OK". Logbogen viste præcis det –
+     sletningen kom ét sekund efter det foregående tryk.
+     Her er slette-knappen SLUKKET de første 1,2 sekunder, og den
+     sikre knap er den store. Så kan et fejltryk ikke nå den.
+     ============================================================ */
+  function bekraeftFarligt({ titel, linjer = [], knap = '🗑 Slet endeligt', note = '' }) {
+    return new Promise((svar) => {
+      const mask = document.createElement('div');
+      mask.className = 'dvmask farligmask';
+      mask.innerHTML = `
+        <div class="farlig" role="alertdialog" aria-modal="true">
+          <h3 class="farlig__titel">${esc(titel)}</h3>
+          ${linjer.length ? `<div class="farlig__hvad">${linjer.map((l) => `<span>${esc(l)}</span>`).join('')}</div>` : ''}
+          ${note ? `<p class="farlig__note">${esc(note)}</p>` : ''}
+          <div class="farlig__knapper">
+            <button type="button" class="abtn abtn--accent farlig__nej">Behold</button>
+            <button type="button" class="abtn abtn--danger farlig__ja" disabled>Vent…</button>
+          </div>
+        </div>`;
+      document.body.appendChild(mask);
+      document.body.classList.add('dv-open');
+      const ja = mask.querySelector('.farlig__ja');
+      const nej = mask.querySelector('.farlig__nej');
+      nej.focus();
+
+      /* knappen vågner først efter 1,2 sek. – med synlig nedtælling */
+      let tilbage = 12;
+      const tik = setInterval(() => {
+        tilbage -= 1;
+        if (tilbage > 0) { ja.textContent = `Vent… ${(tilbage / 10).toFixed(1)}`; return; }
+        clearInterval(tik);
+        ja.disabled = false;
+        ja.textContent = knap;
+      }, 100);
+
+      const luk = (v) => {
+        clearInterval(tik);
+        mask.remove();
+        document.body.classList.remove('dv-open');
+        document.removeEventListener('keydown', tast);
+        svar(v);
+      };
+      const tast = (e) => { if (e.key === 'Escape') luk(false); };
+      document.addEventListener('keydown', tast);
+      nej.addEventListener('click', () => luk(false));
+      ja.addEventListener('click', () => { if (!ja.disabled) luk(true); });
+      mask.addEventListener('click', (e) => { if (e.target === mask) luk(false); });
+    });
+  }
+
   function orderRow(o, showDate = false) {
     const all = orderLines(o).filter((l) => !isExtraLine(l));
     const extras = orderLines(o).filter(isExtraLine);
@@ -1588,7 +1642,15 @@
     const purge = $('#ordersPurge');
     if (purge) {
       purge.addEventListener('click', async () => {
-        if (!confirm(`Slet ${tidligere.length} bestilling${tidligere.length === 1 ? '' : 'er'} fra dage der er overstået?\n\nDet kan ikke fortrydes. Dagens og kommende dages bestillinger røres ikke.`)) return;
+        const ja = await bekraeftFarligt({
+          titel: `Slet ${tidligere.length} gammel${tidligere.length === 1 ? '' : 'e'} bestilling${tidligere.length === 1 ? '' : 'er'}?`,
+          linjer: [`Fra ${new Set(tidligere.map((o) => o.date)).size} dag(e) der er overstået`,
+            `Ældste: ${S.formatDate(tidligere[tidligere.length - 1].date, false)}`,
+            `Nyeste: ${S.formatDate(tidligere[0].date, false)}`],
+          note: 'I dag og alle kommende dage røres ikke. Det kan ikke fortrydes.',
+          knap: `🗑 Slet de ${tidligere.length} gamle`,
+        });
+        if (!ja) return;
         purge.disabled = true;
         purge.textContent = 'Sletter…';
         let fejl = 0;
@@ -2658,11 +2720,22 @@
       /* sig HØJT hvad der forsvinder – navn, mad og dag. Så opdager man
          et fejltryk, inden en rigtig kundes bestilling er væk. */
       const o = S.getOrders().find((x) => x.id === id);
-      const hvad = o
-        ? `${o.name}\n${foodLines(o).map((l) => `${l.qty} × ${l.name}`).join(', ') || 'ingen varer'}\n${S.formatDate(o.date)} kl. ${o.time || '?'}`
-        : 'denne bestilling';
-      if (!confirm(`SLET denne bestilling?\n\n${hvad}\n\nDen kan IKKE hentes tilbage.`)) return;
-      S.deleteOrder(id);
+      bekraeftFarligt({
+        titel: 'Slet denne bestilling?',
+        linjer: o ? [
+          o.name,
+          foodLines(o).map((l) => `${l.qty} × ${l.name}`).join(', ') || 'ingen varer',
+          `${S.formatDate(o.date)} kl. ${o.time || '?'} · 📞 ${o.phone || ''}`,
+        ] : [],
+        note: 'Bestillingen forsvinder for altid. Køkkenet kan ikke få den tilbage, og kunden får ingen besked.',
+        knap: '🗑 Slet bestillingen',
+      }).then((ja) => {
+        if (!ja) return;
+        S.deleteOrder(id);
+        renderBell();
+        renderListViews();
+      });
+      return;
     }
     else if (act === 'booking-edit') {
       /* fold dato/tid-editoren ud i rækken – og læg kundens ønske i felterne */
@@ -2716,11 +2789,22 @@
     }
     else if (act === 'booking-del') {
       const bk = S.getBookings().find((x) => x.id === id);
-      const hvad = bk
-        ? `${bk.name}\n${bk.subject || 'arrangement'}\n${bk.date ? S.formatDate(bk.date) : 'dato ikke fastlagt'}${bk.time ? ` kl. ${bk.time}` : ''}`
-        : 'denne booking';
-      if (!confirm(`SLET denne booking?\n\n${hvad}\n\nDen kan IKKE hentes tilbage.`)) return;
-      S.deleteBooking(id);
+      bekraeftFarligt({
+        titel: 'Slet denne booking?',
+        linjer: bk ? [
+          bk.name,
+          bk.subject || 'arrangement',
+          `${bk.date ? S.formatDate(bk.date) : 'dato ikke fastlagt'}${bk.time ? ` kl. ${bk.time}` : ''} · 📞 ${bk.phone || ''}`,
+        ] : [],
+        note: 'Bookingen forsvinder for altid, og I kan ikke få den tilbage.',
+        knap: '🗑 Slet bookingen',
+      }).then((ja) => {
+        if (!ja) return;
+        S.deleteBooking(id);
+        renderBell();
+        renderListViews();
+      });
+      return;
     }
     else return;
 
