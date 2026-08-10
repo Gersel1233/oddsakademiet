@@ -632,7 +632,47 @@
       .slice(0, 3);
     const newBookings = waitingCount;
 
+    /* ============================================================
+       LIGE MODTAGET
+       Når telefonen siger pling, leder man efter DEN bestilling – ikke
+       efter en bestemt dag. Bestillinger til i morgen eller næste uge
+       stod før kun på deres egen dato, så de var usynlige på forsiden.
+       Her ligger alt, der er tikket ind det seneste døgn, uanset
+       hvilken dag maden skal hentes.
+       ============================================================ */
+    const etDøgn = 24 * 3600e3;
+    const nyligt = S.getOrders()
+      .filter((o) => o.createdAt && (Date.now() - new Date(o.createdAt).getTime()) < etDøgn)
+      .sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || ''));
+    const siden = (iso) => {
+      const min = Math.round((Date.now() - new Date(iso).getTime()) / 60000);
+      if (min < 1) return 'lige nu';
+      if (min < 60) return `for ${min} min. siden`;
+      const t = Math.round(min / 60);
+      return `for ${t} time${t === 1 ? '' : 'r'} siden`;
+    };
+    const nyligtHtml = `
+      <div class="acard nyecard">
+        <div class="acard__head">
+          <h2>🆕 Lige modtaget</h2>
+          <span class="sub">alt der er tikket ind det seneste døgn – uanset hvilken dag maden skal hentes</span>
+        </div>
+        ${nyligt.length ? `
+        <div class="rowlist">
+          ${nyligt.map((o) => `
+            <button type="button" class="nyrow ${o.status === 'ny' ? 'nyrow--ny' : ''}" data-act="goto-orders" data-iso="${o.date}">
+              <span class="nyrow__tid">${esc(siden(o.createdAt))}</span>
+              <span class="nyrow__navn">${esc(o.name)}${o.status === 'ny' ? '<b class="nyrow__prik">Ny</b>' : ' <em>✓ kørt</em>'}</span>
+              <span class="nyrow__mad">${esc(foodLines(o).map((l) => `${l.qty} × ${l.name}`).join(' · ') || 'ingen varer')}</span>
+              <span class="nyrow__hvornaar">📅 <strong>${esc(S.formatDate(o.date, false))}</strong> kl. ${esc(o.time || '–')} · ${o.type === 'togo' ? '🥡 To-go' : '🍽️ Spiser her'}</span>
+              <span class="nyrow__gaa">Åbn dagen →</span>
+            </button>`).join('')}
+        </div>`
+        : '<div class="empty">Ingen nye bestillinger det seneste døgn.</div>'}
+      </div>`;
+
     $('#view-overblik').innerHTML = `
+      ${nyligtHtml}
       <div class="stats">
         <div class="stat stat--accent">
           <div class="stat__label">Personer i dag</div>
@@ -1444,7 +1484,10 @@
         ${pending.length ? `
         <h3 class="kp__sub">🔥 Mangler <em class="kp__sub-hint">· tryk ✓ når bestillingen er kørt</em></h3>
         <div class="rowlist">${pending.map((o) => orderRow(o)).join('')}</div>`
-          : `<div class="empty">${orders.length ? 'Alle bestillinger er kørt – flot! 🎉' : 'Ingen bestillinger på denne dato.'}</div>`}
+          : `<div class="empty">${orders.length ? 'Alle bestillinger er kørt – flot! 🎉'
+              : (elsewhere.size
+                ? `Ingen bestillinger til <strong>${esc(S.formatDate(ordersDate, false))}</strong> – men der er nye til andre dage. Tryk på en dato herover ↑, eller på 📚 Alle dage.`
+                : 'Ingen bestillinger på denne dato.')}</div>`}
         ${done.length ? `
         <h3 class="kp__sub">✅ Kørt / færdige <em class="kp__sub-hint">· tryk ↩ Gendan hvis noget var en fejl</em></h3>
         <div class="rowlist">${done.map((o) => orderRow(o)).join('')}</div>` : ''}`;
@@ -1516,11 +1559,34 @@
         ${tidligere.length ? `
         <details class="donefold" style="margin-top:18px;">
           <summary>🕓 Tidligere dage (${tidligere.length}) <em>· tryk for at se</em></summary>
+          <div class="ryddop">
+            <span>Gamle bestillinger fra dage der er overstået – de kan roligt ryddes væk.</span>
+            <button class="abtn abtn--danger" id="ordersPurge">🗑 Slet alle ${tidligere.length} gamle</button>
+          </div>
           <div style="margin-top:10px;">${groupHtml(tidligere)}</div>
         </details>` : ''}
       </div>`;
 
     $('#ordersAll').addEventListener('click', () => { ordersAllDays = false; renderBestillinger(); });
+    /* ét tryk rydder alle overståede dage – det er ikke noget man vil
+       sidde og gøre én ad gangen efter en testperiode */
+    const purge = $('#ordersPurge');
+    if (purge) {
+      purge.addEventListener('click', async () => {
+        if (!confirm(`Slet ${tidligere.length} bestilling${tidligere.length === 1 ? '' : 'er'} fra dage der er overstået?\n\nDet kan ikke fortrydes. Dagens og kommende dages bestillinger røres ikke.`)) return;
+        purge.disabled = true;
+        purge.textContent = 'Sletter…';
+        let fejl = 0;
+        for (const o of tidligere) {
+          /* eslint-disable no-await-in-loop */
+          const ok = await S.deleteOrder(o.id);
+          if (!ok) fejl++;
+        }
+        renderBestillinger();
+        renderBell();
+        if (!fejl) toast(`${tidligere.length} gamle bestillinger slettet`);
+      });
+    }
   }
 
   /* ============================================================
@@ -2696,13 +2762,27 @@
     try { navigator.vibrate && navigator.vibrate([160, 60, 160]); } catch { /* ignorér */ }
   }
 
+  /* Hvornår blev appen åbnet? Alt, der er oprettet FØR det tidspunkt,
+     er pr. definition ikke nyt – uanset hvad appen lige har hentet.
+     (2 minutters slæk, fordi telefonens ur og databasens ur ikke
+     nødvendigvis er helt enige.) */
+  const APP_AABNET = Date.now() - 2 * 60000;
+  const oprettetEfterAabning = (x) => {
+    if (!x.createdAt) return false;
+    const t = new Date(x.createdAt).getTime();
+    return Number.isFinite(t) && t >= APP_AABNET;
+  };
+
   function liveAlerts() {
     const orders = S.getOrders();
     const bookings = S.getBookings();
     const ids = new Set([...orders.map((o) => 'o' + o.id), ...bookings.map((b) => 'b' + b.id)]);
     if (liveSeen === null) { liveSeen = ids; return; } /* første indlæsning = ikke nyt */
-    const freshOrders = orders.filter((o) => !liveSeen.has('o' + o.id));
-    const freshBookings = bookings.filter((b) => !liveSeen.has('b' + b.id));
+    /* To krav, ikke ét: den må ikke have været der før, OG den skal være
+       oprettet mens appen var åben. Ellers kunne en tom cache eller en
+       nyinstalleret app få gamle bestillinger til at plinge som nye. */
+    const freshOrders = orders.filter((o) => !liveSeen.has('o' + o.id) && oprettetEfterAabning(o));
+    const freshBookings = bookings.filter((b) => !liveSeen.has('b' + b.id) && oprettetEfterAabning(b));
     liveSeen = ids;
     if (!freshOrders.length && !freshBookings.length) return;
     const dayTxt = (o) => (o.date === S.todayISO() ? '' : ` · ${S.formatDate(o.date, false)}`);

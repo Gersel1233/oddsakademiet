@@ -1466,6 +1466,57 @@ body.dv-open { overflow: hidden; }
   from { opacity: 0; transform: translate(-50%, 16px); }
   to { opacity: 1; transform: translate(-50%, 0); }
 }
+/* ryd op i overståede dage med ét tryk */
+.ryddop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  flex-wrap: wrap;
+  margin-top: 12px;
+  padding: 12px 14px;
+  border: 1px dashed rgba(28, 24, 20, 0.2);
+  border-radius: 12px;
+  font-size: 0.9rem;
+  color: var(--ink-soft);
+}
+
+/* ---------- "Lige modtaget" – første kort på overblikket ---------- */
+.nyecard { border: 2px solid var(--accent); }
+.nyrow {
+  display: grid;
+  gap: 3px;
+  width: 100%;
+  text-align: left;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 14px 16px;
+}
+.nyrow--ny { border-color: rgba(217, 108, 44, 0.45); background: #FFF8F1; }
+.nyrow:hover { border-color: var(--accent); }
+.nyrow:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+.nyrow__tid { font-size: 0.76rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent-deep); }
+.nyrow__navn { font-weight: 700; font-size: 1.05rem; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.nyrow__navn em { font-style: normal; font-size: 0.8rem; font-weight: 600; color: #3F7A3B; }
+.nyrow__prik {
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  background: #B3372B;
+  color: #fff;
+  border-radius: 999px;
+  padding: 2px 9px;
+}
+.nyrow__mad { color: var(--ink-soft); font-size: 0.94rem; }
+.nyrow__hvornaar { font-size: 0.92rem; margin-top: 3px; }
+.nyrow__hvornaar strong { color: var(--ink); }
+.nyrow__gaa { font-size: 0.82rem; font-weight: 700; color: var(--accent-deep); margin-top: 4px; }
+
 /* appen er forældet – vises indtil den er hentet forfra */
 .updatebar {
   position: fixed;
