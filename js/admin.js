@@ -510,6 +510,10 @@
     return set;
   }
 
+  /* rækker hvor "⋯" er foldet ud – så en automatisk opdatering ikke
+     lukker panelet, mens man står med fingeren på skærmen */
+  const aabneRaekker = new Set();
+
   function orderRow(o, showDate = false) {
     const all = orderLines(o).filter((l) => !isExtraLine(l));
     const extras = orderLines(o).filter(isExtraLine);
@@ -544,7 +548,14 @@
           ${done
             ? `<button class="abtn abtn--ghost" data-act="order-toggle" data-id="${o.id}" title="Fortryd – læg bestillingen tilbage på listen">↩ Gendan</button>`
             : `<button class="abtn abtn--green" data-act="order-toggle" data-id="${o.id}">✓ Færdig</button>`}
-          <button class="abtn abtn--danger abtn--icon" data-act="order-del" data-id="${o.id}" aria-label="Slet">🗑</button>
+          <!-- Slet ligger IKKE ved siden af "Færdig". Den knap trykkes
+               hundrede gange om dagen på en telefon, og et fejltryk på
+               en skraldespand ved siden af koster en rigtig bestilling. -->
+          <button class="abtn abtn--ghost abtn--icon" data-act="row-more" aria-label="Flere valg" title="Flere valg">⋯</button>
+        </div>
+        <div class="row__danger" ${aabneRaekker.has(o.id) ? '' : 'hidden'}>
+          <span>Bestillingen forsvinder for altid – køkkenet kan ikke få den tilbage.</span>
+          <button class="abtn abtn--danger" data-act="order-del" data-id="${o.id}">🗑 Slet bestillingen</button>
         </div>
       </div>`;
   }
@@ -590,7 +601,11 @@
             ? `<button class="abtn abtn--green" data-act="booking-restore" data-id="${b.id}" title="Fortryd – læg den tilbage under 'Venter på jer'">↩ Gendan</button>`
             : `<button class="abtn ${b.status === 'bekraeftet' ? 'abtn--ghost' : 'abtn--green'}" data-act="booking-edit" data-id="${b.id}">${b.status === 'bekraeftet' ? '🖉 Ret / notér' : (isMoede ? '✓ Bekræft & sæt tid' : '✓ Aftal & sæt tid')}</button>
                <button class="abtn abtn--ghost" data-act="booking-no" data-id="${b.id}">Afvis</button>`}
-          <button class="abtn abtn--danger abtn--icon" data-act="booking-del" data-id="${b.id}" aria-label="Slet">🗑</button>
+          <button class="abtn abtn--ghost abtn--icon" data-act="row-more" aria-label="Flere valg" title="Flere valg">⋯</button>
+        </div>
+        <div class="row__danger" ${aabneRaekker.has(b.id) ? '' : 'hidden'}>
+          <span>Bookingen forsvinder for altid – I kan ikke få den tilbage.</span>
+          <button class="abtn abtn--danger" data-act="booking-del" data-id="${b.id}">🗑 Slet bookingen</button>
         </div>
         <div class="bkedit" hidden>
           <label class="afield"><span>Dato</span><input type="date" class="bkedit__date" value="${esc(b.date || '')}" /></label>
@@ -2628,8 +2643,25 @@
       const o = S.getOrders().find((x) => x.id === id);
       if (o) S.updateOrder(id, { status: o.status === 'ny' ? 'haandteret' : 'ny', read: true });
     }
+    else if (act === 'row-more') {
+      const række = btn.closest('.row');
+      const p = række && række.querySelector('.row__danger');
+      if (!p) return;
+      p.hidden = !p.hidden;
+      /* husk at den er foldet ud, så en automatisk opdatering midt i
+         det hele ikke lukker den igen foran næsen på en */
+      const rid = p.querySelector('[data-id]')?.dataset.id;
+      if (rid) { if (p.hidden) aabneRaekker.delete(rid); else aabneRaekker.add(rid); }
+      return; /* ingen gen-tegning – den ville folde panelet sammen igen */
+    }
     else if (act === 'order-del') {
-      if (!confirm('Slet denne bestilling?')) return;
+      /* sig HØJT hvad der forsvinder – navn, mad og dag. Så opdager man
+         et fejltryk, inden en rigtig kundes bestilling er væk. */
+      const o = S.getOrders().find((x) => x.id === id);
+      const hvad = o
+        ? `${o.name}\n${foodLines(o).map((l) => `${l.qty} × ${l.name}`).join(', ') || 'ingen varer'}\n${S.formatDate(o.date)} kl. ${o.time || '?'}`
+        : 'denne bestilling';
+      if (!confirm(`SLET denne bestilling?\n\n${hvad}\n\nDen kan IKKE hentes tilbage.`)) return;
       S.deleteOrder(id);
     }
     else if (act === 'booking-edit') {
@@ -2683,7 +2715,11 @@
       toast('Booking hentet tilbage – ligger nu under "Venter på jer" ↩');
     }
     else if (act === 'booking-del') {
-      if (!confirm('Slet denne booking?')) return;
+      const bk = S.getBookings().find((x) => x.id === id);
+      const hvad = bk
+        ? `${bk.name}\n${bk.subject || 'arrangement'}\n${bk.date ? S.formatDate(bk.date) : 'dato ikke fastlagt'}${bk.time ? ` kl. ${bk.time}` : ''}`
+        : 'denne booking';
+      if (!confirm(`SLET denne booking?\n\n${hvad}\n\nDen kan IKKE hentes tilbage.`)) return;
       S.deleteBooking(id);
     }
     else return;
