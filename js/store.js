@@ -658,8 +658,23 @@ const SpiisStore = (() => {
     return null;
   }
 
+  /* ============================================================
+     EN KVITTERING SKAL BETYDE, AT KØKKENET HAR DEN
+     Databasen findes først, når håndtrykket med Supabase er færdigt.
+     Bliver der bestilt i de første sekunder efter sideindlæsning – eller
+     mens databasen er nede – må vi ALDRIG gemme bestillingen lokalt og
+     sige "tak for din bestilling". Så ville kunden stå med en kvittering
+     på en bestilling, der kun findes i kundens egen browser.
+     ============================================================ */
+  async function ventPaaSkyen() {
+    if (cloudReady) { try { await cloudReady; } catch { /* håndteres nedenfor */ } }
+  }
+  /* true = databasen er sat op, men vi kan ikke nå den lige nu */
+  const skyenSvarerIkke = () => !!CLOUD && !cloud;
+
   /* ---------- bestillinger (kurv med dagens ret + menukort) ---------- */
   async function addOrder(order) {
+    await ventPaaSkyen();
     /* input-validering – spejler databasen 1:1, så tomme eller ugyldige
        ordrer aldrig sendes af sted (ekstra sikkerhedsnet ud over formularen) */
     const q = Number(order.qty);
@@ -667,6 +682,10 @@ const SpiisStore = (() => {
     if (!Number.isFinite(q) || q < 0 || q > 100) return { ok: false, reason: 'ugyldig' };
     if (q === 0 && nItems === 0) return { ok: false, reason: 'tom' };
     if (!String(order.name || '').trim() || !String(order.phone || '').trim()) return { ok: false, reason: 'mangler' };
+    /* Kan vi ikke nå databasen, ved vi INTET om lager, udsolgt eller
+       lukkedage. Så skal vi sige "vi kan ikke lige nu" – ikke gætte og
+       fortælle kunden at retten er udsolgt, når den slet ikke er det. */
+    if (skyenSvarerIkke()) return { ok: false, error: 'net' };
     /* chefen kan slukke HELT for online bestillinger med én kontakt */
     if (data.settings.ordersPaused) return { ok: false, reason: 'pauset' };
     /* Spiis Tapas skal bestilles senest dagen FØR – aldrig samme dag.
@@ -739,6 +758,9 @@ const SpiisStore = (() => {
         return { ok: false, error: 'net' };
       }
     }
+    /* Databasen er sat op, men svarer ikke. Sig nej – hellere en ærlig
+       fejl end en kvittering på en bestilling, køkkenet aldrig ser. */
+    if (skyenSvarerIkke()) return { ok: false, error: 'net' };
     /* gamle ordrer uden items-linjer: fald tilbage til dag-totalen */
     const hasDagensLines = (order.items || []).some((l) => l.kind === 'dagensret');
     if (!hasDagensLines && Number(order.qty) > 0) {
@@ -1237,6 +1259,7 @@ const SpiisStore = (() => {
      Ordren lander i den ALMINDELIGE orders-tabel som en 'nyhed'-vare, så den
      dukker op i køreplanen og tælles i kalenderen ligesom alt andet – ingen huller. */
   async function placeNewsOrder(newsId, o) {
+    await ventPaaSkyen();
     const news = (data.news || []).find((n) => n.id === newsId);
     if (!news) return { ok: false, reason: 'findes-ikke' };
     if (!news.orderable) return { ok: false, reason: 'ikke-bestilbar' };
@@ -1263,6 +1286,8 @@ const SpiisStore = (() => {
         return { ok: false, error: 'net' };
       }
     }
+    /* databasen er sat op men nede – aldrig en kvittering uden en ordre */
+    if (skyenSvarerIkke()) return { ok: false, error: 'net' };
     /* lokal demo-tilstand */
     if (news.orderMax != null && news.orderMax !== '') {
       const sold = (data.orders || []).reduce((s, ord) =>
