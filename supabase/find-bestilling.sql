@@ -94,5 +94,38 @@ select * from (
               else 'ADVARSEL: der er hverken en INSERT-regel eller en place_order-funktion'
          end
 
+  -- 7) Er der overhovedet ÅBENT for bestillinger lige nu?
+  union all
+  select 7, '⑦ ER DER ÅBENT?',
+         case when coalesce((data->'settings'->>'ordersPaused')::boolean, false)
+              then 'LUKKET: nødbremsen er slået TIL – ingen kan bestille online. Slå den fra under Åbningstider i admin.'
+              else 'Åbent: nødbremsen er slået fra' end
+  from public.config where id = 1
+  union all
+  select 7, '⑦ ER DER ÅBENT?',
+         'Lukkede dage: ' || coalesce(nullif((select string_agg(d, ', ' order by d)
+                                                from jsonb_array_elements_text(coalesce(data->'blockedDates','[]'::jsonb)) t(d)
+                                               where d >= to_char(current_date, 'YYYY-MM-DD')), ''), 'ingen fremover')
+  from public.config where id = 1
+  union all
+  select 7, '⑦ ER DER ÅBENT?',
+         case when coalesce((data->'closure'->>'active')::boolean, false)
+              then 'FERIE er slået TIL – forsiden viser ferielukket' else 'Ingen ferie slået til' end
+  from public.config where id = 1
+
+  -- 8) Står ugens dagens ret der stadig?
+  union all
+  select 8, '⑧ UGENS RETTER',
+         to_char(dg::date, 'DD-MM') || ': ' ||
+         coalesce((select string_agg(x->>'title', ' ELLER ')
+                     from jsonb_array_elements(
+                            case jsonb_typeof(data->'dagensRet'->to_char(dg, 'YYYY-MM-DD'))
+                              when 'array'  then data->'dagensRet'->to_char(dg, 'YYYY-MM-DD')
+                              when 'object' then jsonb_build_array(data->'dagensRet'->to_char(dg, 'YYYY-MM-DD'))
+                              else '[]'::jsonb end) x), '— ingen ret sat')
+  from public.config,
+       generate_series(current_date, current_date + 6, interval '1 day') dg
+  where id = 1
+
 ) x
 order by sortering, linje;

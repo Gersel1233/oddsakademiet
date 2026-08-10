@@ -1,36 +1,59 @@
 -- ============================================================
--- SPIIS – RYD TESTDATA (frisk start før personalet tager over)
--- Kør DENNE fil i Supabase → SQL Editor → Run, ÉN gang.
+--  ⚠️  STOP OG LÆS  ⚠️
 --
--- Den fjerner alt det "løse", der er lavet under test:
---   • alle bookinger (møder + arrangement-forespørgsler)
---   • alle bestillinger (madbestillinger + special-bestillinger fra nyheder)
---   • lukkede/blokerede dage + ferie-perioden (nulstilles, så intet hænger fast)
+--  DENNE FIL SLETTER **ALLE** BESTILLINGER OG BOOKINGER.
+--  Også rigtige kunders. Også dem til i morgen. Alt.
+--  Det kan IKKE fortrydes.
 --
--- Den RØRER IKKE dit rigtige opsæt:
---   ✓ menukort + priser   ✓ åbningstider   ✓ dagens ret / ugeplan
---   ✓ nyheder             ✓ indstillinger  ✓ login
+--  Den er kun til ÉN ting: at nulstille alt ÉN gang, lige før
+--  personalet tager systemet i brug for første gang.
 --
--- OBS: sletning kan ikke fortrydes – men det er kun testdata, der ryddes.
+--  Skal du bare af med gamle testbestillinger i den daglige drift?
+--  → Brug admin i stedet:
+--       Bestillinger → 📚 Alle dage → 🕓 Tidligere dage
+--       → "🗑 Slet alle X gamle"
+--    Den rører KUN dage der er overstået. I dag og fremad står urørt.
+--
+--  Vil du finde ud af, hvor en bestilling er blevet af?
+--  → Kør supabase/find-bestilling.sql. Den ændrer ingenting.
+-- ============================================================
+--
+--  For at køre den her SKAL du fjerne "-- " forrest på de linjer
+--  der står nedenfor. Det er med vilje: så kan man ikke komme til
+--  at markere det hele og trykke Run.
+--
+--  Husk bagefter: lukkedage, ferie og arrangement-dage nulstilles
+--  også, så kør supabase/uge-33.sql (eller sæt dagene igen i admin),
+--  ellers står fredag og lørdag åbne igen.
 -- ============================================================
 
--- 1) alle bookinger og bestillinger væk
-delete from public.bookings;
-delete from public.orders;
+-- ─────────────────────────────────────────────────────────────
+-- FJERN "-- " FORREST PÅ DE FIRE BLOKKE HERUNDER FOR AT SLETTE
+-- ─────────────────────────────────────────────────────────────
 
--- 2) nulstil de "operationelle" dage i config, så ingen dag står lukket
---    med en booking, der ikke findes mere (og sluk ferie-tilstand)
-update public.config
-set data = data || jsonb_build_object(
-      'blockedDates',     '[]'::jsonb,
-      'arrangementDates', '[]'::jsonb,
-      'orderClosedDates', '[]'::jsonb,
-      'closure', jsonb_build_object('active', false, 'from', '', 'reopen', '', 'message', '')
-    ),
-    updated_at = now()
-where id = 1;
+-- 1) alle bookinger væk
+-- delete from public.bookings;
 
--- (VALGFRIT) vil du også fjerne test-nyheder, så fjern -- foran linjen herunder:
--- update public.config set data = data || jsonb_build_object('news', '[]'::jsonb), updated_at = now() where id = 1;
+-- 2) alle bestillinger væk
+-- delete from public.orders;
 
--- ✅ Færdig. Genindlæs admin-appen (træk ned / opdater siden), så er alt blankt.
+-- 3) nulstil lukkede dage, arrangement-dage og ferie
+-- update public.config
+-- set data = data || jsonb_build_object(
+--       'blockedDates',     '[]'::jsonb,
+--       'arrangementDates', '[]'::jsonb,
+--       'orderClosedDates', '[]'::jsonb,
+--       'closure', jsonb_build_object('active', false, 'from', '', 'reopen', '', 'message', '')
+--     ),
+--     updated_at = now()
+-- where id = 1;
+
+-- 4) (valgfrit) fjern også nyheder
+-- update public.config set data = data || jsonb_build_object('news', '[]'::jsonb),
+--        updated_at = now() where id = 1;
+
+-- ─────────────────────────────────────────────────────────────
+-- Kører du filen som den er, sker der INTET ud over denne besked:
+select 'Der blev IKKE slettet noget. Læs toppen af filen – de slettende '
+    || 'linjer er slået fra med vilje. Skal du bare af med gamle '
+    || 'testbestillinger, så brug "🗑 Slet alle gamle" i admin i stedet.' as besked;
