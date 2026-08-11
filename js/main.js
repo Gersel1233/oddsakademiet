@@ -225,6 +225,22 @@
     const price = $('#todayPrice');
     const stockEl = $('#todayStock');
 
+    /* billedet er frivilligt: er der intet, forsvinder feltet helt, og
+       kortet står nøjagtig som før. Med flere retter samme dag viser vi
+       ikke noget billede – så ved man ikke hvilken ret det hører til. */
+    const fotoBoks = $('#todayFoto');
+    const fotoUrl = (dishes.length === 1 && dish && dish.img) ? dish.img : '';
+    if (fotoBoks) {
+      fotoBoks.hidden = !fotoUrl;
+      document.querySelector('.today')?.classList.toggle('today--foto', !!fotoUrl);
+      if (fotoUrl) {
+        const im = $('#todayFotoImg');
+        im.src = fotoUrl;
+        im.alt = dish.title;
+        im.loading = 'lazy';
+      }
+    }
+
     if (!dish) {
       label.textContent = 'Dagens ret';
       title.textContent = 'Vi opdaterer menuen lige nu';
@@ -315,7 +331,12 @@
       /* én ret: som altid. Flere retter: en linje pr. ret med eget udsolgt/få-tilbage-mærke */
       let dishHtml;
       if (!dishes.length) {
-        dishHtml = '<span class="dayplan__dish">Dagens ret følger snart…</span>';
+        /* dage i en SENERE uge er ikke planlagt endnu – køkkenet lægger
+           ugens menu op hen over weekenden. Sig det, i stedet for et
+           uklart "følger snart", så folk ved hvornår de skal kigge igen. */
+        dishHtml = S.weekStart(day.iso) > S.weekStart(S.todayISO())
+          ? '<span class="dayplan__dish dayplan__dish--kommer">Menuen for den uge lægges op i løbet af weekenden</span>'
+          : '<span class="dayplan__dish">Dagens ret følger snart…</span>';
       } else if (dishes.length === 1) {
         const d0 = dishes[0];
         const rem = S.getRemainingFor(day.iso, d0.title);
@@ -373,7 +394,9 @@
       krop = `<p class="daycard__lukket">${esc(lukketTekst(iso))}</p>
         <p class="daycard__note">Vi tager ikke imod bestillinger denne dag – vælg en anden dag, så er vi klar. 💛</p>`;
     } else if (!dishes.length) {
-      krop = '<p class="daycard__note">Dagens ret er ikke lagt ind endnu – kig forbi igen, eller ring til os på 93 99 58 58.</p>';
+      krop = S.weekStart(iso) > S.weekStart(S.todayISO())
+        ? '<p class="daycard__note">🗓️ Menuen for den uge er ikke lagt op endnu. Køkkenet planlægger ugen hen over weekenden – kig forbi igen søndag eller mandag.</p>'
+        : '<p class="daycard__note">Dagens ret er ikke lagt ind endnu – kig forbi igen, eller ring til os på 93 99 58 58.</p>';
     } else {
       krop = dishes.map((d) => {
         const rem = S.getRemainingFor(iso, d.title);
@@ -1399,16 +1422,23 @@
   }
   renderAll();
 
+  /* Hver del tegnes for sig. Går én galt, må den ikke tage resten af
+     siden med sig – før kunne en fejl i ugeoversigten betyde at både
+     åbningstider, kontakt og datolisten holdt op med at opdatere,
+     uden at nogen kunne se hvorfor. */
+  function tegn(navn, fn) {
+    try { fn(); } catch (e) { console.error(`Spiis: kunne ikke tegne "${navn}"`, e); }
+  }
   S.subscribe(() => {
-    renderPause();
-    renderClosure();
-    renderNews();
-    renderToday();
-    renderWeekPlan();
-    renderHours();
-    renderContact();
-    renderCloudNotice();
-    refreshOrderDatesPreserving();
+    tegn('pause', renderPause);
+    tegn('ferie', renderClosure);
+    tegn('nyheder', renderNews);
+    tegn('dagens ret', renderToday);
+    tegn('ugeoversigt', renderWeekPlan);
+    tegn('åbningstider', renderHours);
+    tegn('kontakt', renderContact);
+    tegn('forbindelse', renderCloudNotice);
+    tegn('datoliste', refreshOrderDatesPreserving);
   });
 
   /* genopfrisk datolisten uden at smide brugerens valg væk,

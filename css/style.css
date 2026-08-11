@@ -1110,6 +1110,15 @@ body.menupage { padding-bottom: 0 !important; }
   50% { opacity: 1; transform: translateY(-2px); }
 }
 .today__body { padding: clamp(26px, 4vw, 42px); }
+/* dagens ret MED billede: en tredje søjle. Uden billede er reglen her
+   uden virkning, og kortet er præcis som før. */
+.today--foto { grid-template-columns: 220px 1fr minmax(200px, 300px); }
+.today__foto { margin: 0; align-self: stretch; overflow: hidden; }
+.today__foto img { width: 100%; height: 100%; object-fit: cover; display: block; }
+@media (max-width: 900px) {
+  .today--foto { grid-template-columns: 1fr; }
+  .today--foto .today__foto { order: -1; aspect-ratio: 16 / 9; }
+}
 .today__dish {
   font-family: var(--font-display);
   font-weight: 600;
@@ -2005,6 +2014,8 @@ a, button, select, .daytab, .choice, .segmented label, .stepper button {
 .descpoints { margin: 4px 0 0; padding-left: 1.15em; text-align: left; display: inline-block; }
 .descpoints li { margin: 2px 0; }
 .dayplan__dish--multi { font-size: 0.95rem; margin-top: 4px; }
+/* dage i en uge der ikke er planlagt endnu – dæmpet, ikke som en ret */
+.dayplan__dish--kommer { font-weight: 500; font-size: 0.9rem; color: var(--ink-soft); line-height: 1.45; }
 .dayplan__inlineprice { font-style: normal; color: var(--ink-soft); font-size: 0.85rem; }
 
 /* ---------- scroll-reveal – lettere og hurtigere, så siden føles kvik ---------- */

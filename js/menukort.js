@@ -126,7 +126,11 @@
       const dishes = day.dishes || [];
       let højre;
       if (lukket) højre = `<span class="ugerow__lukket">${esc(lukketTekst(day.iso))}</span>`;
-      else if (!dishes.length) højre = '<span class="ugerow__tom">Følger snart…</span>';
+      else if (!dishes.length) {
+        højre = S.weekStart(day.iso) > S.weekStart(iDag)
+          ? '<span class="ugerow__tom">🗓️ Menuen for den uge lægges op i løbet af weekenden</span>'
+          : '<span class="ugerow__tom">Følger snart…</span>';
+      }
       else højre = dishes.map((d, i) => `
         ${i ? '<span class="ugerow__eller">eller</span>' : ''}
         <div class="ugerow__ret">

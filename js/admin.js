@@ -2062,7 +2062,7 @@
     const on = day.open;
     const sold = d.title ? S.getSoldFor(day.iso, d.title) : 0;
     return `
-      <div class="pd-dish ${d.soldout ? 'pd-dish--soldout' : ''}" data-out="${d.soldout ? '1' : ''}">
+      <div class="pd-dish ${d.soldout ? 'pd-dish--soldout' : ''}" data-out="${d.soldout ? '1' : ''}" data-navn="${d.title ? '1' : ''}">
         <input class="inline-input" data-f="title" placeholder="${on ? 'Ret, fx Boller i karry' : 'Lukket'}" value="${esc(d.title || '')}" ${on ? '' : 'disabled'} />
         <textarea class="inline-input pd-dish__desc" data-f="desc" rows="1" placeholder="Beskrivelse – én linje pr. punkt (fx alt i en tapas)" ${on ? '' : 'disabled'}>${esc(d.desc || '')}</textarea>
         <input class="inline-input" data-f="price" type="number" min="0" placeholder="Pris" value="${esc(d.price ?? '')}" ${on ? '' : 'disabled'} />
@@ -2070,6 +2070,14 @@
         <button type="button" class="abtn ${d.soldout ? 'abtn--green' : 'abtn--ghost'} pd-dish__so" data-soldout title="${d.soldout ? 'Åbn for bestilling igen' : 'Meld retten udsolgt med ét tryk'}" ${on ? '' : 'disabled'}>${d.soldout ? '✅ Åbn igen' : '🚫 Udsolgt'}</button>
         <button type="button" class="abtn abtn--danger abtn--icon" data-delret title="Fjern retten" ${on ? '' : 'disabled'}>✕</button>
         ${sold ? `<small class="pd-dish__sold">solgt: ${sold}${d.stock != null && d.stock !== '' ? ` / ${d.stock}` : ''}</small>` : ''}
+        <!-- billede er FRIVILLIGT. Er der intet, ser forsiden ud præcis
+             som den plejer – kortet ændrer sig kun, når der ER et. -->
+        <div class="pd-dish__foto" data-img="${esc(d.img || '')}">
+          ${d.img
+            ? `<img src="${esc(d.img)}" alt="" /><button type="button" class="abtn abtn--ghost" data-fjernfoto>✕ Fjern billede</button>`
+            : `<label class="abtn abtn--ghost pd-dish__vaelg">📷 Tilføj billede <em>(valgfrit)</em>
+                 <input type="file" accept="image/*" hidden data-fotofil ${on ? '' : 'disabled'} /></label>`}
+        </div>
       </div>`;
   }
 
@@ -2105,9 +2113,37 @@
     $('#view-dagensret').oninput = (e) => {
       const row = e.target.closest && e.target.closest('.planday');
       if (!row) return;
+      /* billed-knappen dukker først op, når dagen HAR en ret – ellers stod
+         der "Tilføj billede" under fjorten tomme dage på én gang */
+      if (e.target.matches('[data-f="title"]')) {
+        const dish = e.target.closest('.pd-dish');
+        if (dish) dish.dataset.navn = e.target.value.trim() ? '1' : '';
+      }
       const iso = row.dataset.iso;
       clearTimeout(dayTimers[iso]);
       dayTimers[iso] = setTimeout(() => saveDay(row, true), 900);
+    };
+
+    /* valgfrit billede til en ret – telefonbilleder pakkes ned først,
+       så en 5 MB mobilfoto ikke gør forsiden tung at hente */
+    $('#view-dagensret').onchange = async (e) => {
+      const fil = e.target.closest('[data-fotofil]');
+      if (!fil || !fil.files || !fil.files[0]) return;
+      const row = fil.closest('.planday');
+      const boks = fil.closest('.pd-dish__foto');
+      const label = boks.querySelector('.pd-dish__vaelg');
+      if (label) label.textContent = 'Lægger billedet op …';
+      const lille = await compressImage(fil.files[0], 1200, 4 / 3, 0.84);
+      const up = await S.uploadNewsImage(lille, 'dagensret.jpg');
+      if (!up.ok) {
+        toast('⚠️ Billedet kunne ikke lægges op. Tjek nettet og prøv igen.', true);
+        renderDagensRetEditor();
+        return;
+      }
+      boks.dataset.img = up.url;
+      saveDay(row, true);
+      renderDagensRetEditor();
+      toast('Billedet er lagt op ✓');
     };
     /* udsolgt-knap, fjern-ret og tilføj-ret */
     $('#view-dagensret').onclick = (e) => {
@@ -2117,6 +2153,12 @@
       if (soBtn) {
         const dishEl = soBtn.closest('.pd-dish');
         dishEl.dataset.out = dishEl.dataset.out === '1' ? '' : '1';
+        saveDay(row);
+        renderDagensRetEditor();
+        return;
+      }
+      if (e.target.closest('[data-fjernfoto]')) {
+        e.target.closest('.pd-dish__foto').dataset.img = '';
         saveDay(row);
         renderDagensRetEditor();
         return;
@@ -2141,12 +2183,14 @@
     const dishes = Array.from(rowEl.querySelectorAll('.pd-dish')).map((el) => {
       const priceRaw = $('[data-f="price"]', el).value;
       const stockRaw = $('[data-f="stock"]', el).value;
+      const foto = $('.pd-dish__foto', el);
       return {
         title: $('[data-f="title"]', el).value.trim(),
         desc: $('[data-f="desc"]', el).value.trim(),
         price: priceRaw ? Number(priceRaw) : null,
         stock: stockRaw === '' ? null : Number(stockRaw),
         soldout: el.dataset.out === '1',
+        img: (foto && foto.dataset.img) || '',
       };
     }).filter((d) => d.title);
     S.setDagensRetList(iso, dishes);

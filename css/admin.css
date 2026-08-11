@@ -984,6 +984,17 @@ button { font-family: var(--font-body); }
 .pd-dish__desc { resize: vertical; min-height: 40px; line-height: 1.4; }
 .pd-dish--soldout input, .pd-dish--soldout textarea { opacity: 0.55; }
 .pd-dish__sold { grid-column: 1 / -1; color: var(--ink-soft); font-weight: 600; }
+/* frivilligt billede til retten – ligger på sin egen linje under felterne,
+   så rækken ser ud som før for de retter der ikke har et */
+.pd-dish__foto { grid-column: 1 / -1; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+/* tom dag = ingen ret = ingen grund til at tilbyde et billede */
+.pd-dish[data-navn=""] .pd-dish__foto { display: none; }
+.pd-dish__foto img {
+  width: 76px; height: 57px; object-fit: cover;
+  border-radius: 9px; border: 1.6px solid rgba(28, 24, 20, 0.1);
+}
+.pd-dish__vaelg { cursor: pointer; font-size: 0.85rem; }
+.pd-dish__vaelg em { font-style: normal; color: var(--ink-soft); font-weight: 500; }
 .planday__add { justify-self: start; }
 @media (max-width: 860px) {
   .planday--multi { grid-template-columns: 1fr; }

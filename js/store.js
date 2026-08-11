@@ -1339,6 +1339,12 @@ const SpiisStore = (() => {
 
   function subscribe(fn) {
     listeners.add(fn);
+    /* Databasen kan nå at svare, FØR siden har nået at melde sig som
+       lytter – især på en hurtig forbindelse. Så ville siden blive
+       stående med de lokale demo-data og aldrig opdage at de rigtige
+       er hentet. Derfor får en sen lytter altid ét kald, når skyen er
+       på plads. */
+    if (cloudReady) cloudReady.then(() => { try { fn(); } catch { /* ignorér */ } });
     return () => listeners.delete(fn);
   }
 
