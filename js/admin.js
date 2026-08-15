@@ -837,13 +837,35 @@
        Når telefonen siger pling, leder man efter DEN bestilling – ikke
        efter en bestemt dag. Bestillinger til i morgen eller næste uge
        stod før kun på deres egen dato, så de var usynlige på forsiden.
-       Her ligger alt, der er tikket ind det seneste døgn, uanset
-       hvilken dag maden skal hentes.
+       Her ligger det, der er tikket ind LIGE NU, uanset hvilken dag
+       maden skal hentes.
+
+       "Lige" betyder to ting, og begge skal holde:
+         · højst 3 timer gammelt
+         · og fra I DAG – når dagen er ovre, er kortet tomt igen
+       Alt der falder ud herfra er ikke væk: det står stadig på sin
+       egen dag under Bestillinger, i klokken, og i 🕓 Historik.
        ============================================================ */
-    const etDøgn = 24 * 3600e3;
-    const nyligt = S.getOrders()
-      .filter((o) => o.createdAt && (Date.now() - new Date(o.createdAt).getTime()) < etDøgn)
+    const TRE_TIMER = 3 * 3600e3;
+    const iDagNu = S.todayISO();
+    /* hvilken DAG blev den oprettet – efter telefonens egen kalender,
+       ikke efter UTC, ellers skifter kortet ved forkert klokkeslæt */
+    const oprettelsesdag = (iso) => {
+      const d = new Date(iso);
+      if (Number.isNaN(d.getTime())) return '';
+      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    };
+    const iVinduet = (o) => o.createdAt
+      && oprettelsesdag(o.createdAt) === iDagNu
+      && (Date.now() - new Date(o.createdAt).getTime()) < TRE_TIMER;
+    const nyligt = S.getOrders().filter(iVinduet)
       .sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || ''));
+    /* Sikkerhedsnet: en bestilling fra i dag, der ER faldet ud af
+       vinduet, men stadig mangler at blive kørt, må ikke bare gå i
+       stilhed. Den kommer ikke tilbage i listen – der står bare én
+       linje med en vej hen til den. */
+    const glemte = S.getOrders().filter((o) => o.status === 'ny'
+      && o.createdAt && oprettelsesdag(o.createdAt) === iDagNu && !iVinduet(o));
     const siden = (iso) => {
       const min = Math.round((Date.now() - new Date(iso).getTime()) / 60000);
       if (min < 1) return 'lige nu';
@@ -853,17 +875,26 @@
     };
     /* Er der intet nyt, må kortet ikke stjæle en halv telefonskærm.
        Så skrumper det til én stille linje. */
+    /* linjen om dem der er faldet ud af vinduet, men stadig mangler */
+    const glemteHtml = !glemte.length ? '' : `
+      <button type="button" class="nyecard__glemt" data-act="goto-orders" data-iso="${glemte[0].date}">
+        ⏰ <strong>${glemte.length} bestilling${glemte.length === 1 ? '' : 'er'} fra tidligere i dag</strong>
+        mangler stadig at blive kørt — åbn dem →
+      </button>`;
+
     const nyligtHtml = !nyligt.length ? `
       <div class="acard nyecard nyecard--tom">
-        <span>🆕 <strong>Lige modtaget</strong> · ingen nye bestillinger det seneste døgn</span>
-      </div>`
+        <span>🆕 <strong>Lige modtaget</strong> · intet er tikket ind de sidste 3 timer</span>
+        <button type="button" class="nyecard__log" data-act="vis-historik">🕓 Historik</button>
+      </div>
+      ${glemteHtml}`
       : `
       <div class="acard nyecard">
         <div class="acard__head">
           <h2>🆕 Lige modtaget</h2>
-          <span class="sub">tikket ind det seneste døgn – uanset hvilken dag maden skal hentes</span>
+          <span class="sub">tikket ind inden for de sidste 3 timer – uanset hvilken dag maden skal hentes</span>
+          <button type="button" class="nyecard__log" data-act="vis-historik">🕓 Historik</button>
         </div>
-        ${nyligt.length ? `
         <div class="rowlist">
           ${nyligt.map((o) => `
             <button type="button" class="nyrow ${o.status === 'ny' ? 'nyrow--ny' : ''}" data-act="goto-orders" data-iso="${o.date}">
@@ -873,9 +904,9 @@
               <span class="nyrow__hvornaar">📅 <strong>${esc(S.formatDate(o.date, false))}</strong> kl. ${esc(o.time || '–')} · ${o.type === 'togo' ? '🥡 To-go' : '🍽️ Spiser her'}</span>
               <span class="nyrow__gaa">Åbn dagen →</span>
             </button>`).join('')}
-        </div>`
-        : '<div class="empty">Ingen nye bestillinger det seneste døgn.</div>'}
-      </div>`;
+        </div>
+      </div>
+      ${glemteHtml}`;
 
     $('#view-overblik').innerHTML = `
       ${nyligtHtml}
@@ -2841,6 +2872,9 @@
       return;
     }
 
+    /* "hvor blev de af?" – der hvor de forlader Lige modtaget */
+    if (act === 'vis-historik') { visHistorik(); return; }
+
     if (act === 'kal-newbooking') {
       /* hop til Bookinger med formularen åben og datoen sat – arrangementer
          med "luk"-fluebenet blokerer automatisk dagen for madbestillinger */
@@ -3160,6 +3194,34 @@
     document.addEventListener('visibilitychange', tjek);
     tjek();
     setInterval(tjek, 5 * 60 * 1000);
+  })();
+
+  /* ============================================================
+     URET GÅR, OGSÅ NÅR INGEN RØRER TELEFONEN
+     "Lige modtaget" holder kun 3 timer, og tømmes ved døgnskiftet.
+     Men skærmen blev kun tegnet om, når DATABASEN ændrede sig – så
+     en iPad der stod og lyste i køkkenet kunne blive ved med at vise
+     "for 2 timer siden" længe efter. Her tikker vi selv.
+     ============================================================ */
+  (function urTikker() {
+    let sidsteDag = S.todayISO();
+    setInterval(() => {
+      if (app.hidden || document.visibilityState !== 'visible') return;
+      const nu = S.todayISO();
+      if (nu !== sidsteDag) {
+        /* nyt døgn: alt der siger "i dag" skal tegnes om, ikke kun kortet */
+        sidsteDag = nu;
+        renderAll();
+        return;
+      }
+      if (activeView === 'overblik') renderOverblik();
+    }, 60000);
+    /* … og med det samme når man tager telefonen op igen */
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState !== 'visible' || app.hidden) return;
+      if (S.todayISO() !== sidsteDag) { sidsteDag = S.todayISO(); renderAll(); }
+      else if (activeView === 'overblik') renderOverblik();
+    });
   })();
 
   S.subscribe(() => {
