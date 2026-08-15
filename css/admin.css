@@ -1860,3 +1860,37 @@ body.dv-open { overflow: hidden; }
 .alldag__head span { font-size: 0.88rem; color: var(--ink-soft); }
 .alldag__new { color: #A9500D; }
 .alldag__head .abtn { margin-left: auto; }
+
+/* ---------- historik: hvad skete der med bestillingerne? ---------- */
+.logbox {
+  background: #fff;
+  width: min(680px, 100%);
+  border-radius: 20px;
+  padding: 24px 22px 18px;
+  box-shadow: 0 30px 70px -25px rgba(28, 24, 20, 0.55);
+  animation: dvUp 0.18s ease-out;
+}
+.logbox__head { display: flex; align-items: center; gap: 12px; }
+.logbox__head h3 { font-family: var(--font-display); font-size: 1.3rem; font-weight: 600; }
+.logbox__head .abtn { margin-left: auto; }
+.logbox__sub { font-size: 0.86rem; color: var(--ink-soft); line-height: 1.5; margin: 8px 0 16px; }
+.logbox__krop { max-height: min(62vh, 620px); overflow-y: auto; }
+.logbox__krop code {
+  font-size: 0.9em; padding: 1px 5px; border-radius: 5px;
+  background: rgba(28, 24, 20, 0.06);
+}
+.logrow {
+  display: grid; gap: 2px;
+  padding: 11px 13px; margin-bottom: 8px;
+  border: 1.6px solid var(--line); border-radius: 13px;
+  background: #fff;
+}
+.logrow__hvad { font-weight: 650; font-size: 0.95rem; }
+.logrow__tid, .logrow__mad, .logrow__naar, .logrow__hvem {
+  font-size: 0.82rem; color: var(--ink-soft);
+}
+.logrow__mad { color: var(--ink); }
+/* slettet = det man leder efter, når noget er væk */
+.logrow--slettet { border-color: rgba(190, 60, 40, 0.34); background: #FDF3F1; }
+.logrow--slettet .logrow__hvad { color: var(--red); }
+.logrow--ny { border-color: rgba(217, 108, 44, 0.3); }

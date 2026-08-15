@@ -568,6 +568,94 @@
     });
   }
 
+  /* ============================================================
+     HISTORIK — "hvor blev den bestilling af?"
+     Der findes ingen skraldespand: sletter man en bestilling, er den
+     væk fra databasen med det samme. Men databasen skriver ned, hvad
+     der sker, og hvem der gjorde det. Her kan personalet selv slå op,
+     i stedet for at gætte på om en bestilling nogensinde kom ind.
+     ============================================================ */
+  function logTid(iso) {
+    const d = new Date(iso);
+    const dag = d.toLocaleDateString('da-DK', { day: 'numeric', month: 'short' });
+    const kl = d.toLocaleTimeString('da-DK', { hour: '2-digit', minute: '2-digit' });
+    const minSiden = Math.round((Date.now() - d.getTime()) / 60000);
+    let siden = '';
+    if (minSiden < 1) siden = 'lige nu';
+    else if (minSiden < 60) siden = `for ${minSiden} min. siden`;
+    else if (minSiden < 60 * 24) siden = `for ${Math.round(minSiden / 60)} time(r) siden`;
+    return { naar: `${dag} kl. ${kl}`, siden };
+  }
+
+  /* Hvem gjorde det – oversat fra databasesprog til dansk */
+  function logHvem(r) {
+    const mail = r.af_hvem && r.af_hvem !== '(ingen)' ? r.af_hvem : '';
+    if (r.rolle === 'anon') return 'kunden selv (fra hjemmesiden)';
+    if (mail) return mail;
+    if (r.rolle === 'authenticated') return 'personalet';
+    return 'direkte i databasen';
+  }
+
+  const LOG_TEKST = {
+    oprettet: { ikon: '🆕', ord: 'kom ind', klasse: 'logrow--ny' },
+    'ændret': { ikon: '✏️', ord: 'blev rettet', klasse: '' },
+    SLETTET: { ikon: '🗑', ord: 'blev SLETTET', klasse: 'logrow--slettet' },
+  };
+
+  async function visHistorik() {
+    const mask = document.createElement('div');
+    mask.className = 'dvmask logmask';
+    mask.innerHTML = `
+      <div class="logbox" role="dialog" aria-modal="true" aria-label="Historik">
+        <div class="logbox__head">
+          <h3>🕓 Historik</h3>
+          <button type="button" class="abtn abtn--ghost logbox__luk" aria-label="Luk">✕</button>
+        </div>
+        <p class="logbox__sub">Alt hvad der er sket med bestillinger – også dem der er slettet. En slettet bestilling kan ikke hentes tilbage, men her kan man se hvad der stod i den, og hvem der slettede den.</p>
+        <div class="logbox__krop"><div class="empty">Henter …</div></div>
+      </div>`;
+    document.body.appendChild(mask);
+    document.body.classList.add('dv-open');
+    const luk = () => {
+      mask.remove();
+      document.body.classList.remove('dv-open');
+      document.removeEventListener('keydown', tast);
+    };
+    const tast = (e) => { if (e.key === 'Escape') luk(); };
+    document.addEventListener('keydown', tast);
+    mask.querySelector('.logbox__luk').addEventListener('click', luk);
+    mask.addEventListener('click', (e) => { if (e.target === mask) luk(); });
+
+    const krop = mask.querySelector('.logbox__krop');
+    const svar = await S.getOrderHistory(200);
+    if (!svar.ok) {
+      const besked = {
+        'ingen-logbog': 'Logbogen er ikke slået til endnu. Kør <code>logbog.sql</code> i Supabase, så gemmes alt fra da af.',
+        'ikke-logget-ind': 'Log ind igen for at se historikken.',
+        net: 'Kunne ikke hente historikken – tjek forbindelsen og prøv igen.',
+        fejl: 'Kunne ikke hente historikken – prøv igen om lidt.',
+      }[svar.grund] || 'Kunne ikke hente historikken.';
+      krop.innerHTML = `<div class="empty">${besked}</div>`;
+      return;
+    }
+    if (!svar.rows.length) {
+      krop.innerHTML = '<div class="empty">Der er ikke sket noget endnu.</div>';
+      return;
+    }
+    krop.innerHTML = `<div class="rowlist">${svar.rows.map((r) => {
+      const t = LOG_TEKST[r.handling] || { ikon: '•', ord: r.handling, klasse: '' };
+      const { naar, siden } = logTid(r.hvornaar);
+      return `
+        <div class="logrow ${t.klasse}">
+          <span class="logrow__hvad">${t.ikon} ${esc(r.kunde || 'uden navn')} — ${t.ord}</span>
+          <span class="logrow__tid">${esc(naar)}${siden ? ` · ${esc(siden)}` : ''}</span>
+          <span class="logrow__mad">${esc(r.varer || 'ingen varer')}</span>
+          <span class="logrow__naar">📅 ${r.dato ? esc(S.formatDate(r.dato, false)) : '?'} kl. ${esc(r.klokken || '–')}</span>
+          <span class="logrow__hvem">👤 ${esc(logHvem(r))}</span>
+        </div>`;
+    }).join('')}</div>`;
+  }
+
   function orderRow(o, showDate = false) {
     const all = orderLines(o).filter((l) => !isExtraLine(l));
     const extras = orderLines(o).filter(isExtraLine);
@@ -1542,6 +1630,7 @@
             <button class="abtn abtn--ghost" id="ordersNext" ${ordersAllDays ? 'disabled' : ''}>→</button>
             <button class="abtn" id="ordersToday" ${ordersAllDays ? 'disabled' : ''}>I dag</button>
             <button class="abtn ${ordersAllDays ? 'abtn--accent' : 'abtn--ghost'}" id="ordersAll">${ordersAllDays ? '📅 Vis én dag' : '📚 Alle dage'}</button>
+            <button class="abtn abtn--ghost" id="ordersLog" title="Se hvad der er sket – også med bestillinger der er slettet">🕓 Historik</button>
           </div>
         </div>
         <p class="sub" style="color:var(--ink-soft);margin-bottom:14px;">
@@ -1582,6 +1671,7 @@
     $('#ordersNext').addEventListener('click', () => { ordersDate = S.addDays(ordersDate, 1); renderBestillinger(); });
     $('#ordersToday').addEventListener('click', () => { ordersDate = S.todayISO(); renderBestillinger(); });
     $('#ordersAll').addEventListener('click', () => { ordersAllDays = true; renderBestillinger(); });
+    $('#ordersLog').addEventListener('click', visHistorik);
   }
 
   /* ALLE bestillinger samlet ét sted – grupperet og sorteret på dato,
@@ -1622,6 +1712,7 @@
             <button class="abtn abtn--ghost" id="ordersNext" disabled>→</button>
             <button class="abtn" id="ordersToday" disabled>I dag</button>
             <button class="abtn abtn--accent" id="ordersAll">📅 Vis én dag</button>
+            <button class="abtn abtn--ghost" id="ordersLog" title="Se hvad der er sket – også med bestillinger der er slettet">🕓 Historik</button>
           </div>
         </div>
         <p class="sub" style="color:var(--ink-soft);margin-bottom:12px;">
@@ -1644,6 +1735,7 @@
       </div>`;
 
     $('#ordersAll').addEventListener('click', () => { ordersAllDays = false; renderBestillinger(); });
+    $('#ordersLog').addEventListener('click', visHistorik);
     /* ét tryk rydder alle overståede dage – det er ikke noget man vil
        sidde og gøre én ad gangen efter en testperiode */
     const purge = $('#ordersPurge');

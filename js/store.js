@@ -891,6 +891,30 @@ const SpiisStore = (() => {
     }).then((ok) => { if (!ok) emit(); return ok; });
   }
 
+  /* ============================================================
+     LOGBOGEN
+     En slettet bestilling er væk for altid – der findes ingen
+     skraldespand. Til gengæld skriver databasen ned, hver gang en
+     bestilling oprettes, ændres eller slettes, og af hvem. Her
+     henter vi den ned, så personalet selv kan se hvad der skete,
+     i stedet for at gætte.
+     ============================================================ */
+  async function getOrderHistory(limit = 200) {
+    if (!cloud || !session) return { ok: false, grund: 'ikke-logget-ind' };
+    try {
+      const res = await sbFetch(
+        `/rest/v1/order_log?select=*&order=hvornaar.desc&limit=${Number(limit) || 200}`,
+        { auth: true },
+      );
+      /* 404 = tabellen findes ikke endnu (logbog.sql er ikke kørt) */
+      if (res.status === 404) return { ok: false, grund: 'ingen-logbog' };
+      if (!res.ok) return { ok: false, grund: 'fejl' };
+      return { ok: true, rows: await res.json() };
+    } catch {
+      return { ok: false, grund: 'net' };
+    }
+  }
+
   /* ---------- bookinger (arrangementer & møder) ---------- */
   async function addBooking(booking) {
     if (cloud) {
@@ -1358,7 +1382,7 @@ const SpiisStore = (() => {
     getSold, getRemaining, getSoldFor, getRemainingFor, dagensAllSoldOut,
     getNote, setNote, weekStart, weekNumber,
     getMenu, setMenu,
-    addOrder, getOrders, updateOrder, deleteOrder,
+    addOrder, getOrders, updateOrder, deleteOrder, getOrderHistory,
     addBooking, getBookings, updateBooking, deleteBooking,
     getBlockedDates, getArrangementDates, isOrderingClosed, blockDate, unblockDate, isDateAvailable,
     getDayMark, setDayMark, DEFAULT_TAPAS_ITEMS,
