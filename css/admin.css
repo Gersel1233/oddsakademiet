@@ -1955,3 +1955,34 @@ body.dv-open { overflow: hidden; }
 }
 .nyecard__glemt:hover { border-color: var(--accent); }
 .nyecard--tom + .nyecard__glemt { margin-top: 10px; }
+
+/* ---------- luk take-away eller spis her hver for sig ---------- */
+.typelukning {
+  margin: 0 0 14px;
+  padding: 14px 16px;
+  border: 1.6px solid var(--line); border-radius: 14px;
+  background: #fff;
+}
+.typelukning--aktiv { border-color: rgba(169, 80, 13, 0.4); background: #FFFaF4; }
+.typelukning__head { display: grid; gap: 2px; margin-bottom: 11px; }
+.typelukning__head strong { font-size: 0.98rem; }
+.typelukning__head small { color: var(--ink-soft); font-size: 0.82rem; }
+.typelukning__raekke { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.typekort {
+  display: grid; gap: 5px; justify-items: start;
+  padding: 11px 13px;
+  border: 1.6px solid var(--line); border-radius: 12px;
+  background: #fff;
+}
+.typekort--lukket { border-color: rgba(190, 60, 40, 0.34); background: #FDF3F1; }
+.typekort__navn { font-weight: 650; font-size: 0.93rem; }
+.typekort__stand { font-size: 0.82rem; color: var(--ink-soft); }
+.typekort--lukket .typekort__stand { color: var(--red); font-weight: 600; }
+.typekort .abtn { width: 100%; justify-content: center; }
+.typelukning__note, .typelukning__advarsel {
+  margin: 11px 0 0; font-size: 0.83rem; line-height: 1.5; color: var(--ink-soft);
+}
+.typelukning__advarsel { color: #A9500D; font-weight: 600; }
+@media (max-width: 420px) {
+  .typelukning__raekke { grid-template-columns: 1fr; }
+}

@@ -581,6 +581,43 @@
     onOrderDateChange();
   }
 
+  /* ============================================================
+     NOGLE DAGE ER KUN DEN ENE MÅDE MULIG
+     Fx "på torsdag kan man kun bestille take-away". Så skal den
+     anden knap ikke bare give en fejl til sidst – den skal slet
+     ikke kunne vælges, og der skal stå hvorfor.
+     ============================================================ */
+  const TYPENAVN = { togo: 'Take-away', spise: 'Spis her' };
+  function syncOrderTypes(iso) {
+    const knapper = $$('input[name="orderType"]');
+    if (!knapper.length) return;
+    const aabne = iso && S.openTypesFor ? S.openTypesFor(iso) : ['togo', 'spise'];
+    /* er dagen helt lukket, rører vi ikke ved knapperne – den besked
+       hører til datoen, ikke til måden man vil spise på */
+    const kunHelDagLukket = iso && !aabne.length;
+    knapper.forEach((r) => {
+      const lukket = !kunHelDagLukket && !aabne.includes(r.value);
+      r.disabled = lukket;
+      const label = r.closest('label');
+      if (label) label.classList.toggle('is-lukket', lukket);
+      if (label) label.title = lukket ? `${TYPENAVN[r.value]} er ikke muligt denne dag` : '';
+    });
+    /* stod man på den lukkede, flyttes man til den der er åben */
+    const valgt = knapper.find((r) => r.checked);
+    if (valgt && valgt.disabled) {
+      const åben = knapper.find((r) => !r.disabled);
+      if (åben) åben.checked = true;
+    }
+    const note = $('#typeLukketNote');
+    if (note) {
+      const lukkede = knapper.filter((r) => r.disabled).map((r) => TYPENAVN[r.value]);
+      note.hidden = !lukkede.length;
+      note.textContent = lukkede.length
+        ? `${lukkede.join(' og ')} er ikke muligt denne dag – vælg en anden dag, hvis I hellere vil det.`
+        : '';
+    }
+  }
+
   function onOrderDateChange() {
     const iso = orderDate.value;
     if (!iso) {
@@ -606,6 +643,7 @@
       orderDishHint.classList.add('is-live');
     }
 
+    syncOrderTypes(iso);
     renderBuilder();
 
     /* kun fremtidige tider – to-go stopper kl. 19:30, spis her kl. 20:30 */
@@ -862,6 +900,11 @@
       } else if (result.reason === 'lukket') {
         error.textContent = `Denne dag er netop blevet lukket for bestillinger (${lukketTekst(o.iso).replace(/^\S+\s/, '').toLowerCase()}) – vælg venligst en anden dag.`;
         if (S.isCloud()) S.refreshPublic();
+      } else if (result.reason === 'type-lukket') {
+        /* køkkenet har lukket netop den måde, mens kunden sad og skrev */
+        error.textContent = `${TYPENAVN[result.type] || 'Den valgte måde'} er desværre ikke muligt denne dag. Vælg den anden mulighed, eller en anden dag.`;
+        if (S.isCloud()) S.refreshPublic();
+        syncOrderTypes(o.iso);
       } else if (result.reason === 'tid') {
         error.textContent = `Bestillinger kan kun vælges mellem kl. ${orderFrom()} og ${orderTo()} – vælg et tidspunkt i det vindue.`;
         onOrderDateChange();

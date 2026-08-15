@@ -143,6 +143,7 @@ const SpiisStore = (() => {
       news: [],         /* nyheder på forsiden { id, title, text, image, cta, active, createdAt } */
       closure: { active: false, from: '', reopen: '', message: '' }, /* ferie/luk-periode */
       dayMarks: {},     /* hvorfor en dag er lukket { 'YYYY-MM-DD': { e: '👥', t: 'Personaledag' } } */
+      closedTypes: {},  /* dage hvor KUN den ene måde er lukket { 'YYYY-MM-DD': ['spise'] } */
       log: [],
     };
 
@@ -175,6 +176,7 @@ const SpiisStore = (() => {
       if (!parsed.news) parsed.news = [];
       if (!parsed.closure) parsed.closure = { active: false, from: '', reopen: '', message: '' };
       if (!parsed.dayMarks) parsed.dayMarks = {};
+      if (!parsed.closedTypes) parsed.closedTypes = {};
       return parsed;
     } catch {
       return null;
@@ -239,7 +241,7 @@ const SpiisStore = (() => {
     return res;
   }
 
-  const CONFIG_KEYS = ['settings', 'hours', 'dagensRet', 'menu', 'blockedDates', 'arrangementDates', 'orderClosedDates', 'news', 'closure', 'dayMarks'];
+  const CONFIG_KEYS = ['settings', 'hours', 'dagensRet', 'menu', 'blockedDates', 'arrangementDates', 'orderClosedDates', 'news', 'closure', 'dayMarks', 'closedTypes'];
 
   function mergeConfig(remote) {
     if (!remote) return;
@@ -261,6 +263,7 @@ const SpiisStore = (() => {
       arrangementDates: data.arrangementDates || [],
       orderClosedDates: data.orderClosedDates || [],
       dayMarks: data.dayMarks || {},
+      closedTypes: data.closedTypes || {},
       news: data.news || [],
       closure: data.closure || { active: false, from: '', reopen: '', message: '' },
     };
@@ -703,6 +706,10 @@ const SpiisStore = (() => {
     }
     /* dage med privat arrangement (eller lukkede dage) tager ikke imod bestillinger */
     if (isOrderingClosed(order.date)) return { ok: false, reason: 'lukket' };
+    /* … og en dag kan være lukket for KUN den ene måde at spise på */
+    if (isTypeClosed(order.date, order.type)) {
+      return { ok: false, reason: 'type-lukket', type: normType(order.type) };
+    }
     /* bestillingsvinduet er forskelligt pr. type: to-go til kl. 19,
        spis her til kl. 20:30 (kan ændres i admin) */
     const oFrom = data.settings.orderFrom || '16:00';
@@ -1109,6 +1116,45 @@ const SpiisStore = (() => {
 
   const isOrderingClosed = (iso) =>
     data.blockedDates.includes(iso) || (data.orderClosedDates || []).includes(iso) || isInClosure(iso);
+
+  /* ============================================================
+     LUK KUN DEN ENE MÅDE
+     Nogle dage kan køkkenet godt lave mad ud af huset, men ikke
+     dække borde – eller omvendt. Før kunne man kun lukke HELE
+     dagen, og så mistede man også den halvdel der sagtens kunne
+     lade sig gøre. Her lukkes én måde ad gangen.
+     'togo' = take-away · 'spise' = spiser her
+     ============================================================ */
+  const ORDER_TYPES = ['togo', 'spise'];
+  const normType = (t) => (t === 'togo' ? 'togo' : 'spise');
+  const getClosedTypes = (iso) => {
+    const liste = (data.closedTypes || {})[iso];
+    return Array.isArray(liste) ? liste.filter((t) => ORDER_TYPES.includes(t)) : [];
+  };
+  const isTypeClosed = (iso, type) => getClosedTypes(iso).includes(normType(type));
+  /* hvad kan man overhovedet bestille denne dag? tom liste = ingenting */
+  const openTypesFor = (iso) => (isOrderingClosed(iso)
+    ? [] : ORDER_TYPES.filter((t) => !isTypeClosed(iso, t)));
+  function setTypeClosed(iso, type, lukket) {
+    if (!data.closedTypes) data.closedTypes = {};
+    const t = normType(type);
+    const nu = new Set(getClosedTypes(iso));
+    if (lukket) nu.add(t); else nu.delete(t);
+    if (nu.size) data.closedTypes[iso] = [...nu];
+    else delete data.closedTypes[iso];
+    save();
+    pushConfig();
+  }
+  /* ryd op: en dag der ligger bag os behøver ingen regel */
+  function ryddGamleTypelukninger() {
+    if (!data.closedTypes) return;
+    const graense = addDays(todayISO(), -2);
+    let rørt = false;
+    Object.keys(data.closedTypes).forEach((iso) => {
+      if (iso < graense) { delete data.closedTypes[iso]; rørt = true; }
+    });
+    if (rørt) save(false);
+  }
   function blockDate(iso) {
     if (!data.blockedDates.includes(iso)) {
       data.blockedDates.push(iso);
@@ -1428,6 +1474,7 @@ const SpiisStore = (() => {
     addBooking, getBookings, updateBooking, deleteBooking,
     getBlockedDates, getArrangementDates, isOrderingClosed, blockDate, unblockDate, isDateAvailable,
     getDayMark, setDayMark, DEFAULT_TAPAS_ITEMS,
+    getClosedTypes, setTypeClosed, isTypeClosed, openTypesFor, ryddGamleTypelukninger,
     getClosure, setClosure, isClosureNow, isInClosure,
     timeslotsFor, orderSlots, orderToFor,
     getNews, addNews, updateNews, deleteNews, uploadNewsImage, placeNewsOrder,

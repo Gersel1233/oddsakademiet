@@ -1117,6 +1117,50 @@
     return `${note}<button class="abtn abtn--ghost" data-act="kal-block" data-iso="${iso}">🚫 Luk ${S.isOrderingClosed(iso) ? 'OGSÅ for booking' : 'dagen for bestilling &amp; booking'}</button>`;
   }
 
+  /* ============================================================
+     LUK KUN DEN ENE MÅDE
+     "På torsdag kan man kun bestille take-away." Før måtte man
+     lukke HELE dagen for at styre det – og så mistede man også den
+     halvdel der sagtens kunne lade sig gøre. Her sidder de to
+     kontakter, i kalenderen hvor man har overblikket over dagen.
+     ============================================================ */
+  const TYPER = [
+    { id: 'togo', navn: '🥡 Take-away', kort: 'take-away' },
+    { id: 'spise', navn: '🍽️ Spis her', kort: 'spis her' },
+  ];
+
+  function typeSwitchHtml(iso, today) {
+    /* er dagen helt lukket, eller ligger den bag os, er der intet at styre */
+    if (iso < today || !S.isOpenDay(iso) || S.isInClosure(iso) || S.isOrderingClosed(iso)) return '';
+    const lukkede = S.getClosedTypes(iso);
+    const alleLukket = lukkede.length >= TYPER.length;
+    return `
+      <div class="typelukning ${lukkede.length ? 'typelukning--aktiv' : ''}">
+        <div class="typelukning__head">
+          <strong>Hvad kan man bestille denne dag?</strong>
+          <small>Luk kun den ene måde – resten af dagen kører videre.</small>
+        </div>
+        <div class="typelukning__raekke">
+          ${TYPER.map((t) => {
+            const lukket = lukkede.includes(t.id);
+            return `
+            <div class="typekort ${lukket ? 'typekort--lukket' : ''}">
+              <span class="typekort__navn">${t.navn}</span>
+              <span class="typekort__stand">${lukket ? '🚫 Lukket' : '✅ Åben'}</span>
+              <button type="button" class="abtn ${lukket ? 'abtn--green' : 'abtn--ghost'}"
+                      data-act="type-toggle" data-iso="${iso}" data-type="${t.id}">
+                ${lukket ? 'Åbn igen' : 'Luk'}
+              </button>
+            </div>`;
+          }).join('')}
+        </div>
+        ${alleLukket ? `
+        <p class="typelukning__advarsel">⚠️ Begge måder er lukket – så kan ingen bestille noget denne dag. Vil du hellere lukke hele dagen, så den også står som lukket på hjemmesiden, bruger du "🚫 Luk dagen" ovenfor.</p>` : ''}
+        ${lukkede.length && !alleLukket ? `
+        <p class="typelukning__note">Kunderne kan kun vælge <strong>${TYPER.filter((t) => !lukkede.includes(t.id)).map((t) => t.kort).join(' og ')}</strong> på spiis.dk denne dag. Databasen afviser også resten, hvis nogen prøver udenom.</p>` : ''}
+      </div>`;
+  }
+
   /* fælles top: uge/måned-skifter + pile, der VIRKER begge veje */
   function kalHeader(title, sub) {
     return `
@@ -1278,6 +1322,7 @@
       <div class="dv__status ${st.cls}">${st.full}</div>
       ${nyCount ? `<div class="dv__alert">⚠️ ${nyCount === 1 ? 'Én booking venter' : `${nyCount} bookinger venter`} på jeres svar – den ligger i programmet herunder</div>` : ''}
       ${act ? `<div class="dv__act">${act}</div>` : ''}
+      ${typeSwitchHtml(iso, today)}
       <div class="dv__chips">
         <span class="dvchip">🧾 <b>${d.orders.length}</b> bestillinger</span>
         <span class="dvchip">🍲 <b>${d.items}</b> retter</span>
@@ -2874,6 +2919,20 @@
 
     /* "hvor blev de af?" – der hvor de forlader Lige modtaget */
     if (act === 'vis-historik') { visHistorik(); return; }
+
+    /* luk/åbn take-away eller spis-her for én dag */
+    if (act === 'type-toggle') {
+      const { iso, type } = btn.dataset;
+      const lukkerNu = !S.isTypeClosed(iso, type);
+      S.setTypeClosed(iso, type, lukkerNu);
+      const navn = (TYPER.find((t) => t.id === type) || {}).kort || type;
+      toast(lukkerNu
+        ? `🚫 ${navn} er lukket ${S.formatDate(iso, false).toLowerCase()}`
+        : `✅ ${navn} er åben igen ${S.formatDate(iso, false).toLowerCase()}`);
+      renderDayModal();
+      renderView(activeView);
+      return;
+    }
 
     if (act === 'kal-newbooking') {
       /* hop til Bookinger med formularen åben og datoen sat – arrangementer

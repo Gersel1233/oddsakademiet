@@ -2184,3 +2184,14 @@ a, button, select, .daytab, .choice, .segmented label, .stepper button {
 .form.is-paused button[type="submit"] { opacity: 0.5; cursor: not-allowed; }
 body.orders-paused .mobilecta,
 body.orders-paused .nav__cta { display: none !important; }
+
+/* ---------- dage hvor kun den ene måde er mulig ---------- */
+.segmented label.is-lukket { opacity: 0.42; cursor: not-allowed; }
+.segmented label.is-lukket span { text-decoration: line-through; }
+.field__hint--lukket {
+  display: block;
+  margin-top: 8px; padding: 9px 12px;
+  border-radius: 10px;
+  background: #FFF6EC; border: 1px solid rgba(169, 80, 13, 0.28);
+  color: var(--ink); line-height: 1.5;
+}
