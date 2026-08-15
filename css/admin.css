@@ -1894,3 +1894,39 @@ body.dv-open { overflow: hidden; }
 .logrow--slettet { border-color: rgba(190, 60, 40, 0.34); background: #FDF3F1; }
 .logrow--slettet .logrow__hvad { color: var(--red); }
 .logrow--ny { border-color: rgba(217, 108, 44, 0.3); }
+
+/* ---------- klokken: intet forsvinder ---------- */
+.belldrop__delt {
+  padding: 9px 16px;
+  font-size: 0.76rem; line-height: 1.45;
+  color: var(--ink-soft);
+  background: rgba(28, 24, 20, 0.03);
+  border-bottom: 1px solid var(--line);
+}
+/* tre knapper i bunden i stedet for to – de må ikke blive for smalle */
+.belldrop__foot { flex-wrap: wrap; }
+.belldrop__foot button { flex: 1 1 30%; min-width: 96px; }
+
+.notifset { border-top: 1px solid var(--line); background: rgba(28, 24, 20, 0.02); }
+.notifset > summary {
+  padding: 11px 16px; cursor: pointer;
+  font-weight: 650; font-size: 0.84rem; color: var(--ink-soft);
+  list-style: none;
+}
+.notifset > summary::-webkit-details-marker { display: none; }
+.notifset > summary::before { content: '▸ '; }
+.notifset[open] > summary::before { content: '▾ '; }
+.notifset > summary em {
+  font-style: normal; font-weight: 700;
+  padding: 1px 7px; margin-left: 2px;
+  border-radius: 999px; background: rgba(28, 24, 20, 0.09);
+}
+.notifset__hint { font-weight: 500; }
+.notifset__forklar {
+  padding: 0 16px 10px; margin: 0;
+  font-size: 0.76rem; line-height: 1.45; color: var(--ink-soft);
+}
+.notifrow--set .notif { opacity: 0.62; }
+.notifrow--set .notif__text strong { font-weight: 600; }
+.notif__igen { color: var(--accent-deep); font-size: 1.05rem; }
+.notif__igen:hover { background: var(--accent-soft, rgba(217, 108, 44, 0.12)); color: var(--accent-deep); }

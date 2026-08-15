@@ -356,7 +356,14 @@ const SpiisStore = (() => {
       sbRows('/rest/v1/notes?select=*'),
     ]);
     const snap = JSON.stringify([orders, bookings, notes]);
-    if (snap === lastAdminSnap) return;
+    /* Genvejen "intet nyt siden sidst" sparer en gentegning – men den
+       må ALDRIG bruges, mens der stadig ligger en lokal ændring og
+       overskriver det hentede. Ellers blev overskrivningen hængende
+       for evigt: rettede en anden enhed noget tilbage, kom den her
+       enhed aldrig med, fordi databasen jo "ikke havde ændret sig"
+       siden sidste hentning. Så stod to skærme forskelligt, indtil
+       appen blev genindlæst. */
+    if (snap === lastAdminSnap && !pendingOps.length) return;
     lastAdminSnap = snap;
     data.orders = orders.map(rowToOrder);
     data.bookings = bookings.map(rowToBooking);
@@ -1218,6 +1225,41 @@ const SpiisStore = (() => {
     const bookings = data.bookings.filter((b) => !b.read);
     return { orders, bookings, count: orders.length + bookings.length };
   }
+
+  /* ============================================================
+     NOTIFIKATIONER MÅ ALDRIG FORSVINDE
+     "Læst" står ÉT sted – i databasen, på selve bestillingen. Det
+     er meningen: fjerner én i køkkenet en notifikation, skal de
+     andre ikke stå og køre den samme mad to gange. Men før faldt
+     den så helt ud af klokken, og så var der ingen vej tilbage,
+     hvis nogen kom til at trykke. Nu bliver den liggende under
+     "Set for nylig", og kan sættes tilbage som ny.
+     ============================================================ */
+  const SET_VINDUE = 48 * 3600e3; /* hvor længe en set notifikation bliver hængende */
+  function getSeenRecently() {
+    const graense = Date.now() - SET_VINDUE;
+    const nyligNok = (x) => {
+      const t = x.createdAt ? new Date(x.createdAt).getTime() : NaN;
+      return Number.isFinite(t) && t >= graense;
+    };
+    const orders = data.orders.filter((o) => o.read && nyligNok(o));
+    const bookings = data.bookings.filter((b) => b.read && nyligNok(b));
+    return { orders, bookings, count: orders.length + bookings.length };
+  }
+
+  /* fortryd: sæt en notifikation tilbage som ny – for alle enheder */
+  function markUnread(kind, id) {
+    const table = kind === 'booking' ? 'bookings' : 'orders';
+    const row = data[table].find((x) => x.id === id);
+    if (!row || !row.read) return Promise.resolve(true);
+    row.read = false;
+    save();
+    return cloudWrite({
+      table, id, patch: { read: false },
+      undo: () => { const r = data[table].find((x) => x.id === id); if (r) r.read = true; },
+      what: 'Notifikationen kunne ikke sættes tilbage som ny',
+    }).then((ok) => { if (!ok) emit(); return ok; });
+  }
   /* markér ÉN som læst – bruges når man swiper en notifikation væk.
      Lykkes det ikke i databasen, kommer notifikationen tilbage med
      det samme i stedet for at "forsvinde" og dukke op igen i morgen. */
@@ -1389,7 +1431,7 @@ const SpiisStore = (() => {
     getClosure, setClosure, isClosureNow, isInClosure,
     timeslotsFor, orderSlots, orderToFor,
     getNews, addNews, updateNews, deleteNews, uploadNewsImage, placeNewsOrder,
-    getUnread, markRead, markAllRead, onWriteFail,
+    getUnread, getSeenRecently, markRead, markUnread, markAllRead, onWriteFail,
     exportData, resetData,
     subscribe,
     /* sky */

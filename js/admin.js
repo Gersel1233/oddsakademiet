@@ -250,8 +250,8 @@
     badgeBookings.hidden = unread.bookings.length === 0;
     badgeBookings.textContent = unread.bookings.length;
 
-    const items = [
-      ...unread.orders.map((o) => {
+    const tilPunkter = (samling) => [
+      ...samling.orders.map((o) => {
         const lines = foodLines(o);
         const summary = lines.slice(0, 3).map((l) => `${l.qty} × ${l.name}`).join(' · ') + (lines.length > 3 ? ' · …' : '');
         return {
@@ -263,7 +263,7 @@
           at: o.createdAt,
         };
       }),
-      ...unread.bookings.map((b) => ({
+      ...samling.bookings.map((b) => ({
         icon: b.kind === 'moede' ? '📅' : '🎉',
         kind: 'booking', id: b.id, date: b.date,
         go: { view: 'bookinger' },
@@ -273,6 +273,12 @@
       })),
     ].sort((a, b) => (a.date || '9999').localeCompare(b.date || '9999')
       || (b.at || '').localeCompare(a.at || ''));
+
+    const items = tilPunkter(unread);
+    /* Set for nylig: de er IKKE væk – de ligger her, og kan hentes
+       tilbage. Nyeste øverst, for det er dem man leder efter. */
+    const seteItems = tilPunkter(S.getSeenRecently())
+      .sort((a, b) => (b.at || '').localeCompare(a.at || ''));
 
     /* samlet ét sted og grupperet pr. dag – nærmeste dag øverst */
     const today = S.todayISO();
@@ -287,7 +293,7 @@
       : d === S.addDays(today, 1) ? 'I morgen'
       : S.formatDate(d, false));
 
-    $('#bellList').innerHTML = items.length
+    const nyeHtml = items.length
       ? [...groups.entries()].map(([d, list]) => `
           <div class="notifday">${dayLabel(d)} <em>${list.length}</em></div>
           ${list.map((n) => `
@@ -300,12 +306,35 @@
             <button type="button" class="notif__x" data-dismiss aria-label="Fjern notifikationen">✕</button>
           </div>`).join('')}`).join('')
       : '<div class="belldrop__empty">Ingen nye notifikationer 🎉</div>';
+
+    /* ── Set for nylig ─────────────────────────────────────────
+       En notifikation forsvinder ALDRIG bare. Har nogen fjernet
+       den – eller trykket "✓ Færdig" – ligger den her i to døgn
+       og kan sættes tilbage som ny. */
+    const seteHtml = !seteItems.length ? '' : `
+      <details class="notifset">
+        <summary>👁 Set for nylig <em>${seteItems.length}</em> <span class="notifset__hint">· tryk for at se dem</span></summary>
+        <p class="notifset__forklar">Fjernet af nogen i køkkenet, eller kørt færdig. De er ikke væk – tryk ↩ for at sætte en tilbage som ny.</p>
+        ${seteItems.map((n) => `
+          <div class="notifrow notifrow--set" data-kind="${n.kind}" data-id="${esc(n.id)}">
+            <button type="button" class="notif" data-go-view="${n.go.view}" ${n.go.date ? `data-go-date="${n.go.date}"` : ''}>
+              <span class="notif__icon">${n.icon}</span>
+              <div class="notif__text"><strong>${esc(n.title)}</strong><small>${esc(n.sub)}</small></div>
+              <span class="notif__arrow" aria-hidden="true">→</span>
+            </button>
+            <button type="button" class="notif__x notif__igen" data-undismiss title="Sæt tilbage som ny" aria-label="Sæt tilbage som ny">↩</button>
+          </div>`).join('')}
+      </details>`;
+
+    $('#bellList').innerHTML = nyeHtml + seteHtml;
   }
 
   /* swipe en notifikation væk (telefon) – eller tryk ✕ (alle enheder).
      Notifikationerne bliver ellers HÆNGENDE, til de bevidst fjernes. */
   function dismissNotif(row) {
-    if (!row) return;
+    /* en allerede set notifikation kan ikke fjernes igen – den ligger
+       under "Set for nylig" og skal blive der */
+    if (!row || row.classList.contains('notifrow--set')) return;
     row.classList.add('is-gone');
     setTimeout(() => {
       /* kom den ikke i hus i databasen, dukker den op igen med det samme
@@ -338,6 +367,15 @@
         e.stopPropagation();
         dismissNotif(e.target.closest('.notifrow'));
       }
+      /* ↩ fortryd: hent den tilbage som ny – også hos de andre */
+      const igen = e.target.closest('[data-undismiss]');
+      if (igen) {
+        e.stopPropagation();
+        const row = igen.closest('.notifrow');
+        Promise.resolve(S.markUnread(row.dataset.kind, row.dataset.id)).then(() => renderBell());
+        renderBell();
+        toast('Sat tilbage som ny – også på de andres skærme');
+      }
     });
   })();
 
@@ -360,6 +398,11 @@
   $('#bellAllBookings').addEventListener('click', () => {
     bellDrop.hidden = true;
     switchView('bookinger');
+  });
+  /* "hvem fjernede den, og hvornår?" – logbogen ved det */
+  $('#bellHistorik').addEventListener('click', () => {
+    bellDrop.hidden = true;
+    visHistorik();
   });
 
   $('#bellBtn').addEventListener('click', (e) => {
