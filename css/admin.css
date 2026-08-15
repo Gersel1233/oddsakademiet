@@ -1986,3 +1986,28 @@ body.dv-open { overflow: hidden; }
 @media (max-width: 420px) {
   .typelukning__raekke { grid-template-columns: 1fr; }
 }
+
+/* ---------- egne bestillingstider på én dag ---------- */
+.dagstid {
+  margin: 0 0 14px;
+  padding: 14px 16px;
+  border: 1.6px solid var(--line); border-radius: 14px;
+  background: #fff;
+}
+.dagstid--aktiv { border-color: rgba(217, 108, 44, 0.45); background: #FFFaF4; }
+.dagstid__head { display: grid; gap: 2px; margin-bottom: 11px; }
+.dagstid__head strong { font-size: 0.98rem; }
+.dagstid__head small { color: var(--ink-soft); font-size: 0.82rem; line-height: 1.45; }
+.dagstid__raekke { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.dagstid__felt { display: grid; gap: 4px; min-width: 0; }
+.dagstid__felt > span { font-size: 0.83rem; font-weight: 650; }
+.dagstid__felt small { font-size: 0.75rem; color: var(--ink-soft); }
+.dagstid__felt input { width: 100%; }
+.dagstid__note {
+  margin: 12px 0 0; font-size: 0.83rem; line-height: 1.55; color: var(--ink-soft);
+}
+.dagstid__note strong { color: var(--ink); }
+.dagstid__note .abtn { margin-top: 9px; }
+@media (max-width: 560px) {
+  .dagstid__raekke { grid-template-columns: 1fr; }
+}

@@ -1158,6 +1158,48 @@
         <p class="typelukning__advarsel">⚠️ Begge måder er lukket – så kan ingen bestille noget denne dag. Vil du hellere lukke hele dagen, så den også står som lukket på hjemmesiden, bruger du "🚫 Luk dagen" ovenfor.</p>` : ''}
         ${lukkede.length && !alleLukket ? `
         <p class="typelukning__note">Kunderne kan kun vælge <strong>${TYPER.filter((t) => !lukkede.includes(t.id)).map((t) => t.kort).join(' og ')}</strong> på spiis.dk denne dag. Databasen afviser også resten, hvis nogen prøver udenom.</p>` : ''}
+      </div>
+      ${dagstiderHtml(iso, today)}`;
+  }
+
+  /* ============================================================
+     EGNE BESTILLINGSTIDER PÅ ÉN DAG
+     "På mandag åbner vi først 17:30." Normalt gælder det samme
+     vindue hver dag; her kan man give ÉN dag sit eget. Står feltet
+     tomt, bruges det almindelige – man sætter kun det man vil ændre.
+     ============================================================ */
+  function dagstiderHtml(iso, today) {
+    if (iso < today || !S.isOpenDay(iso) || S.isInClosure(iso) || S.isOrderingClosed(iso)) return '';
+    const egne = S.getDayTimes(iso);
+    const s = S.getSettings();
+    const normalFra = s.orderFrom || '16:00';
+    const normalTogo = s.orderToTogo || '19:00';
+    const normalDine = s.orderToDine || '20:30';
+    const harEgne = !!(egne.from || egne.toTogo || egne.toDine);
+    const felt = (navn, vaerdi, normal, mrk) => `
+      <label class="dagstid__felt">
+        <span>${mrk}</span>
+        <input type="time" class="inline-input" data-dagstid="${navn}" data-iso="${iso}"
+               value="${esc(vaerdi)}" placeholder="${esc(normal)}" />
+        <small>${vaerdi ? `normalt ${esc(normal)}` : `bruger ${esc(normal)}`}</small>
+      </label>`;
+    return `
+      <div class="dagstid ${harEgne ? 'dagstid--aktiv' : ''}">
+        <div class="dagstid__head">
+          <strong>Hvornår kan man hente denne dag?</strong>
+          <small>Lad felterne stå tomme, så gælder de almindelige tider. Udfyld kun det der er anderledes.</small>
+        </div>
+        <div class="dagstid__raekke">
+          ${felt('from', egne.from, normalFra, '🕐 Tidligst')}
+          ${felt('toTogo', egne.toTogo, normalTogo, '🥡 Senest to-go')}
+          ${felt('toDine', egne.toDine, normalDine, '🍽️ Senest spis her')}
+        </div>
+        ${harEgne ? `
+        <p class="dagstid__note">
+          Denne dag kan kunderne kun vælge fra <strong>${esc(egne.from || normalFra)}</strong>
+          — tidligere tider findes slet ikke på spiis.dk, og databasen afviser dem også.
+          <button type="button" class="abtn abtn--ghost" data-act="dagstid-nulstil" data-iso="${iso}">↩ Tilbage til de almindelige tider</button>
+        </p>` : ''}
       </div>`;
   }
 
@@ -1411,6 +1453,22 @@
           return;
         }
         if (e.target === mask) closeDayModal();
+      });
+      /* dagens egne bestillingstider gemmes når feltet forlades,
+         så man ikke gemmer halve klokkeslæt mens der tastes */
+      mask.addEventListener('change', (e) => {
+        const felt = e.target.closest && e.target.closest('[data-dagstid]');
+        if (!felt) return;
+        const iso = felt.dataset.iso;
+        const nu = S.getDayTimes(iso);
+        nu[felt.dataset.dagstid] = felt.value;
+        S.setDayTimes(iso, nu);
+        const t = S.getDayTimes(iso);
+        toast(t.from || t.toTogo || t.toDine
+          ? `Egne tider gemt for ${S.formatDate(iso, false).toLowerCase()}`
+          : 'Tilbage til de almindelige tider');
+        renderDayModal();
+        renderView(activeView);
       });
     }
     renderDayModal();
@@ -2919,6 +2977,15 @@
 
     /* "hvor blev de af?" – der hvor de forlader Lige modtaget */
     if (act === 'vis-historik') { visHistorik(); return; }
+
+    /* tilbage til de almindelige tider */
+    if (act === 'dagstid-nulstil') {
+      S.setDayTimes(btn.dataset.iso, {});
+      toast('Tilbage til de almindelige tider');
+      renderDayModal();
+      renderView(activeView);
+      return;
+    }
 
     /* luk/åbn take-away eller spis-her for én dag */
     if (act === 'type-toggle') {

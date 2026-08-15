@@ -144,6 +144,7 @@ const SpiisStore = (() => {
       closure: { active: false, from: '', reopen: '', message: '' }, /* ferie/luk-periode */
       dayMarks: {},     /* hvorfor en dag er lukket { 'YYYY-MM-DD': { e: '👥', t: 'Personaledag' } } */
       closedTypes: {},  /* dage hvor KUN den ene måde er lukket { 'YYYY-MM-DD': ['spise'] } */
+      dayTimes: {},     /* egne bestillingstider på én dag { 'YYYY-MM-DD': { from:'17:30' } } */
       log: [],
     };
 
@@ -177,6 +178,7 @@ const SpiisStore = (() => {
       if (!parsed.closure) parsed.closure = { active: false, from: '', reopen: '', message: '' };
       if (!parsed.dayMarks) parsed.dayMarks = {};
       if (!parsed.closedTypes) parsed.closedTypes = {};
+      if (!parsed.dayTimes) parsed.dayTimes = {};
       return parsed;
     } catch {
       return null;
@@ -241,7 +243,7 @@ const SpiisStore = (() => {
     return res;
   }
 
-  const CONFIG_KEYS = ['settings', 'hours', 'dagensRet', 'menu', 'blockedDates', 'arrangementDates', 'orderClosedDates', 'news', 'closure', 'dayMarks', 'closedTypes'];
+  const CONFIG_KEYS = ['settings', 'hours', 'dagensRet', 'menu', 'blockedDates', 'arrangementDates', 'orderClosedDates', 'news', 'closure', 'dayMarks', 'closedTypes', 'dayTimes'];
 
   function mergeConfig(remote) {
     if (!remote) return;
@@ -264,6 +266,7 @@ const SpiisStore = (() => {
       orderClosedDates: data.orderClosedDates || [],
       dayMarks: data.dayMarks || {},
       closedTypes: data.closedTypes || {},
+      dayTimes: data.dayTimes || {},
       news: data.news || [],
       closure: data.closure || { active: false, from: '', reopen: '', message: '' },
     };
@@ -712,8 +715,8 @@ const SpiisStore = (() => {
     }
     /* bestillingsvinduet er forskelligt pr. type: to-go til kl. 19,
        spis her til kl. 20:30 (kan ændres i admin) */
-    const oFrom = data.settings.orderFrom || '16:00';
-    const oTo = orderToFor(order.type);
+    const oFrom = orderFromFor(order.date);
+    const oTo = orderToFor(order.type, order.date);
     if (order.time && (order.time < oFrom || order.time > oTo)) return { ok: false, reason: 'tid' };
     /* datoen må ikke være passeret – og til i dag skal tiden være mindst
        20 min. ude i fremtiden (fanger fx en fane, der har stået åben i timevis) */
@@ -1212,18 +1215,65 @@ const SpiisStore = (() => {
   /* bestillingstider: ét fast vindue (16:00–21:00) på åbne dage.
      Vinduet lægges oven på dagens åbningstider, så vi aldrig tilbyder
      tider før køkkenet åbner eller efter det lukker. */
+  /* ============================================================
+     EGNE BESTILLINGSTIDER PÅ ÉN DAG
+     Normalt gælder det samme vindue hver dag (16:00–19:00). Men
+     "på mandag åbner vi først 17:30" – og så skal ingen kunne vælge
+     16:00. Her kan én dag have sit eget vindue; står feltet tomt,
+     bruges det almindelige, så man kun sætter det man vil ændre.
+     ============================================================ */
+  const erKlokkeslet = (v) => typeof v === 'string' && /^([01]\d|2[0-3]):[0-5]\d$/.test(v);
+  function getDayTimes(iso) {
+    const d = (data.dayTimes || {})[iso] || {};
+    return {
+      from: erKlokkeslet(d.from) ? d.from : '',
+      toTogo: erKlokkeslet(d.toTogo) ? d.toTogo : '',
+      toDine: erKlokkeslet(d.toDine) ? d.toDine : '',
+    };
+  }
+  const harEgneTider = (iso) => {
+    const d = getDayTimes(iso);
+    return !!(d.from || d.toTogo || d.toDine);
+  };
+  function setDayTimes(iso, tider) {
+    if (!data.dayTimes) data.dayTimes = {};
+    const rent = {};
+    ['from', 'toTogo', 'toDine'].forEach((k) => {
+      if (erKlokkeslet(tider && tider[k])) rent[k] = tider[k];
+    });
+    if (Object.keys(rent).length) data.dayTimes[iso] = rent;
+    else delete data.dayTimes[iso];
+    save();
+    pushConfig();
+  }
+  /* ryd op: en dag der ligger bag os behøver ingen regel */
+  function ryddGamleDagstider() {
+    if (!data.dayTimes) return;
+    const graense = addDays(todayISO(), -2);
+    let rørt = false;
+    Object.keys(data.dayTimes).forEach((iso) => {
+      if (iso < graense) { delete data.dayTimes[iso]; rørt = true; }
+    });
+    if (rørt) save(false);
+  }
+
+  /* første bestillingstid – dagens egen, ellers den almindelige */
+  function orderFromFor(iso) {
+    return (iso && getDayTimes(iso).from) || data.settings.orderFrom || '16:00';
+  }
   /* seneste bestillingstid pr. type: to-go / spis her */
-  function orderToFor(type) {
+  function orderToFor(type, iso) {
+    const egen = iso ? getDayTimes(iso) : {};
     return type === 'spise'
-      ? (data.settings.orderToDine || '20:30')
-      : (data.settings.orderToTogo || '19:00');
+      ? (egen.toDine || data.settings.orderToDine || '20:30')
+      : (egen.toTogo || data.settings.orderToTogo || '19:00');
   }
   function orderSlots(iso, stepMinutes = 30, type = 'spise') {
     const h = hoursFor(iso);
     if (h.closed || !h.open || !h.close) return [];
     const toMin = (hhmm) => { const [a, b] = hhmm.split(':').map(Number); return a * 60 + b; };
-    const from = data.settings.orderFrom || '16:00';
-    const to = orderToFor(type);
+    const from = orderFromFor(iso);
+    const to = orderToFor(type, iso);
     const start = Math.max(toMin(from), toMin(h.open));
     const end = Math.min(toMin(to), toMin(h.close));
     const slots = [];
@@ -1475,6 +1525,7 @@ const SpiisStore = (() => {
     getBlockedDates, getArrangementDates, isOrderingClosed, blockDate, unblockDate, isDateAvailable,
     getDayMark, setDayMark, DEFAULT_TAPAS_ITEMS,
     getClosedTypes, setTypeClosed, isTypeClosed, openTypesFor, ryddGamleTypelukninger,
+    getDayTimes, setDayTimes, harEgneTider, orderFromFor, ryddGamleDagstider,
     getClosure, setClosure, isClosureNow, isInClosure,
     timeslotsFor, orderSlots, orderToFor,
     getNews, addNews, updateNews, deleteNews, uploadNewsImage, placeNewsOrder,

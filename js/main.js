@@ -24,16 +24,25 @@
 
   /* bestillingsvinduet – FORSKELLIGT pr. type: to-go til kl. 19,
      spis her til kl. 20:30 (kan ændres i admin) */
-  const orderFrom = () => S.getSettings().orderFrom || '16:00';
-  const orderTo = (type) => S.orderToFor(type || currentType());
+  /* tiderne er DAGENS – en enkelt dag kan have sit eget vindue,
+     fx "mandag åbner vi først 17:30" */
+  /* slås op i DOM'en, ikke i variablen: variablen findes først længere
+     nede i filen, og et opslag på den før tid ville kaste en fejl */
+  const valgtDato = () => {
+    const el = document.getElementById('orderDate');
+    return (el && el.value) || '';
+  };
+  const orderFrom = (iso) => S.orderFromFor(iso || valgtDato());
+  const orderTo = (type, iso) => S.orderToFor(type || currentType(), iso || valgtDato());
 
   /* køkkenets tilstand lige nu (styret af det SENESTE vindue = spis her) */
   function kitchenStateToday() {
     const h = S.hoursFor(S.todayISO());
     if (h.closed) return 'lukket';
     const now = nowMin();
-    if (now > toMin(S.orderToFor('spise'))) return 'lukket';
-    if (now >= toMin(orderFrom())) return 'aaben';
+    const iDag = S.todayISO();
+    if (now > toMin(S.orderToFor('spise', iDag))) return 'lukket';
+    if (now >= toMin(orderFrom(iDag))) return 'aaben';
     return 'foer';
   }
 
@@ -409,7 +418,7 @@
           ${tag}
         </div>`;
       }).join(dishes.length > 1 ? '<div class="daycard__eller">eller</div>' : '');
-      krop += `<p class="daycard__note">🕐 Afhentning kl. ${esc(orderFrom())}–${esc(orderTo())}${timer && !timer.closed ? ` · køkkenet har åbent ${esc(timer.open)}–${esc(timer.close)}` : ''}</p>`;
+      krop += `<p class="daycard__note">🕐 Afhentning kl. ${esc(orderFrom(iso))}–${esc(orderTo(null, iso))}${timer && !timer.closed ? ` · køkkenet har åbent ${esc(timer.open)}–${esc(timer.close)}` : ''}</p>`;
     }
     $('#dayInfoBody').innerHTML = krop;
 
@@ -453,7 +462,8 @@
 
     const kitchenNote = $('#kitchenNote');
     if (kitchenNote) {
-      kitchenNote.textContent = `🥡 To-go: kl. ${orderFrom()} – ${S.orderToFor('togo')} · 🍽️ Spis her: kl. ${orderFrom()} – ${S.orderToFor('spise')}`;
+      const iDag = S.todayISO();
+      kitchenNote.textContent = `🥡 To-go: kl. ${orderFrom(iDag)} – ${S.orderToFor('togo', iDag)} · 🍽️ Spis her: kl. ${orderFrom(iDag)} – ${S.orderToFor('spise', iDag)}`;
     }
 
     /* tydelig deadline til kunden: hvor længe kan man nå at bestille til i dag.
@@ -490,7 +500,7 @@
     const status = $('#openStatus');
     const h = hours[todayIdx];
     const now = nowMin();
-    const oTo = toMin(S.orderToFor('spise'));
+    const oTo = toMin(S.orderToFor('spise', S.todayISO()));
     if (h.closed) {
       status.textContent = '● Vi holder lukket i dag';
       status.className = 'hours__status is-closed';
@@ -906,7 +916,7 @@
         if (S.isCloud()) S.refreshPublic();
         syncOrderTypes(o.iso);
       } else if (result.reason === 'tid') {
-        error.textContent = `Bestillinger kan kun vælges mellem kl. ${orderFrom()} og ${orderTo()} – vælg et tidspunkt i det vindue.`;
+        error.textContent = `Bestillinger kan kun vælges mellem kl. ${orderFrom(o.iso)} og ${orderTo(o.type, o.iso)} den dag – vælg et tidspunkt i det vindue.`;
         onOrderDateChange();
       } else if (result.reason === 'udsolgt') {
         error.textContent = `„${result.item}" er desværre lige blevet udsolgt i dag – den er fjernet fra jeres bestilling, så prøv bare igen.`;
