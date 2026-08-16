@@ -423,6 +423,7 @@
   const VIEW_TITLES = {
     overblik: 'Overblik',
     uge: 'Kalender',
+    salg: 'Salg',
     bestillinger: 'Bestillinger',
     bookinger: 'Bookinger',
     nyheder: 'Nyheder',
@@ -432,7 +433,7 @@
     indstillinger: 'Indstillinger',
   };
   let activeView = 'overblik';
-  const MORE_VIEWS = ['uge', 'menukort', 'nyheder', 'tider', 'indstillinger'];
+  const MORE_VIEWS = ['uge', 'salg', 'menukort', 'nyheder', 'tider', 'indstillinger'];
 
   function switchView(view) {
     if (!view || !VIEW_TITLES[view]) return;
@@ -465,6 +466,7 @@
     const renderers = {
       overblik: renderOverblik,
       uge: renderUge,
+      salg: renderSalg,
       bestillinger: renderBestillinger,
       bookinger: renderBookinger,
       nyheder: renderNyheder,
@@ -1206,6 +1208,159 @@
           <button type="button" class="abtn abtn--ghost" data-act="dagstid-nulstil" data-iso="${iso}">↩ Tilbage til de almindelige tider</button>
         </p>` : ''}
       </div>`;
+  }
+
+  /* ============================================================
+     SALG
+     "Hvor meget har vi solgt?" Regnet ud af de bestillinger der
+     rent faktisk er kommet ind gennem spiis.dk. Det er IKKE
+     kassen – det står der også, så tallene ikke bliver forvekslet
+     med regnskabet.
+     ============================================================ */
+  let salgPeriode = 'uge';   /* idag | uge | maaned | selv */
+  let salgFra = '';
+  let salgTil = '';
+
+  function salgInterval() {
+    const iDag = S.todayISO();
+    if (salgPeriode === 'idag') return { fra: iDag, til: iDag, navn: 'I dag' };
+    if (salgPeriode === 'uge') {
+      const man = S.weekStart(iDag);
+      return { fra: man, til: S.addDays(man, 6), navn: 'Denne uge' };
+    }
+    if (salgPeriode === 'maaned') {
+      const fra = `${iDag.slice(0, 7)}-01`;
+      const d = new Date(`${iDag.slice(0, 7)}-01T12:00:00`);
+      d.setMonth(d.getMonth() + 1); d.setDate(0);
+      const til = `${iDag.slice(0, 7)}-${String(d.getDate()).padStart(2, '0')}`;
+      return { fra, til, navn: 'Denne måned' };
+    }
+    /* selvvalgt – tomme felter betyder "alt" */
+    return { fra: salgFra || '0000-01-01', til: salgTil || '9999-12-31', navn: 'Valgt periode' };
+  }
+
+  /* pæne kronebeløb med tusindtalsseparator – kun til salgstallene */
+  const krSalg = (n) => `${Math.round(Number(n) || 0).toLocaleString('da-DK')} kr.`;
+
+  function renderSalg() {
+    const { fra, til, navn } = salgInterval();
+    const ordrer = S.getOrders().filter((o) => o.date >= fra && o.date <= til);
+
+    /* beløb pr. bestilling = summen af linjerne (emballage tæller med,
+       for kunden betaler den) */
+    const beloeb = (o) => orderLines(o).reduce((s, l) => s + (Number(l.price) || 0) * (Number(l.qty) || 0), 0);
+    const omsaetning = ordrer.reduce((s, o) => s + beloeb(o), 0);
+    const retter = ordrer.reduce((s, o) => s + itemsOf(o), 0);
+    const koert = ordrer.filter((o) => o.status !== 'ny');
+    const mangler = ordrer.length - koert.length;
+    const togo = ordrer.filter((o) => o.type === 'togo');
+    const spise = ordrer.filter((o) => o.type !== 'togo');
+    const snit = ordrer.length ? omsaetning / ordrer.length : 0;
+    const emballage = ordrer.reduce((s, o) => s + orderLines(o)
+      .filter((l) => l.kind === 'emballage')
+      .reduce((x, l) => x + (Number(l.price) || 0) * (Number(l.qty) || 0), 0), 0);
+
+    /* pr. ret – delt op efter valg, så man kan se hvad der sælger */
+    const pr = new Map();
+    ordrer.forEach((o) => foodLines(o).forEach((l) => {
+      const n = linjeNavn(l);
+      const e = pr.get(n) || { antal: 0, kroner: 0 };
+      e.antal += Number(l.qty) || 0;
+      e.kroner += (Number(l.price) || 0) * (Number(l.qty) || 0);
+      pr.set(n, e);
+    }));
+    const retListe = [...pr.entries()].sort((a, b) => b[1].kroner - a[1].kroner);
+
+    /* dag for dag – så man kan se hvilke dage der trækker */
+    const dage = new Map();
+    ordrer.forEach((o) => {
+      const e = dage.get(o.date) || { antal: 0, kroner: 0 };
+      e.antal += 1; e.kroner += beloeb(o);
+      dage.set(o.date, e);
+    });
+    const dagListe = [...dage.entries()].sort((a, b) => a[0].localeCompare(b[0]));
+    const bedsteDag = dagListe.reduce((m, d) => (!m || d[1].kroner > m[1].kroner ? d : m), null);
+
+    const knap = (id, tekst) =>
+      `<button class="abtn ${salgPeriode === id ? 'abtn--accent' : 'abtn--ghost'}" data-salg="${id}">${tekst}</button>`;
+
+    $('#view-salg').innerHTML = `
+      <div class="acard">
+        <div class="acard__head">
+          <h2>💰 Salg</h2>
+          <span class="sub">regnet ud af de bestillinger der er kommet ind gennem spiis.dk</span>
+        </div>
+        <div class="salgvaelg">
+          ${knap('idag', 'I dag')}${knap('uge', 'Denne uge')}${knap('maaned', 'Denne måned')}${knap('selv', 'Vælg selv')}
+        </div>
+        ${salgPeriode === 'selv' ? `
+        <div class="salgdato">
+          <label>Fra <input type="date" class="inline-input" id="salgFra" value="${esc(salgFra)}" /></label>
+          <label>Til <input type="date" class="inline-input" id="salgTil" value="${esc(salgTil)}" /></label>
+          <small>Lad felterne stå tomme for at se alt.</small>
+        </div>` : ''}
+        <p class="sub salgperiode">${esc(navn)} · ${salgPeriode === 'selv' && !salgFra && !salgTil ? 'alt' : `${esc(S.formatDate(fra, false))} – ${esc(S.formatDate(til, false))}`}</p>
+
+        ${!ordrer.length ? '<div class="empty">Ingen bestillinger i denne periode.</div>' : `
+        <div class="stats salgstats">
+          <div class="stat stat--accent">
+            <div class="stat__label">Solgt for</div>
+            <div class="stat__value">${esc(krSalg(omsaetning))}</div>
+          </div>
+          <div class="stat">
+            <div class="stat__label">Bestillinger</div>
+            <div class="stat__value">${ordrer.length}</div>
+          </div>
+          <div class="stat">
+            <div class="stat__label">Retter</div>
+            <div class="stat__value">${retter}</div>
+          </div>
+          <div class="stat">
+            <div class="stat__label">Snit pr. bestilling</div>
+            <div class="stat__value">${esc(krSalg(snit))}</div>
+          </div>
+        </div>
+
+        <div class="salgsplit">
+          <span class="dvchip">🥡 <b>${togo.length}</b> to-go · ${esc(krSalg(togo.reduce((s, o) => s + beloeb(o), 0)))}</span>
+          <span class="dvchip">🍽️ <b>${spise.length}</b> spiser her · ${esc(krSalg(spise.reduce((s, o) => s + beloeb(o), 0)))}</span>
+          ${emballage ? `<span class="dvchip">📦 emballage · ${esc(krSalg(emballage))}</span>` : ''}
+          ${mangler ? `<span class="dvchip dvchip--ny">🔥 <b>${mangler}</b> ikke kørt endnu</span>`
+            : '<span class="dvchip">✅ alle kørt</span>'}
+        </div>
+
+        <h3 class="kp__sub">🍲 Hvad solgte bedst</h3>
+        <div class="salgtabel">
+          ${retListe.map(([n, e]) => `
+            <div class="salgrk">
+              <span class="salgrk__navn">${esc(n)}</span>
+              <span class="salgrk__antal">${e.antal} stk.</span>
+              <span class="salgrk__kr">${esc(krSalg(e.kroner))}</span>
+            </div>`).join('') || '<div class="empty">Ingen retter registreret.</div>'}
+        </div>
+
+        <h3 class="kp__sub">📅 Dag for dag${bedsteDag ? ` <em class="kp__sub-hint">· bedste dag: ${esc(S.formatDate(bedsteDag[0], false))} med ${esc(krSalg(bedsteDag[1].kroner))}</em>` : ''}</h3>
+        <div class="salgtabel">
+          ${dagListe.map(([d, e]) => `
+            <div class="salgrk ${d === S.todayISO() ? 'salgrk--idag' : ''}">
+              <span class="salgrk__navn">${esc(S.formatDate(d, false))}${d === S.todayISO() ? ' · i dag' : ''}</span>
+              <span class="salgrk__antal">${e.antal} bestilling${e.antal === 1 ? '' : 'er'}</span>
+              <span class="salgrk__kr">${esc(krSalg(e.kroner))}</span>
+            </div>`).join('')}
+        </div>`}
+
+        <p class="salgnote">
+          Tallene er <strong>online-bestillinger</strong> fra spiis.dk – ikke kassen, og ikke salg i caféen.
+          Bestillinger der er slettet, tæller ikke med. Priserne er dem der stod på siden, da kunden bestilte.
+        </p>
+      </div>`;
+
+    $$('[data-salg]').forEach((b) => b.addEventListener('click', () => {
+      salgPeriode = b.dataset.salg;
+      renderSalg();
+    }));
+    $('#salgFra')?.addEventListener('change', (e) => { salgFra = e.target.value; renderSalg(); });
+    $('#salgTil')?.addEventListener('change', (e) => { salgTil = e.target.value; renderSalg(); });
   }
 
   /* fælles top: uge/måned-skifter + pile, der VIRKER begge veje */

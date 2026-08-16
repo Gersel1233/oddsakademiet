@@ -2020,3 +2020,36 @@ body.dv-open { overflow: hidden; }
 @media (max-width: 520px) {
   .pd-valg__rk { grid-template-columns: 1fr 78px auto; }
 }
+
+/* ---------- salg ---------- */
+.salgvaelg { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
+.salgdato {
+  display: flex; gap: 14px; align-items: flex-end; flex-wrap: wrap;
+  padding: 12px 14px; margin-bottom: 12px;
+  border: 1.6px solid var(--line); border-radius: 13px; background: #fff;
+}
+.salgdato label { display: grid; gap: 4px; font-size: 0.83rem; font-weight: 650; }
+.salgdato small { color: var(--ink-soft); font-weight: 500; font-size: 0.78rem; }
+.salgperiode { color: var(--ink-soft); margin-bottom: 16px; }
+.salgstats { margin-bottom: 14px; }
+.salgsplit { display: flex; gap: 9px; flex-wrap: wrap; margin-bottom: 6px; }
+
+.salgtabel { display: grid; gap: 6px; margin-bottom: 6px; }
+.salgrk {
+  display: grid; grid-template-columns: 1fr auto auto; gap: 14px; align-items: center;
+  padding: 10px 13px;
+  border: 1.5px solid var(--line); border-radius: 12px; background: #fff;
+}
+.salgrk--idag { border-color: var(--accent); }
+.salgrk__navn { font-weight: 600; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.salgrk__antal { color: var(--ink-soft); font-size: 0.86rem; white-space: nowrap; }
+.salgrk__kr { font-weight: 700; white-space: nowrap; min-width: 92px; text-align: right; }
+.salgnote {
+  margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--line);
+  font-size: 0.82rem; line-height: 1.55; color: var(--ink-soft);
+}
+@media (max-width: 480px) {
+  .salgrk { grid-template-columns: 1fr auto; row-gap: 3px; }
+  .salgrk__antal { grid-column: 1; font-size: 0.8rem; }
+  .salgrk__kr { grid-row: 1 / 3; grid-column: 2; align-self: center; }
+}
