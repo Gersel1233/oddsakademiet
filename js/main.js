@@ -415,6 +415,7 @@
         return `<div class="daycard__ret">
           <div class="daycard__navn">${esc(d.title)}${d.price ? `<span class="daycard__pris">${kr(d.price)}</span>` : ''}</div>
           ${d.desc ? `<div class="daycard__desc">${descHtml(d.desc)}</div>` : ''}
+          ${valgFor(d).length ? `<div class="daycard__valg">Vælg mellem: ${valgFor(d).map((v) => `${esc(v.navn)}${Number(v.pris) ? ` (+ ${kr(Number(v.pris))})` : ''}`).join(' · ')}</div>` : ''}
           ${tag}
         </div>`;
       }).join(dishes.length > 1 ? '<div class="daycard__eller">eller</div>' : '');
@@ -537,6 +538,9 @@
   const openCats = new Set();
 
   const basketLines = () => Object.values(basket).filter((l) => l.qty > 0);
+  /* ÉT sted der bestemmer hvordan en linje hedder – så kurven,
+     kvitteringen, sms'en og køkkenets seddel altid siger det samme */
+  const linjeNavn = (l) => `${l.name}${l.valg ? ` · ${l.valg}` : ''}`;
 
   /* ---------- emballage ved to-go ----------
      10 kr. pr. ret (ikke drikkevarer og dip). Tager kunden sin
@@ -665,6 +669,23 @@
   }
   orderDate.addEventListener('change', onOrderDateChange);
 
+  /* ============================================================
+     VALGMULIGHEDER PÅ DAGENS RET
+     "Bao med nakkefilet – vælg mellem almindelig bolle eller
+     salatwrap." Køkkenet skriver mulighederne ind i admin; her får
+     hver mulighed sin egen tæller, så en familie kan bestille to af
+     den ene og én af den anden i samme bestilling. Har retten ingen
+     muligheder, ser den ud og virker præcis som før.
+     ============================================================ */
+  const valgFor = (d) => (Array.isArray(d && d.valg) ? d.valg.filter((v) => v && v.navn) : []);
+  const valgNoegle = (titel, valgNavn) => `d::${titel}::${valgNavn}`;
+  /* hvor mange af SAMME ret ligger allerede i kurven under en anden
+     mulighed? De trækker fra det samme antal portioner. */
+  function andreValgAfSammeRet(titel, undtagNoegle) {
+    return Object.entries(basket).reduce((sum, [k, l]) => (
+      k !== undtagNoegle && k.startsWith(`d::${titel}::`) ? sum + Number(l.qty || 0) : sum), 0);
+  }
+
   /* kurv-opbyggeren: dagens ret øverst, menukortets kategorier under */
   function renderBuilder() {
     const iso = orderDate.value;
@@ -679,10 +700,26 @@
     delete basket.dagens; /* gammel nøgle fra før flere-retter – ryd altid */
     dishes.forEach((d) => {
       const rem = S.getRemainingFor(iso, d.title);
-      builderIndex['d::' + d.title] = {
-        name: d.title, price: d.price ?? null, kind: 'dagensret', cat: 'Dagens ret',
-        soldout: rem !== null && rem <= 0, left: rem,
-      };
+      const valg = valgFor(d);
+      if (!valg.length) {
+        /* ret uden valgmuligheder – præcis som før */
+        builderIndex['d::' + d.title] = {
+          name: d.title, price: d.price ?? null, kind: 'dagensret', cat: 'Dagens ret',
+          soldout: rem !== null && rem <= 0, left: rem,
+        };
+        return;
+      }
+      /* ret MED valgmuligheder: hver mulighed får sin egen linje, så man
+         kan bestille fx to almindelige og én glutenfri på én gang */
+      valg.forEach((v) => {
+        builderIndex[valgNoegle(d.title, v.navn)] = {
+          name: d.title, valg: v.navn,
+          price: (d.price ?? 0) + Number(v.pris || 0),
+          tillaeg: Number(v.pris || 0),
+          kind: 'dagensret', cat: 'Dagens ret',
+          soldout: rem !== null && rem <= 0, left: rem,
+        };
+      });
     });
     const groups = [];
     const extras = (menu.weekly[wIdx] || []).filter((i) => i.name);
@@ -720,15 +757,39 @@
 
     let html = '';
     dishes.forEach((d) => {
-      const inf = builderIndex['d::' + d.title];
+      const valg = valgFor(d);
+      const inf = builderIndex[valg.length ? valgNoegle(d.title, valg[0].navn) : 'd::' + d.title];
       const rem = inf.left;
-      html += `<div class="builder__dagens">
+      const hoved = `
         <div class="bitem__info">
           <strong>${esc(d.title)}<span class="menuline__badge">Dagens ret</span>${rem !== null && rem > 0 && rem <= 5 ? `<span class="menuline__badge menuline__badge--few">Kun ${rem} tilbage</span>` : ''}</strong>
           ${d.desc ? `<small>${esc(d.desc)}</small>` : ''}
           ${d.price ? `<em>${kr(d.price)}</em>` : ''}
-        </div>
-        ${inf.soldout ? '<span class="builder__soldout">Udsolgt</span>' : stepper('d::' + d.title, rem)}
+        </div>`;
+      if (!valg.length) {
+        html += `<div class="builder__dagens">
+          ${hoved}
+          ${inf.soldout ? '<span class="builder__soldout">Udsolgt</span>' : stepper('d::' + d.title, rem)}
+        </div>`;
+        return;
+      }
+      /* én linje pr. mulighed – vælg antal af hver */
+      html += `<div class="builder__dagens builder__dagens--valg">
+        ${hoved}
+        ${inf.soldout ? '<span class="builder__soldout">Udsolgt</span>' : `
+        <div class="valgliste">
+          <span class="valgliste__titel">Vælg hvilken:</span>
+          ${valg.map((v) => {
+            const key = valgNoegle(d.title, v.navn);
+            const brugtAndre = andreValgAfSammeRet(d.title, key);
+            const maxHer = rem === null ? null : Math.max(0, rem - brugtAndre);
+            return `
+            <div class="valgrow">
+              <span class="valgrow__navn">${esc(v.navn)}${Number(v.pris) ? `<em class="valgrow__tillaeg">+ ${kr(Number(v.pris))}</em>` : ''}</span>
+              ${stepper(key, maxHer)}
+            </div>`;
+          }).join('')}
+        </div>`}
       </div>`;
     });
     html += groups.map((g) => {
@@ -766,12 +827,17 @@
     if (!info || info.soldout) return;
     const cur = basket[key] ? basket[key].qty : 0;
     let next = cur + Number(btn.dataset.step);
-    const max = key.startsWith('d::')
+    let max = key.startsWith('d::')
       ? S.getRemainingFor(orderDate.value, info.name)
       : (info.left != null ? Number(info.left) : 50);
+    /* har retten valgmuligheder, deler de det SAMME antal portioner */
+    if (max !== null && info.valg) max = Math.max(0, max - andreValgAfSammeRet(info.name, key));
     if (max !== null && next > max) next = max;
     if (next <= 0) delete basket[key];
-    else basket[key] = { name: info.name, qty: next, price: info.price, kind: info.kind, cat: info.cat };
+    else {
+      basket[key] = { name: info.name, qty: next, price: info.price, kind: info.kind, cat: info.cat };
+      if (info.valg) basket[key].valg = info.valg;
+    }
     renderBuilder();
   });
 
@@ -785,7 +851,7 @@
     const total = sendLines.reduce((s, l) => s + (l.price ? l.price * l.qty : 0), 0);
     const packLine = sendLines.find((l) => l.kind === 'emballage');
     const reuseLine = sendLines.find((l) => l.kind === 'genbrug');
-    basketBar.innerHTML = `<strong>Jeres bestilling:</strong> ${lines.map((l) => `${l.qty} × ${esc(l.name)}`).join(' · ')}
+    basketBar.innerHTML = `<strong>Jeres bestilling:</strong> ${lines.map((l) => `${l.qty} × ${esc(linjeNavn(l))}`).join(' · ')}
       ${packLine ? `<span class="basketbar__pack">+ emballage ${packLine.qty} × ${EMBALLAGE_PRIS} kr.</span>` : ''}
       ${reuseLine ? '<span class="basketbar__pack basketbar__pack--free">♻️ egen emballage til dagens ret</span>' : ''}
       <span class="basketbar__total">${totalItems} ret${totalItems === 1 ? '' : 'ter'}${total ? ` · i alt ${total} kr.` : ''}</span>`;
@@ -857,7 +923,7 @@
     const o = pendingOrder;
     const total = o.lines.reduce((s, l) => s + (l.price ? l.price * l.qty : 0), 0);
     $('#confirmLines').innerHTML = o.lines.map((l) => `
-      <div class="confirm__line"><span><b>${l.qty} ×</b> ${esc(l.name)}</span><span>${l.price ? kr(l.price * l.qty) : ''}</span></div>`).join('')
+      <div class="confirm__line"><span><b>${l.qty} ×</b> ${esc(linjeNavn(l))}</span><span>${l.price ? kr(l.price * l.qty) : ''}</span></div>`).join('')
       + (total ? `<div class="confirm__line confirm__line--total"><span>I alt</span><span>${kr(total)}</span></div>` : '');
     $('#confirmMeta').innerHTML = `
       <div>📅 ${esc(S.formatDate(o.iso))} · kl. ${esc(o.time)}</div>
@@ -950,7 +1016,7 @@
     const success = $('#orderSuccess');
     success.hidden = false;
     $('#orderSuccessText').textContent =
-      `${o.lines.map((l) => `${l.qty} × ${l.name}`).join(', ')} — til ${o.persons} person${o.persons === 1 ? '' : 'er'} ${o.type === 'togo' ? 'til afhentning' : 'ved bordet'} ${S.formatDate(o.iso).toLowerCase()} kl. ${o.time}. Vi glæder os til at se jer, ${o.name}!`;
+      `${o.lines.map((l) => `${l.qty} × ${linjeNavn(l)}`).join(', ')} — til ${o.persons} person${o.persons === 1 ? '' : 'er'} ${o.type === 'togo' ? 'til afhentning' : 'ved bordet'} ${S.formatDate(o.iso).toLowerCase()} kl. ${o.time}. Vi glæder os til at se jer, ${o.name}!`;
     success.scrollIntoView({ behavior: 'smooth', block: 'center' });
     pendingOrder = null;
   });

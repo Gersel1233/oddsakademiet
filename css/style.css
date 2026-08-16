@@ -2195,3 +2195,24 @@ body.orders-paused .nav__cta { display: none !important; }
   background: #FFF6EC; border: 1px solid rgba(169, 80, 13, 0.28);
   color: var(--ink); line-height: 1.5;
 }
+
+/* ---------- vælg mellem flere udgaver af dagens ret ---------- */
+.builder__dagens--valg { display: block; }
+.valgliste {
+  margin-top: 12px; padding-top: 12px;
+  border-top: 1px dashed rgba(28, 24, 20, 0.16);
+  display: grid; gap: 8px;
+}
+.valgliste__titel { font-size: 0.86rem; font-weight: 650; color: var(--ink-soft); }
+.valgrow {
+  display: flex; align-items: center; gap: 12px; justify-content: space-between;
+  padding: 9px 12px;
+  border: 1.5px solid rgba(28, 24, 20, 0.1); border-radius: 12px;
+  background: #fff;
+}
+.valgrow__navn { font-weight: 600; line-height: 1.35; }
+.valgrow__tillaeg { font-style: normal; font-weight: 500; color: var(--ink-soft); margin-left: 7px; }
+.daycard__valg, .menuline__valg, .ugerow__valg {
+  display: block; margin-top: 5px;
+  font-size: 0.85rem; line-height: 1.45; color: var(--ink-soft);
+}

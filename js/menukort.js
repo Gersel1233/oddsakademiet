@@ -8,6 +8,9 @@
   const esc = (str) => String(str ?? '').replace(/[&<>"']/g, (c) => (
     { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
+  /* en ret kan have valgmuligheder – fx to slags bolle */
+  const valgFor = (d) => (Array.isArray(d && d.valg) ? d.valg.filter((v) => v && v.navn) : []);
+
   /* beskrivelser kan skrives i PUNKTFORM: hver linje bliver sit eget punkt */
   function descHtml(desc) {
     const lines = String(desc || '').split('\n').map((l) => l.replace(/^[-•·*]\s*/, '').trim()).filter(Boolean);
@@ -37,6 +40,7 @@
           <div>
             <div class="menuline__name">${esc(d.title)}<span class="menuline__badge">Dagens ret</span>${tag}</div>
             ${d.desc ? `<div class="menuline__desc">${descHtml(d.desc)}</div>` : ''}
+            ${valgFor(d).length ? `<div class="menuline__valg">Vælg mellem: ${valgFor(d).map((v) => `${esc(v.navn)}${Number(v.pris) ? ` (+ ${kr(Number(v.pris))})` : ''}`).join(' · ')}</div>` : ''}
           </div>
           <span class="menuline__price">${d.price ? kr(d.price) : ''}</span>
         </div>`;
@@ -136,6 +140,7 @@
         <div class="ugerow__ret">
           <span class="ugerow__navn">${esc(d.title)}</span>
           ${d.desc ? `<span class="ugerow__desc">${descHtml(d.desc)}</span>` : ''}
+          ${valgFor(d).length ? `<span class="ugerow__valg">Vælg mellem: ${valgFor(d).map((v) => esc(v.navn)).join(' · ')}</span>` : ''}
           ${d.price ? `<span class="ugerow__pris">${kr(d.price)}</span>` : ''}
         </div>`).join('');
       return `<div class="ugerow ${lukket ? 'ugerow--lukket' : ''} ${day.iso === iDag ? 'ugerow--idag' : ''}">

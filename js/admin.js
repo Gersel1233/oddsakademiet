@@ -253,7 +253,7 @@
     const tilPunkter = (samling) => [
       ...samling.orders.map((o) => {
         const lines = foodLines(o);
-        const summary = lines.slice(0, 3).map((l) => `${l.qty} × ${l.name}`).join(' · ') + (lines.length > 3 ? ' · …' : '');
+        const summary = lines.slice(0, 3).map((l) => `${l.qty} × ${linjeNavn(l)}`).join(' · ') + (lines.length > 3 ? ' · …' : '');
         return {
           icon: '🥡',
           kind: 'order', id: o.id, date: o.date,
@@ -485,6 +485,10 @@
     if (o.items && o.items.length) return o.items.filter((l) => Number(l.qty) > 0);
     return Number(o.qty) > 0 ? [{ name: o.dish || 'Dagens ret', qty: o.qty, price: o.price, kind: 'dagensret' }] : [];
   }
+  /* ÉT sted der bestemmer hvordan en linje hedder. Har kunden valgt
+     mellem fx to slags bolle, SKAL det stå på køkkenets seddel – ellers
+     bliver den forkerte ret pakket. */
+  const linjeNavn = (l) => `${l.name}${l.valg ? ` · ${l.valg}` : ''}`;
   /* emballage-/genbrugslinjer er ikke mad – de tælles og produceres ikke */
   const isExtraLine = (l) => l.kind === 'emballage' || l.kind === 'genbrug';
   const foodLines = (o) => orderLines(o).filter((l) => !isExtraLine(l));
@@ -495,7 +499,7 @@
   function dishTotals(orders) {
     const map = new Map();
     orders.forEach((o) => foodLines(o).forEach((l) => {
-      map.set(l.name, (map.get(l.name) || 0) + Number(l.qty));
+      map.set(linjeNavn(l), (map.get(linjeNavn(l)) || 0) + Number(l.qty));
     }));
     return [...map.entries()].sort((a, b) => b[1] - a[1]);
   }
@@ -504,10 +508,11 @@
   function dishTotalsSplit(orders) {
     const map = new Map();
     orders.forEach((o) => foodLines(o).forEach((l) => {
-      const e = map.get(l.name) || { total: 0, togo: 0, spise: 0 };
+      const navn = linjeNavn(l);
+      const e = map.get(navn) || { total: 0, togo: 0, spise: 0 };
       e.total += Number(l.qty);
       e[o.type === 'togo' ? 'togo' : 'spise'] += Number(l.qty);
-      map.set(l.name, e);
+      map.set(navn, e);
     }));
     return [...map.entries()].sort((a, b) => b[1].total - a[1].total);
   }
@@ -708,7 +713,7 @@
     const isDrink = (l) => (l.cat ? /drik/i.test(l.cat) : drinks.has(l.name));
     const food = all.filter((l) => !isDrink(l));
     const drink = all.filter(isDrink);
-    const li = (l) => `<li><b>${l.qty} ×</b> ${esc(l.name)}${l.kind === 'dagensret' ? '<span class="tag tag--accent">Dagens ret</span>' : ''}${l.kind === 'nyhed' ? '<span class="tag tag--ink">📣 Nyhed</span>' : ''}</li>`;
+    const li = (l) => `<li><b>${l.qty} ×</b> ${esc(linjeNavn(l))}${l.kind === 'dagensret' ? '<span class="tag tag--accent">Dagens ret</span>' : ''}${l.kind === 'nyhed' ? '<span class="tag tag--ink">📣 Nyhed</span>' : ''}</li>`;
     const done = o.status !== 'ny';
     return `
       <div class="row ${done ? 'row--done' : 'row--new'}">
@@ -900,7 +905,7 @@
             <button type="button" class="nyrow ${o.status === 'ny' ? 'nyrow--ny' : ''}" data-act="goto-orders" data-iso="${o.date}">
               <span class="nyrow__tid">${esc(siden(o.createdAt))}</span>
               <span class="nyrow__navn">${esc(o.name)}${o.status === 'ny' ? '<b class="nyrow__prik">Ny</b>' : ' <em>✓ kørt</em>'}</span>
-              <span class="nyrow__mad">${esc(foodLines(o).map((l) => `${l.qty} × ${l.name}`).join(' · ') || 'ingen varer')}</span>
+              <span class="nyrow__mad">${esc(foodLines(o).map((l) => `${l.qty} × ${linjeNavn(l)}`).join(' · ') || 'ingen varer')}</span>
               <span class="nyrow__hvornaar">📅 <strong>${esc(S.formatDate(o.date, false))}</strong> kl. ${esc(o.time || '–')} · ${o.type === 'togo' ? '🥡 To-go' : '🍽️ Spiser her'}</span>
               <span class="nyrow__gaa">Åbn dagen →</span>
             </button>`).join('')}
@@ -1329,7 +1334,7 @@
     /* bestillinger på deres afhentnings-/spisetid – tryk åbner Bestillinger */
     d.orders.forEach((o) => {
       const lines = foodLines(o);
-      const sum = lines.slice(0, 2).map((l) => `${l.qty} × ${esc(l.name)}`).join(' · ')
+      const sum = lines.slice(0, 2).map((l) => `${l.qty} × ${esc(linjeNavn(l))}`).join(' · ')
         + (lines.length > 2 ? ` · +${lines.length - 2} mere` : '');
       rows.push({ t: o.time || '–', sort: (o.time || '00:00') + 'C', html: `
         <button class="dvtl__order ${o.status === 'ny' ? 'dvtl__order--ny' : 'dvtl__order--ok'}" data-act="goto-orders" data-iso="${iso}" title="Åbn dagens bestillinger">
@@ -2347,6 +2352,27 @@
             : `<label class="abtn abtn--ghost pd-dish__vaelg">📷 Tilføj billede <em>(valgfrit)</em>
                  <input type="file" accept="image/*" hidden data-fotofil ${on ? '' : 'disabled'} /></label>`}
         </div>
+        <!-- valgmuligheder er FRIVILLIGE. Er der ingen, bestilles retten
+             præcis som før. Er der to eller flere, kan kunden vælge. -->
+        <div class="pd-valg" data-valg>
+          ${(Array.isArray(d.valg) ? d.valg : []).filter((v) => v && v.navn).map((v) => valgRaekke(v, on)).join('')}
+          <button type="button" class="abtn abtn--ghost pd-valg__add" data-addvalg ${on ? '' : 'disabled'}>
+            ＋ Tilføj valgmulighed <em>(fx bolle-type)</em>
+          </button>
+        </div>
+      </div>`;
+  }
+
+  /* én valgmulighed: navn + evt. tillæg i kroner */
+  function valgRaekke(v = { navn: '', pris: '' }, on = true) {
+    return `
+      <div class="pd-valg__rk">
+        <input class="inline-input" data-vf="navn" placeholder="Fx Almindelig bao-bolle"
+               value="${esc(v.navn || '')}" ${on ? '' : 'disabled'} />
+        <input class="inline-input" data-vf="pris" type="number" min="0" step="1"
+               placeholder="+ kr." title="Tillæg i kroner – lad stå tomt hvis den koster det samme"
+               value="${esc(v.pris ? String(v.pris) : '')}" ${on ? '' : 'disabled'} />
+        <button type="button" class="abtn abtn--danger abtn--icon" data-delvalg title="Fjern muligheden" ${on ? '' : 'disabled'}>✕</button>
       </div>`;
   }
 
@@ -2432,6 +2458,18 @@
         renderDagensRetEditor();
         return;
       }
+      if (e.target.closest('[data-delvalg]')) {
+        e.target.closest('.pd-valg__rk').remove();
+        saveDay(row);
+        return;
+      }
+      if (e.target.closest('[data-addvalg]')) {
+        const add = e.target.closest('[data-addvalg]');
+        add.insertAdjacentHTML('beforebegin', valgRaekke());
+        const inp = add.previousElementSibling.querySelector('[data-vf="navn"]');
+        if (inp) inp.focus();
+        return;
+      }
       if (e.target.closest('[data-delret]')) {
         e.target.closest('.pd-dish').remove();
         saveDay(row);
@@ -2460,6 +2498,12 @@
         stock: stockRaw === '' ? null : Number(stockRaw),
         soldout: el.dataset.out === '1',
         img: (foto && foto.dataset.img) || '',
+        /* kun muligheder med et navn gemmes – en tom række er bare
+           en der ikke blev skrevet færdig */
+        valg: Array.from(el.querySelectorAll('.pd-valg__rk')).map((vr) => ({
+          navn: $('[data-vf="navn"]', vr).value.trim(),
+          pris: Number($('[data-vf="pris"]', vr).value) || 0,
+        })).filter((v) => v.navn),
       };
     }).filter((d) => d.title);
     S.setDagensRetList(iso, dishes);
@@ -3070,7 +3114,7 @@
         titel: 'Slet denne bestilling?',
         linjer: o ? [
           o.name,
-          foodLines(o).map((l) => `${l.qty} × ${l.name}`).join(', ') || 'ingen varer',
+          foodLines(o).map((l) => `${l.qty} × ${linjeNavn(l)}`).join(', ') || 'ingen varer',
           `${S.formatDate(o.date)} kl. ${o.time || '?'} · 📞 ${o.phone || ''}`,
         ] : [],
         note: 'Bestillingen forsvinder for altid. Køkkenet kan ikke få den tilbage, og kunden får ingen besked.',

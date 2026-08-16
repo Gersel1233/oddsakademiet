@@ -2011,3 +2011,12 @@ body.dv-open { overflow: hidden; }
 @media (max-width: 560px) {
   .dagstid__raekke { grid-template-columns: 1fr; }
 }
+
+/* ---------- valgmuligheder på en ret (fx bolle-type) ---------- */
+.pd-valg { grid-column: 1 / -1; display: grid; gap: 7px; }
+.pd-valg__rk { display: grid; grid-template-columns: 1fr 92px auto; gap: 7px; align-items: center; }
+.pd-valg__add { justify-self: start; font-size: 0.85rem; }
+.pd-valg__add em { font-style: normal; color: var(--ink-soft); font-weight: 500; }
+@media (max-width: 520px) {
+  .pd-valg__rk { grid-template-columns: 1fr 78px auto; }
+}
