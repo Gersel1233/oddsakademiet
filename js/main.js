@@ -96,38 +96,66 @@
   const heroVideo = $('#heroVideo');
   /* vis videoen så snart der er et billede – både når den "playing" og når
      første frame er klar. Play-knappen er skjult i CSS. */
-  const revealHero = () => heroVideo.classList.add('is-playing');
-  heroVideo.addEventListener('playing', revealHero, { once: true });
-  heroVideo.addEventListener('loadeddata', revealHero, { once: true });
-  /* de første ~0,5 s af optagelsen står stille – dem springer vi over,
-     både ved start og hver gang videoen looper forfra */
-  const HERO_START = 0.5;
-  const skipStill = () => {
-    if (heroVideo.currentTime < HERO_START - 0.1) {
-      try { heroVideo.currentTime = HERO_START; } catch { /* endnu ikke klar */ }
-    }
+  /* Videoen vises først når den FAKTISK kører. Indtil da står stillbilledet
+     (posteren) bag den. Før blev videoen vist allerede når første frame var
+     hentet – og hvis telefonen så nægtede at afspille, stod man med en
+     frossen, uskarp frame i stedet for et skarpt billede. */
+  /* Vi må IKKE kun lytte efter "nu spiller den": videoen kan nå at gå i
+     gang, før koden her overhovedet er kørt – og så kom beskeden aldrig,
+     og videoen forblev usynlig. Derfor kigger vi også bare efter, om den
+     rent faktisk kører. */
+  const revealHero = () => {
+    if (!heroVideo.paused && heroVideo.currentTime > 0) heroVideo.classList.add('is-playing');
   };
-  heroVideo.addEventListener('loadedmetadata', skipStill);
-  heroVideo.addEventListener('timeupdate', skipStill);
+  heroVideo.addEventListener('playing', revealHero);
+  heroVideo.addEventListener('timeupdate', revealHero);
+
   /* muted SKAL sættes i JS på iOS, ellers nægter den at autoplay'e */
   heroVideo.muted = true;
+  heroVideo.defaultMuted = true;
+  heroVideo.setAttribute('muted', '');
   if (!heroVideo.getAttribute('src')) heroVideo.src = heroVideo.dataset.src;
-  const tryPlay = () => { const p = heroVideo.play?.(); if (p) p.catch(() => {}); };
-  tryPlay();
-  heroVideo.addEventListener('canplay', tryPlay, { once: true });
 
-  /* Nogle telefoner nægter at auto-starte en video, før brugeren har rørt
-     skærmen (fx strøm-spare-tilstand / streng autoplay-politik). Derfor sætter
-     vi den i gang ved den ALLERførste handling – berøring, scroll, klik – så
-     den starter stort set med det samme, i stedet for først når man scroller. */
-  const kickHero = () => {
-    if (hero.classList.contains('is-offscreen')) return;
+  /* Vi spoler IKKE i videoen. Før sprang koden de første halve sekund
+     over ved at spole – men en spoling midt i opstarten afbryder
+     afspilningen, og på en telefon kunne den ende i en løkke: spole,
+     starte, spole igen … så stod billedet stille, indtil man rørte
+     skærmen. Videoen kører nu bare forfra, som en baggrundsvideo skal.
+     Optagelsen trækker selv fokus fra nær til hele bordet. */
+
+  /* Bliv ved med at prøve at starte den – stille og roligt. Telefoner
+     afviser tit det første forsøg, og så skal man ikke være nødt til at
+     scrolle for at få gang i den. */
+  let heroForsoeg = 0;
+  const tryPlay = () => {
+    if (!heroVideo.paused || hero.classList.contains('is-offscreen')) return;
     heroVideo.muted = true;
     const p = heroVideo.play?.();
-    if (p) p.catch(() => {});
+    if (p && p.catch) p.catch(() => { /* prøver igen om lidt */ });
   };
-  ['touchstart', 'pointerdown', 'click', 'scroll', 'keydown'].forEach((ev) =>
-    window.addEventListener(ev, kickHero, { once: true, passive: true }));
+  const bliVedMedAtPrøve = () => {
+    tryPlay();
+    revealHero();
+    heroForsoeg += 1;
+    /* ti forsøg over ca. fem sekunder – derefter venter vi på et tryk */
+    if (heroForsoeg < 10 && heroVideo.paused) setTimeout(bliVedMedAtPrøve, 500);
+  };
+  bliVedMedAtPrøve();
+  ['loadeddata', 'canplay', 'canplaythrough'].forEach((ev) =>
+    heroVideo.addEventListener(ev, tryPlay));
+
+  /* Nogle telefoner (fx i strømsparetilstand) starter FØRST en video, når
+     brugeren har rørt skærmen. Vi tager derfor imod den allerførste
+     handling – og lytteren bliver hængende, så den også fanger en telefon
+     der har været låst imens. */
+  const kickHero = () => { heroForsoeg = 0; tryPlay(); };
+  ['touchstart', 'pointerdown', 'click', 'keydown'].forEach((ev) =>
+    window.addEventListener(ev, kickHero, { passive: true }));
+  /* … og når man kommer tilbage til fanen eller låser telefonen op */
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') kickHero();
+  });
+  window.addEventListener('pageshow', kickHero);
 
   /* iOS Safari viser kun :active-tryk-effekter, hvis siden har en (blivende)
      touch-lytter – denne tomme, passive lytter tænder for klik-følelsen */
@@ -157,7 +185,9 @@
     entries.forEach((en) => {
       hero.classList.toggle('is-offscreen', !en.isIntersecting);
       if (!heroVideo.src) return;
-      if (en.isIntersecting) heroVideo.play?.().catch(() => {});
+      /* scroller man tilbage op til toppen, skal den i gang igen –
+         og den bruger samme forsøgs-rutine som ved sidens start */
+      if (en.isIntersecting) tryPlay();
       else heroVideo.pause?.();
     });
   }, { threshold: 0.05 });

@@ -896,7 +896,14 @@ body.menupage { padding-bottom: 0 !important; }
   /* mørk fallback mens videoen loader */
   background: radial-gradient(1200px 700px at 50% 30%, #3A2E22, var(--dark));
 }
-.hero__media { position: absolute; inset: 0; }
+/* Stillbilledet fra videoen ligger som baggrund. Så er der aldrig et
+   mørkt/tomt hul mens videoen henter – og nægter telefonen at afspille
+   (fx strømsparetilstand), står der stadig et skarpt billede i stedet
+   for en frossen, uskarp video-frame. */
+.hero__media {
+  position: absolute; inset: 0;
+  background: url('../assets/hero-poster.jpg') center/cover no-repeat;
+}
 .hero__media video {
   width: 100%; height: 100%;
   object-fit: cover;

@@ -120,7 +120,11 @@
   <section class="hero" id="top">
     <div class="hero__media">
       <!-- src sættes af js: straks på desktop, dovent på mobil så teksten lander først -->
-      <video id="heroVideo" autoplay muted loop playsinline preload="auto" src="assets/hero.mp4" data-src="assets/hero.mp4"></video>
+      <!-- poster = et skarpt billede fra selve videoen. Det ligger bag som
+           baggrund, så der ALDRIG er et mørkt hul mens videoen loader – og
+           så siden ser rigtig ud, selv hvis telefonen nægter at afspille. -->
+      <video id="heroVideo" autoplay muted loop playsinline preload="auto"
+             poster="assets/hero-poster.jpg" src="assets/hero.mp4" data-src="assets/hero.mp4"></video>
       <div class="hero__overlay"></div>
     </div>
     <div class="hero__content">
