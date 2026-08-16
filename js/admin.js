@@ -1182,7 +1182,7 @@
     const normalFra = s.orderFrom || '16:00';
     const normalTogo = s.orderToTogo || '19:00';
     const normalDine = s.orderToDine || '20:30';
-    const harEgne = !!(egne.from || egne.toTogo || egne.toDine);
+    const harEgne = S.harEgneTider(iso);
     const felt = (navn, vaerdi, normal, mrk) => `
       <label class="dagstid__felt">
         <span>${mrk}</span>

@@ -1148,16 +1148,6 @@ const SpiisStore = (() => {
     save();
     pushConfig();
   }
-  /* ryd op: en dag der ligger bag os behøver ingen regel */
-  function ryddGamleTypelukninger() {
-    if (!data.closedTypes) return;
-    const graense = addDays(todayISO(), -2);
-    let rørt = false;
-    Object.keys(data.closedTypes).forEach((iso) => {
-      if (iso < graense) { delete data.closedTypes[iso]; rørt = true; }
-    });
-    if (rørt) save(false);
-  }
   function blockDate(iso) {
     if (!data.blockedDates.includes(iso)) {
       data.blockedDates.push(iso);
@@ -1245,16 +1235,6 @@ const SpiisStore = (() => {
     else delete data.dayTimes[iso];
     save();
     pushConfig();
-  }
-  /* ryd op: en dag der ligger bag os behøver ingen regel */
-  function ryddGamleDagstider() {
-    if (!data.dayTimes) return;
-    const graense = addDays(todayISO(), -2);
-    let rørt = false;
-    Object.keys(data.dayTimes).forEach((iso) => {
-      if (iso < graense) { delete data.dayTimes[iso]; rørt = true; }
-    });
-    if (rørt) save(false);
   }
 
   /* første bestillingstid – dagens egen, ellers den almindelige */
@@ -1524,8 +1504,8 @@ const SpiisStore = (() => {
     addBooking, getBookings, updateBooking, deleteBooking,
     getBlockedDates, getArrangementDates, isOrderingClosed, blockDate, unblockDate, isDateAvailable,
     getDayMark, setDayMark, DEFAULT_TAPAS_ITEMS,
-    getClosedTypes, setTypeClosed, isTypeClosed, openTypesFor, ryddGamleTypelukninger,
-    getDayTimes, setDayTimes, harEgneTider, orderFromFor, ryddGamleDagstider,
+    getClosedTypes, setTypeClosed, isTypeClosed, openTypesFor,
+    getDayTimes, setDayTimes, harEgneTider, orderFromFor,
     getClosure, setClosure, isClosureNow, isInClosure,
     timeslotsFor, orderSlots, orderToFor,
     getNews, addNews, updateNews, deleteNews, uploadNewsImage, placeNewsOrder,

@@ -419,7 +419,7 @@
           ${tag}
         </div>`;
       }).join(dishes.length > 1 ? '<div class="daycard__eller">eller</div>' : '');
-      krop += `<p class="daycard__note">🕐 Afhentning kl. ${esc(orderFrom(iso))}–${esc(orderTo(null, iso))}${timer && !timer.closed ? ` · køkkenet har åbent ${esc(timer.open)}–${esc(timer.close)}` : ''}</p>`;
+      krop += `<p class="daycard__note">🕐 ${tiderTekst(iso)}${timer && !timer.closed ? ` · køkkenet har åbent ${esc(timer.open)}–${esc(timer.close)}` : ''}</p>`;
     }
     $('#dayInfoBody').innerHTML = krop;
 
@@ -602,6 +602,19 @@
      ikke kunne vælges, og der skal stå hvorfor.
      ============================================================ */
   const TYPENAVN = { togo: 'Take-away', spise: 'Spis her' };
+
+  /* Hvilke tider gælder egentlig for DENNE dag?
+     Vinduet er forskelligt for take-away og spis her – og er den ene
+     lukket, må vi ikke love tider for den. Før stod der fx
+     "Afhentning kl. 17:30–19:00" på en dag hvor take-away var lukket
+     og man i virkeligheden kunne spise her helt til 20:30. */
+  function tiderTekst(iso) {
+    const aabne = S.openTypesFor ? S.openTypesFor(iso) : ['togo', 'spise'];
+    const fra = esc(orderFrom(iso));
+    if (!aabne.length) return 'Lukket for bestillinger denne dag';
+    const dele = aabne.map((t) => `${t === 'togo' ? '🥡 Afhentning' : '🍽️ Spisning'} kl. ${fra}–${esc(S.orderToFor(t, iso))}`);
+    return dele.join(' · ');
+  }
   function syncOrderTypes(iso) {
     const knapper = $$('input[name="orderType"]');
     if (!knapper.length) return;
