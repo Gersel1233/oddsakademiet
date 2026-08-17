@@ -1461,11 +1461,15 @@
     const toTxt = lastDay ? S.formatDate(lastDay, false) : '';
     const reopenTxt = c.reopen ? S.formatDate(c.reopen) : '';
     const reopenLow = reopenTxt ? reopenTxt.charAt(0).toLowerCase() + reopenTxt.slice(1) : '';
+    /* Beskeden bruges ikke kun til ferie: en personaledag eller en enkelt
+       lukket fredag skal ikke pryde sig med et palmetræ. Er der sat et
+       mærke på den første dag, er DET ikonet. */
+    const mark = S.getDayMark && S.getDayMark(c.from);
     el.innerHTML = `
       <div class="container">
         <article class="feriekort">
           <div class="feriekort__top">
-            <span class="feriekort__icon" aria-hidden="true">🌴</span>
+            <span class="feriekort__icon" aria-hidden="true">${esc((mark && mark.e) || '🌴')}</span>
             <div>
               <p class="feriekort__eyebrow">${upcoming ? 'Kommende lukkedage' : 'Vi holder lukket'}</p>
               <h3 class="feriekort__period">${fromTxt && toTxt

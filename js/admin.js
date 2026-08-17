@@ -1690,15 +1690,15 @@
             <button type="button" class="ldtype" data-e="🌴" data-t="Ferie">🌴 Ferie</button>
             <button type="button" class="ldtype" data-e="🎉" data-t="Privat arrangement">🎉 Privat arrangement</button>
           </div>
-          <label class="afield afield--wide" style="margin-top:8px;"><span>Hvorfor? <em>(valgfrit – vises i kalenderen)</em></span>
-            <input id="ldReason" placeholder="Fx personaledag kl. 14-15" /></label>
+          <label class="afield afield--wide" style="margin-top:8px;"><span>Hvorfor? <em>(valgfrit – står både i kalenderen og for kunderne på spiis.dk)</em></span>
+            <input id="ldReason" placeholder="Fx Personaledag – vi er tilbage i morgen" /></label>
           <div class="ld__count" id="ldCount"></div>
           <label class="bkedit__check" style="margin:10px 0 0;">
             <input type="checkbox" id="ldFerie" />
-            <span><strong>🌴 Vis ferie-besked på hjemmesiden i perioden</strong><br/>
-            <em>Kunderne ser beskeden som banner øverst på siden. Erstatter en evt. tidligere ferie-besked – der kan kun vises én ad gangen.</em></span>
+            <span><strong>📣 Skriv en besked til kunderne på forsiden</strong><br/>
+            <em>Kunderne ser beskeden øverst på spiis.dk – også i dagene FØR, så de ved det i god tid. Erstatter en evt. tidligere besked – der kan kun vises én ad gangen.</em></span>
           </label>
-          <label class="afield afield--wide" id="ldMsgWrap" hidden style="margin-top:10px;"><span>Besked til kunderne</span>
+          <label class="afield afield--wide" id="ldMsgWrap" hidden style="margin-top:10px;"><span>Besked til kunderne <em>(vises øverst på spiis.dk)</em></span>
             <textarea id="ldMsg" class="inline-input" rows="3"></textarea></label>
           <div class="dv__foot">
             <button class="abtn abtn--accent" id="ldClose">🚫 Luk dagene</button>
@@ -1761,7 +1761,7 @@
       closeLukDialog();
       renderUge();
       refreshDayModal();
-      toast(`${days.length} dag${days.length === 1 ? '' : 'e'} lukket 🚫${$('#ldFerie')?.checked ? ' – ferie-beskeden vises på hjemmesiden 🌴' : ''}`);
+      toast(`${days.length} dag${days.length === 1 ? '' : 'e'} lukket 🚫${$('#ldFerie')?.checked ? ' – beskeden står nu øverst på spiis.dk 📣' : ''}`);
     });
     $('#ldOpen').addEventListener('click', () => {
       const days = range();
