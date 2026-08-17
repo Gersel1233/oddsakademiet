@@ -491,10 +491,21 @@
         <td>${h.closed ? 'Lukket' : `${h.open} – ${h.close}`}</td>
       </tr>`).join('');
 
+    /* Tabellen ovenfor er køkkenets ÅBNINGSTIDER. Denne linje er noget
+       andet: hvornår man kan HENTE sin bestilling i dag. Det stod der
+       ikke før, så de to blev læst som det samme – og så gav resten af
+       kortet ingen mening. */
     const kitchenNote = $('#kitchenNote');
     if (kitchenNote) {
       const iDag = S.todayISO();
-      kitchenNote.textContent = `🥡 To-go: kl. ${orderFrom(iDag)} – ${S.orderToFor('togo', iDag)} · 🍽️ Spis her: kl. ${orderFrom(iDag)} – ${S.orderToFor('spise', iDag)}`;
+      const aabne = S.openTypesFor ? S.openTypesFor(iDag) : ['togo', 'spise'];
+      const stk = aabne.map((t) => (t === 'togo'
+        ? `🥡 To-go kl. ${orderFrom(iDag)}–${S.orderToFor('togo', iDag)}`
+        : `🍽️ Spis her kl. ${orderFrom(iDag)}–${S.orderToFor('spise', iDag)}`));
+      kitchenNote.textContent = stk.length
+        ? `Afhentning i dag: ${stk.join(' · ')}`
+        : '';
+      kitchenNote.hidden = !stk.length;
     }
 
     /* tydelig deadline til kunden: hvor længe kan man nå at bestille til i dag.
@@ -505,6 +516,10 @@
       const todayIso = S.todayISO();
       const fmt = (m) => `${String(Math.floor(m / 60)).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}`;
       const deadlineFor = (type) => {
+        /* har køkkenet lukket for netop DEN måde i dag, må vi ikke love
+           en frist for den – så stod der "to-go frem til kl. 18:40" på en
+           dag hvor to-go slet ikke kunne vælges */
+        if (S.isTypeClosed && S.isTypeClosed(todayIso, type)) return null;
         const daySlots = S.orderSlots(todayIso, 30, type);
         const lastSlot = daySlots[daySlots.length - 1];
         if (!lastSlot) return null;
@@ -522,36 +537,50 @@
         cutoffEl.className = 'hours__cutoff';
         cutoffEl.hidden = false;
       } else {
-        cutoffEl.textContent = '🕐 Bestillinger til i dag er lukket – vælg en kommende dag';
-        cutoffEl.className = 'hours__cutoff is-closed';
-        cutoffEl.hidden = false;
+        /* er der lukket for i dag, står det i linjen nedenunder –
+           det skal ikke stå to gange lige efter hinanden */
+        cutoffEl.hidden = true;
       }
     }
 
+    /* ============================================================
+       ÉN historie, ikke tre.
+       Linjen her handlede før om, hvornår DISKEN har åbent – mens
+       linjen ovenover handlede om, hvornår man kan BESTILLE. Så kunne
+       der stå "Bestil til i dag: frem til kl. 18:40" og lige under
+       "Vi har lukket lige nu". Begge dele var sande, men sammen gav
+       de ingen mening, og folk troede de ikke kunne bestille.
+       Nu taler hele kortet om bestilling – for det er dét, man er
+       kommet efter. Køkkenets åbningstider står i tabellen ovenfor.
+       ============================================================ */
     const status = $('#openStatus');
     const h = hours[todayIdx];
+    const iDagIso = S.todayISO();
     const now = nowMin();
-    const oTo = toMin(S.orderToFor('spise', S.todayISO()));
-    if (h.closed) {
-      status.textContent = '● Vi holder lukket i dag';
+    /* kan man overhovedet nå at bestille til i dag? Samme regnestykke
+       som selve bestillingen bruger – aldrig et andet tal. */
+    const naaDetIDag = ['togo', 'spise']
+      .filter((t) => !S.isTypeClosed || !S.isTypeClosed(iDagIso, t))
+      .some((t) => slotsFor(iDagIso, t).length > 0);
+    const foersteTid = orderFrom(iDagIso);
+
+    if (S.isClosureNow && S.isClosureNow()) {
+      status.textContent = '● Vi holder ferielukket';
       status.className = 'hours__status is-closed';
-    } else if (now < toMin(h.open)) {
-      status.textContent = `● Vi har lukket lige nu – vi åbner kl. ${h.open}`;
+    } else if (h.closed || S.isOrderingClosed(iDagIso)) {
+      status.textContent = '● Vi tager ikke imod bestillinger i dag';
       status.className = 'hours__status is-closed';
-    } else if (now <= toMin(h.close)) {
-      if (now > oTo) {
-        status.textContent = `● Køkkenet er lukket for bestillinger i dag – vi har åbent til kl. ${h.close}`;
-        status.className = 'hours__status is-soon';
-      } else if (toMin(h.close) - now <= 60) {
-        status.textContent = `● Vi lukker snart – åbent til kl. ${h.close}`;
-        status.className = 'hours__status is-soon';
-      } else {
-        status.textContent = `● Vi har åbent nu – frem til kl. ${h.close}`;
-        status.className = 'hours__status is-open';
-      }
+    } else if (naaDetIDag && now < toMin(foersteTid)) {
+      /* Vi har ikke åbnet endnu – men man kan sagtens bestille til senere.
+         Det er hele pointen med siden, så det skal stå positivt. */
+      status.textContent = `● Åbent for bestillinger – første afhentning kl. ${foersteTid}`;
+      status.className = 'hours__status is-open';
+    } else if (naaDetIDag) {
+      status.textContent = '● Du kan bestille til i dag lige nu';
+      status.className = 'hours__status is-open';
     } else {
-      status.textContent = '● Vi har lukket for i dag';
-      status.className = 'hours__status is-closed';
+      status.textContent = '● Bestillinger til i dag er lukket – vælg en af de kommende dage';
+      status.className = 'hours__status is-soon';
     }
   }
 
@@ -1098,8 +1127,38 @@
     const timeSel = $('#tapasTime');
     const typeSel = $('#tapasType');
 
+    /* Tapas spises ENTEN med hjem eller her – præcis som al anden mad.
+       Har køkkenet lukket for den ene måde den dag, gælder det derfor
+       også tapas. Før kunne man vælge den alligevel og først få det at
+       vide, når bestillingen blev afvist. Nu er den slået fra med det
+       samme, og der står hvorfor. */
+    function syncTapasType() {
+      const iso = dateSel.value;
+      const aabne = iso && S.openTypesFor ? S.openTypesFor(iso) : ['togo', 'spise'];
+      let flyttet = false;
+      [...typeSel.options].forEach((o) => {
+        const lukket = iso ? !aabne.includes(o.value) : false;
+        o.disabled = lukket;
+        o.textContent = `${o.value === 'togo' ? '🥡 To-go' : '🍽️ Spis her'}${lukket ? ' – lukket denne dag' : ''}`;
+        if (lukket && typeSel.value === o.value) flyttet = true;
+      });
+      if (flyttet) {
+        const aaben = [...typeSel.options].find((o) => !o.disabled);
+        if (aaben) typeSel.value = aaben.value;
+      }
+      const note = $('#tapasTypeNote');
+      if (note) {
+        const lukkede = [...typeSel.options].filter((o) => o.disabled)
+          .map((o) => (o.value === 'togo' ? 'Take-away' : 'Spis her'));
+        note.hidden = !lukkede.length;
+        note.textContent = lukkede.length
+          ? `${lukkede.join(' og ')} er ikke muligt den dag – vælg en anden dag, hvis I hellere vil det.`
+          : '';
+      }
+    }
     function fillTimes() {
       const iso = dateSel.value;
+      syncTapasType();
       const slots = iso ? S.orderSlots(iso, 30, typeSel.value) : [];
       const prev = timeSel.value;
       timeSel.innerHTML = slots.length
@@ -1154,6 +1213,8 @@
     dateSel.addEventListener('change', fillTimes);
     typeSel.addEventListener('change', fillTimes);
     form.addEventListener('input', updTotal);
+    typeSel.addEventListener('change', fillTimes);
+    dateSel.addEventListener('change', fillTimes);
     fillDates();
     renderTapasItems();
     updTotal();
@@ -1197,6 +1258,7 @@
            "noget gik galt", som man ikke kan gøre noget ved */
         const grunde = {
           'tapas-dato': 'Tapas skal bestilles senest dagen før – vælg en dato fra i morgen.',
+          'type-lukket': 'Den måde at spise på er desværre ikke mulig den dag – vælg den anden mulighed, eller en anden dag.',
           pauset: 'Vi tager ikke imod online bestillinger lige nu – ring til os på 93 99 58 58, så finder vi ud af det.',
           lukket: `Vi holder lukket den dag (${lukketTekst(iso).replace(/^\S+\s/, '').toLowerCase()}) – vælg en anden dag.`,
           dag: 'Køkkenet holder lukket den ugedag – vælg en anden dag.',

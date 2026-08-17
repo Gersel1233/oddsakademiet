@@ -367,6 +367,8 @@
                 <input type="number" id="tapasPersons" min="0" max="60" value="0" /></label>
               <label class="field"><span>Hvordan?</span>
                 <select id="tapasType"><option value="togo">🥡 To-go</option><option value="spise">🍽️ Spis her</option></select></label>
+              <!-- nogle dage er kun den ene måde mulig – så står grunden her -->
+              <small class="field__hint field__hint--lukket field--full" id="tapasTypeNote" hidden></small>
               <div class="tapas__cavacard field--full" id="tapasCavaCard">
                 <span class="tapas__cavatxt"><strong>🥂 Cava Brut Nature</strong><em>Anbefalet af vores vinmand · <b id="tapasCavaPrice">150 kr.</b> pr. flaske</em></span>
                 <span class="tapas__cavaqty">
