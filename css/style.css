@@ -900,21 +900,36 @@ body.menupage { padding-bottom: 0 !important; }
    mørkt/tomt hul mens videoen henter – og nægter telefonen at afspille
    (fx strømsparetilstand), står der stadig et skarpt billede i stedet
    for en frossen, uskarp video-frame. */
-.hero__media {
+.hero__media { position: absolute; inset: 0; overflow: hidden; }
+/* Stillbilledet ligger i sit EGET lag bag videoen – i præcis samme
+   udsnit og størrelse som videoen hviler i. Så kan man ikke se, hvornår
+   videoen tager over: billedet er videoens allerførste frame.
+   Og der er aldrig et mørkt hul, mens videoen henter. */
+.hero__media::before {
+  content: '';
   position: absolute; inset: 0;
   background: url('../assets/hero-poster.jpg') center/cover no-repeat;
+  transform: scale(1.04);
 }
 .hero__media video {
   width: 100%; height: 100%;
   object-fit: cover;
-  transform: scale(1.06);
-  animation: heroZoom 22s ease-in-out infinite alternate;
+  /* Videoen starter en anelse længere inde og glider ud på plads, mens
+     den toner frem. Så "sætter" den sig i stedet for bare at blinke ind.
+     Selve det langsomme zoom starter FØRST når den er synlig – ellers
+     dukkede den op midt i en bevægelse. */
   opacity: 0;
-  transition: opacity 1s ease;
+  transform: scale(1.1);
+  transition: opacity 1.4s ease, transform 1.6s cubic-bezier(0.22, 1, 0.36, 1);
   pointer-events: none;      /* dekorativ baggrund – taps går til indholdet */
-  will-change: transform;    /* jævn zoom uden hak */
+  will-change: opacity, transform;
 }
-.hero__media video.is-playing { opacity: 1; }
+.hero__media video.is-playing {
+  opacity: 1;
+  transform: scale(1.04);
+  /* efter indgangen overtager det rolige, uendelige zoom */
+  animation: heroZoom 26s 1.6s ease-in-out infinite alternate;
+}
 /* skjul telefonens indbyggede play-knap/kontroller på baggrundsvideoen */
 .hero__media video::-webkit-media-controls-start-playback-button,
 .hero__media video::-webkit-media-controls-play-button,
@@ -925,9 +940,11 @@ body.menupage { padding-bottom: 0 !important; }
   -webkit-appearance: none;
   opacity: 0 !important;
 }
+/* meget lille zoom – nok til at billedet lever, ikke nok til at det
+   trækker opmærksomheden væk fra teksten */
 @keyframes heroZoom {
-  from { transform: scale(1.06); }
-  to { transform: scale(1.14); }
+  from { transform: scale(1.04); }
+  to { transform: scale(1.11); }
 }
 .hero__overlay {
   position: absolute; inset: 0;
@@ -979,7 +996,9 @@ body.menupage { padding-bottom: 0 !important; }
   transform-origin: left center;
 }
 .hero.is-ready .hero__title em::after {
-  animation: underlineIn 0.7s 1.2s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  /* stregen tegnes lige EFTER linjen er landet – ikke et halvt sekund
+     senere, hvor man har nået at kigge videre */
+  animation: underlineIn 0.8s 0.85s cubic-bezier(0.22, 1, 0.36, 1) forwards;
 }
 @keyframes underlineIn { to { transform: scaleX(1); } }
 /* display:block, men UDEN overflow:hidden – den klippede bogstav-haler (j, g) af */
@@ -1000,19 +1019,44 @@ body.menupage { padding-bottom: 0 !important; }
   flex-wrap: wrap;
 }
 
-/* hero indgangs-animation */
+/* ---------- hero: indgangen ----------
+   Fast rytme på 0,11 s mellem hver linje, så det læses som ÉN bevægelse
+   i stedet for fem løsrevne. Kortere vej at rejse (18 px mod 34) og et
+   blødt udløb – det føles roligt i stedet for at hoppe på plads.
+   translate3d holder det på grafikkortet, så det ikke hakker på en
+   telefon, mens videoen samtidig starter. */
 [data-hero] { opacity: 0; }
 .hero.is-ready [data-hero] {
-  animation: heroUp 0.9s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  animation: heroUp 1s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
-.hero.is-ready [data-hero="1"] { animation-delay: 0.15s; }
-.hero.is-ready [data-hero="2"] { animation-delay: 0.3s; }
-.hero.is-ready [data-hero="3"] { animation-delay: 0.42s; }
-.hero.is-ready [data-hero="4"] { animation-delay: 0.6s; }
-.hero.is-ready [data-hero="5"] { animation-delay: 0.75s; }
+.hero.is-ready [data-hero="1"] { animation-delay: 0.10s; }
+.hero.is-ready [data-hero="2"] { animation-delay: 0.21s; }
+.hero.is-ready [data-hero="3"] { animation-delay: 0.32s; }
+.hero.is-ready [data-hero="4"] { animation-delay: 0.43s; }
+.hero.is-ready [data-hero="5"] { animation-delay: 0.54s; }
 @keyframes heroUp {
-  from { opacity: 0; transform: translateY(34px); }
-  to { opacity: 1; transform: translateY(0); }
+  from { opacity: 0; transform: translate3d(0, 18px, 0); }
+  to { opacity: 1; transform: translate3d(0, 0, 0); }
+}
+/* pilen nederst kommer sidst og helt stille */
+.hero__scroll { opacity: 0; }
+.hero.is-ready .hero__scroll { animation: heroUp 1.1s 0.95s cubic-bezier(0.16, 1, 0.3, 1) both; }
+
+/* ---------- for dem der har slået bevægelse fra på telefonen ----------
+   iOS og Android har en indstilling for "reducér bevægelse" – bl.a. for
+   folk der bliver dårlige af det. Så viser vi det hele med det samme,
+   uden zoom og uden at noget glider. */
+@media (prefers-reduced-motion: reduce) {
+  [data-hero], .hero__scroll { opacity: 1 !important; }
+  .hero.is-ready [data-hero],
+  .hero.is-ready .hero__scroll { animation: none !important; }
+  .hero__media video { transition: opacity 0.4s ease; transform: none; }
+  .hero__media video.is-playing { animation: none; transform: none; }
+  .hero__media::before { transform: none; }
+  /* !important, fordi prikkens egen regel står længere nede i filen */
+  .hero__scroll-dot { animation: none !important; }
+  .marquee__track { animation: none !important; }
+  .hero.is-ready .hero__title em::after { animation: none; transform: scaleX(1); }
 }
 
 .hero__scroll {
