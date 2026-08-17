@@ -107,6 +107,28 @@ select * from (
               else 'Kør logbog.sql.' end
 
   union all
+  select 8.1, 'Skraldespand – slettede kan hentes tilbage',
+         case when exists (
+                select 1 from pg_proc p join pg_namespace s on s.oid = p.pronamespace
+                 where s.nspname = 'public' and p.proname = 'gendan_bestilling')
+              then '✅ KLAR' else '❌ IKKE KLAR' end,
+         case when exists (
+                select 1 from pg_proc p join pg_namespace s on s.oid = p.pronamespace
+                 where s.nspname = 'public' and p.proname = 'gendan_bestilling')
+              then 'En slettet bestilling kan lægges tilbage i 30 dage.'
+              else 'Kør opdatering-skraldespand.sql.' end
+
+  union all
+  select 8.2, 'Egne tider pr. dag & luk kun den ene spisemåde',
+         case when exists (
+                select 1 from pg_proc p join pg_namespace s on s.oid = p.pronamespace
+                 where s.nspname = 'public' and p.proname = 'spiis_type_lukket')
+              and (select prosrc from pg_proc p join pg_namespace s on s.oid = p.pronamespace
+                    where s.nspname = 'public' and p.proname = 'place_order' limit 1) like '%dayTimes%'
+              then '✅ KLAR' else '❌ IKKE KLAR' end,
+         'Databasen kender dagens egne tider og lukning af én spisemåde.'
+
+  union all
   select 9, 'Bestillinger i databasen lige nu',
          'ℹ️ til info',
          (select count(*) from public.orders)::text || ' i alt · '

@@ -2053,3 +2053,44 @@ body.dv-open { overflow: hidden; }
   .salgrk__antal { grid-column: 1; font-size: 0.8rem; }
   .salgrk__kr { grid-row: 1 / 3; grid-column: 2; align-self: center; }
 }
+
+/* ============================================================
+   SKRALDESPAND & FORTRYD
+   Et fejltryk skal kunne trækkes tilbage – både med det samme
+   og bagefter.
+   ============================================================ */
+.toast--fortryd {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  border-radius: 16px;
+  padding: 12px 12px 12px 20px;
+}
+.toast__btn {
+  flex: none;
+  border: 0;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 700;
+  color: var(--ink);
+  background: var(--cream);
+  border-radius: 999px;
+  padding: 8px 16px;
+}
+.toast__btn:hover { background: #fff; }
+.toast__btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.skraldrow { position: relative; }
+.skraldrow__knap {
+  grid-column: 1 / -1;
+  margin-top: 8px;
+  display: flex;
+  justify-content: flex-end;
+}
+@media (min-width: 700px) {
+  .skraldrow__knap {
+    grid-column: auto;
+    margin-top: 0;
+    align-self: center;
+  }
+}

@@ -829,6 +829,16 @@ const SpiisStore = (() => {
     const i = pendingOps.indexOf(op);
     if (i >= 0) pendingOps.splice(i, 1);
   }
+  /* Glem en ubekræftet ændring HELT. Bruges når vi bevidst gør det
+     modsatte af den: fortryder man en sletning, må sletningens
+     nådevindue ikke blive ved med at fjerne rækken igen, hver gang
+     vi henter data ned. */
+  function glemPending(table, id) {
+    for (let i = pendingOps.length - 1; i >= 0; i--) {
+      const op = pendingOps[i];
+      if (op.table === table && op.id === id) pendingOps.splice(i, 1);
+    }
+  }
   function applyPending() {
     const now = Date.now();
     for (let i = pendingOps.length - 1; i >= 0; i--) {
@@ -927,6 +937,61 @@ const SpiisStore = (() => {
       if (res.status === 404) return { ok: false, grund: 'ingen-logbog' };
       if (!res.ok) return { ok: false, grund: 'fejl' };
       return { ok: true, rows: await res.json() };
+    } catch {
+      return { ok: false, grund: 'net' };
+    }
+  }
+
+  /* ============================================================
+     SKRALDESPANDEN
+     En sletning fjerner bestillingen med det samme – det SKAL den,
+     for ellers bliver portionerne ved med at være optaget efter en
+     afbestilling. Men logbogen har gemt hele rækken, og herfra kan
+     den lægges tilbage præcis som den var, i 30 dage.
+     ============================================================ */
+  async function getSlettede(dage = 30) {
+    if (!cloud || !session) return { ok: false, grund: 'ikke-logget-ind' };
+    const fra = new Date(Date.now() - Math.max(1, Number(dage) || 30) * 864e5).toISOString();
+    try {
+      const res = await sbFetch(
+        '/rest/v1/order_log?select=log_id,hvornaar,af_hvem,kunde,dato,klokken,varer,order_id,hele_raden'
+        + `&handling=eq.SLETTET&hvornaar=gte.${encodeURIComponent(fra)}`
+        + '&order=hvornaar.desc&limit=300',
+        { auth: true },
+      );
+      if (res.status === 404) return { ok: false, grund: 'ingen-logbog' };
+      if (!res.ok) return { ok: false, grund: 'fejl' };
+      const rows = await res.json();
+      /* er den allerede lagt tilbage, skal den ikke se ud som om den mangler */
+      const findes = new Set(data.orders.map((o) => o.id));
+      return { ok: true, rows: rows.map((r) => ({ ...r, erTilbage: findes.has(r.order_id) })) };
+    } catch {
+      return { ok: false, grund: 'net' };
+    }
+  }
+
+  async function gendanOrdre(raekke) {
+    if (!cloud || !session) return { ok: false, grund: 'ikke-logget-ind' };
+    if (!raekke || typeof raekke !== 'object') return { ok: false, grund: 'tom' };
+    try {
+      const res = await sbFetch('/rest/v1/rpc/gendan_bestilling', {
+        method: 'POST', auth: true, body: JSON.stringify({ p_row: raekke }),
+      });
+      /* 404 = opdatering-skraldespand.sql er ikke kørt endnu */
+      if (res.status === 404) return { ok: false, grund: 'ingen-funktion' };
+      if (!res.ok) return { ok: false, grund: 'fejl' };
+      const svar = await res.json();
+      if (!svar || svar.ok !== true) return { ok: false, grund: (svar && svar.grund) || 'fejl' };
+      /* Sletningen ligger stadig i nådevinduet og ville fjerne rækken
+         igen, hver gang vi henter ned. Vi fortryder den bevidst nu –
+         så den skal glemmes, ikke holdes i live. */
+      glemPending('orders', svar.id || raekke.id);
+      /* hent den ned med det samme, så den står i listen uden at vente
+         på næste opdatering – og så klokken kan ringe */
+      lastAdminSnap = '';
+      await fetchAdminData();
+      emit();
+      return { ok: true, id: svar.id };
     } catch {
       return { ok: false, grund: 'net' };
     }
@@ -1501,6 +1566,7 @@ const SpiisStore = (() => {
     getNote, setNote, weekStart, weekNumber,
     getMenu, setMenu,
     addOrder, getOrders, updateOrder, deleteOrder, getOrderHistory,
+    getSlettede, gendanOrdre,
     addBooking, getBookings, updateBooking, deleteBooking,
     getBlockedDates, getArrangementDates, isOrderingClosed, blockDate, unblockDate, isDateAvailable,
     getDayMark, setDayMark, DEFAULT_TAPAS_ITEMS,

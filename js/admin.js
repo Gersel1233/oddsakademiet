@@ -16,11 +16,41 @@
   let toastTimer;
   function toast(msg, fejl = false) {
     const el = $('#toast');
-    el.textContent = msg;
+    el.textContent = msg; /* rydder også en evt. fortryd-knap */
+    el.classList.remove('toast--fortryd');
     el.classList.toggle('toast--fejl', !!fejl);
     el.hidden = false;
     clearTimeout(toastTimer);
     toastTimer = setTimeout(() => { el.hidden = true; }, fejl ? 7000 : 2600);
+  }
+
+  /* Et fejltryk skal kunne fortrydes MED DET SAMME – ikke først efter
+     man har fundet skraldespanden. Beskeden bliver stående længe nok
+     til at man når at reagere. */
+  function toastFortryd(msg, tekst, handling, ms = 12000) {
+    const el = $('#toast');
+    el.textContent = '';
+    el.classList.remove('toast--fejl');
+    el.classList.add('toast--fortryd');
+    const t = document.createElement('span');
+    t.textContent = msg;
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'toast__btn';
+    b.textContent = tekst;
+    b.addEventListener('click', () => {
+      el.hidden = true;
+      el.classList.remove('toast--fortryd');
+      handling();
+    });
+    el.append(t, b);
+    el.hidden = false;
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => {
+      el.hidden = true;
+      el.classList.remove('toast--fortryd');
+      el.textContent = '';
+    }, ms);
   }
 
   /* alt gemmes automatisk – den lille kvittering vises højst hvert 2,5 sek. */
@@ -704,6 +734,94 @@
           <span class="logrow__hvem">👤 ${esc(logHvem(r))}</span>
         </div>`;
     }).join('')}</div>`;
+  }
+
+  /* ============================================================
+     SKRALDESPANDEN — 30 dage
+     Sletningen sker med det samme, og det SKAL den: ellers ville en
+     afbestilt portion blive ved med at være optaget. Men logbogen har
+     gemt hele bestillingen, og herfra lægges den tilbage præcis som
+     den var – også selvom dagen imellem er blevet lukket.
+     ============================================================ */
+  const GENDAN_FEJL = {
+    'ingen-funktion': 'Skraldespanden er ikke slået til i databasen endnu. Kør opdatering-skraldespand.sql i Supabase.',
+    'ingen-logbog': 'Logbogen er ikke slået til endnu – uden den kan intet hentes tilbage.',
+    'ikke-logget-ind': 'Log ind igen, og prøv en gang til.',
+    'ikke-adgang': 'Kun chefens login må hente bestillinger tilbage.',
+    net: 'Ingen forbindelse – prøv igen om lidt.',
+    'mangler-dato': 'Bestillingen mangler en dato og kan ikke lægges tilbage.',
+    tom: 'Der var ikke noget at hente tilbage.',
+  };
+  const gendanFejl = (grund) => GENDAN_FEJL[grund] || 'Kunne ikke hente bestillingen tilbage – prøv igen om lidt.';
+
+  async function visSkraldespand() {
+    const mask = document.createElement('div');
+    mask.className = 'dvmask logmask';
+    mask.innerHTML = `
+      <div class="logbox" role="dialog" aria-modal="true" aria-label="Skraldespand">
+        <div class="logbox__head">
+          <h3>🗑 Skraldespand</h3>
+          <button type="button" class="abtn abtn--ghost logbox__luk" aria-label="Luk">✕</button>
+        </div>
+        <p class="logbox__sub">Bestillinger der er slettet inden for de sidste <strong>30 dage</strong>. Tryk <strong>↩ Hent tilbage</strong>, så står den i listen igen præcis som den var – med samme tid, samme retter og samme valg. Den markeres som ny, så ingen overser den.</p>
+        <div class="logbox__krop"><div class="empty">Henter …</div></div>
+      </div>`;
+    document.body.appendChild(mask);
+    document.body.classList.add('dv-open');
+    const luk = () => {
+      mask.remove();
+      document.body.classList.remove('dv-open');
+      document.removeEventListener('keydown', tast);
+    };
+    const tast = (e) => { if (e.key === 'Escape') luk(); };
+    document.addEventListener('keydown', tast);
+    mask.querySelector('.logbox__luk').addEventListener('click', luk);
+    mask.addEventListener('click', (e) => { if (e.target === mask) luk(); });
+
+    const krop = mask.querySelector('.logbox__krop');
+    async function tegn() {
+      const svar = await S.getSlettede(30);
+      if (!svar.ok) { krop.innerHTML = `<div class="empty">${esc(gendanFejl(svar.grund))}</div>`; return; }
+      if (!svar.rows.length) {
+        krop.innerHTML = '<div class="empty">Skraldespanden er tom – der er ikke slettet nogen bestillinger de sidste 30 dage. 👍</div>';
+        return;
+      }
+      krop.innerHTML = `<div class="rowlist">${svar.rows.map((r) => {
+        const { naar, siden } = logTid(r.hvornaar);
+        return `
+          <div class="logrow logrow--slettet skraldrow">
+            <span class="logrow__hvad">🗑 ${esc(r.kunde || 'uden navn')}</span>
+            <span class="logrow__tid">slettet ${esc(naar)}${siden ? ` · ${esc(siden)}` : ''}</span>
+            <span class="logrow__mad">${esc(r.varer || 'ingen varer')}</span>
+            <span class="logrow__naar">📅 ${r.dato ? esc(S.formatDate(r.dato, false)) : '?'} kl. ${esc(r.klokken || '–')}</span>
+            <span class="logrow__hvem">👤 ${esc(logHvem(r))}</span>
+            <span class="skraldrow__knap">${r.erTilbage
+              ? '<span class="tag tag--green">✓ Hentet tilbage</span>'
+              : `<button type="button" class="abtn abtn--green" data-gendan="${r.log_id}">↩ Hent tilbage</button>`}</span>
+          </div>`;
+      }).join('')}</div>`;
+
+      krop.querySelectorAll('[data-gendan]').forEach((b) => {
+        b.addEventListener('click', async () => {
+          const raekke = svar.rows.find((x) => String(x.log_id) === b.dataset.gendan);
+          if (!raekke || !raekke.hele_raden) { toast('Der er ikke nok gemt om den til at hente den tilbage', true); return; }
+          b.disabled = true;
+          b.textContent = 'Henter …';
+          const res = await S.gendanOrdre(raekke.hele_raden);
+          if (!res.ok) {
+            b.disabled = false;
+            b.textContent = '↩ Hent tilbage';
+            toast(gendanFejl(res.grund), true);
+            return;
+          }
+          toast(`${raekke.kunde || 'Bestillingen'} er tilbage ✓`);
+          renderBell();
+          renderListViews();
+          tegn();
+        });
+      });
+    }
+    tegn();
   }
 
   function orderRow(o, showDate = false) {
@@ -1968,6 +2086,7 @@
             <button class="abtn" id="ordersToday" ${ordersAllDays ? 'disabled' : ''}>I dag</button>
             <button class="abtn ${ordersAllDays ? 'abtn--accent' : 'abtn--ghost'}" id="ordersAll">${ordersAllDays ? '📅 Vis én dag' : '📚 Alle dage'}</button>
             <button class="abtn abtn--ghost" id="ordersLog" title="Se hvad der er sket – også med bestillinger der er slettet">🕓 Historik</button>
+            <button class="abtn abtn--ghost" id="ordersTrash" title="Hent en slettet bestilling tilbage – op til 30 dage">🗑 Skraldespand</button>
           </div>
         </div>
         <p class="sub" style="color:var(--ink-soft);margin-bottom:14px;">
@@ -2009,6 +2128,7 @@
     $('#ordersToday').addEventListener('click', () => { ordersDate = S.todayISO(); renderBestillinger(); });
     $('#ordersAll').addEventListener('click', () => { ordersAllDays = true; renderBestillinger(); });
     $('#ordersLog').addEventListener('click', visHistorik);
+    $('#ordersTrash').addEventListener('click', visSkraldespand);
   }
 
   /* ALLE bestillinger samlet ét sted – grupperet og sorteret på dato,
@@ -2050,6 +2170,7 @@
             <button class="abtn" id="ordersToday" disabled>I dag</button>
             <button class="abtn abtn--accent" id="ordersAll">📅 Vis én dag</button>
             <button class="abtn abtn--ghost" id="ordersLog" title="Se hvad der er sket – også med bestillinger der er slettet">🕓 Historik</button>
+            <button class="abtn abtn--ghost" id="ordersTrash" title="Hent en slettet bestilling tilbage – op til 30 dage">🗑 Skraldespand</button>
           </div>
         </div>
         <p class="sub" style="color:var(--ink-soft);margin-bottom:12px;">
@@ -2073,6 +2194,7 @@
 
     $('#ordersAll').addEventListener('click', () => { ordersAllDays = false; renderBestillinger(); });
     $('#ordersLog').addEventListener('click', visHistorik);
+    $('#ordersTrash').addEventListener('click', visSkraldespand);
     /* ét tryk rydder alle overståede dage – det er ikke noget man vil
        sidde og gøre én ad gangen efter en testperiode */
     const purge = $('#ordersPurge');
@@ -3272,13 +3394,22 @@
           foodLines(o).map((l) => `${l.qty} × ${linjeNavn(l)}`).join(', ') || 'ingen varer',
           `${S.formatDate(o.date)} kl. ${o.time || '?'} · 📞 ${o.phone || ''}`,
         ] : [],
-        note: 'Bestillingen forsvinder for altid. Køkkenet kan ikke få den tilbage, og kunden får ingen besked.',
+        note: 'Bestillingen fjernes fra listen, og portionerne bliver frie igen. Kunden får ingen besked. Du kan hente den tilbage i skraldespanden i 30 dage.',
         knap: '🗑 Slet bestillingen',
-      }).then((ja) => {
+      }).then(async (ja) => {
         if (!ja) return;
-        S.deleteOrder(id);
+        /* gem hele rækken FØR den forsvinder – så kan vi lægge den
+           tilbage uden at skulle lede i logbogen først */
+        const kopi = o ? { ...o } : null;
+        await S.deleteOrder(id);
         renderBell();
         renderListViews();
+        if (!kopi) { toast('Bestillingen er slettet 🗑'); return; }
+        toastFortryd(`${kopi.name} er slettet`, '↩ Fortryd', async () => {
+          const res = await S.gendanOrdre(kopi);
+          if (res.ok) { renderBell(); renderListViews(); toast(`${kopi.name} er tilbage ✓`); }
+          else toast(gendanFejl(res.grund), true);
+        });
       });
       return;
     }
