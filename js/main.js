@@ -60,6 +60,18 @@
   /* er dagen reelt slut for madbestillinger? (målt på det længste vindue) */
   const dayDone = (iso) => iso === S.todayISO() && slotsFor(iso, 'spise').length === 0;
 
+  /* dagens SIDSTE tid for en måde – uden "kun fremtidige"-filteret, så vi
+     kan fortælle kunden hvornår toget kørte ("sidste afhentning var 19:00") */
+  function sidsteTid(iso, type) {
+    const alle = S.orderSlots(iso, 30, type);
+    return alle.length ? alle[alle.length - 1] : '';
+  }
+
+  /* hvilke måder er overhovedet mulige på en dag – både køkkenets
+     lukning OG uret taget i betragtning */
+  const aabneTyperFor = (iso) => (S.openTypesFor ? S.openTypesFor(iso) : ['togo', 'spise']);
+  const kanBestillesPaa = (iso) => aabneTyperFor(iso).some((t) => slotsFor(iso, t).length > 0);
+
   /* ---------- navigation ---------- */
   const nav = $('#nav');
   const navLinks = $('#navLinks');
@@ -638,7 +650,11 @@
   function renderOrderDates() {
     const plan = S.getPlan(14);
     const options = plan
-      .filter((d) => d.open && slotsFor(d.iso, 'spise').length > 0 && !S.isOrderingClosed(d.iso))
+      /* En dag hører kun til i listen, hvis der er en måde tilbage man
+         FAKTISK kan bestille på. Før målte vi kun på spis-her-vinduet:
+         var spis her lukket den dag, og take-away for længst slut,
+         stod dagen der stadig – med en tom tidsliste. */
+      .filter((d) => d.open && !S.isOrderingClosed(d.iso) && kanBestillesPaa(d.iso))
       .map((d) => {
         const dishes = d.dishes || [];
         const soldOut = dishes.length > 0 && S.dagensAllSoldOut(d.iso);
@@ -674,34 +690,62 @@
     const dele = aabne.map((t) => `${t === 'togo' ? '🥡 Afhentning' : '🍽️ Spisning'} kl. ${fra}–${esc(S.orderToFor(t, iso))}`);
     return dele.join(' · ');
   }
+  /* HVORFOR kan man ikke vælge denne måde?
+       'lukket' = køkkenet har lukket netop den måde på dagen
+       'slut'   = uret er simpelthen løbet fra den i dag
+     De to ting skal siges FORSKELLIGT. "Take-away er ikke muligt denne
+     dag" er forkert kl. 19:05 – det var muligt, det er bare slut. */
+  function typeSpaerret(iso, type) {
+    if (!iso) return '';
+    const aabne = aabneTyperFor(iso);
+    if (aabne.length && !aabne.includes(type)) return 'lukket';
+    if (iso === S.todayISO() && slotsFor(iso, type).length === 0) return 'slut';
+    return '';
+  }
+
   function syncOrderTypes(iso) {
     const knapper = $$('input[name="orderType"]');
     if (!knapper.length) return;
-    const aabne = iso && S.openTypesFor ? S.openTypesFor(iso) : ['togo', 'spise'];
     /* er dagen helt lukket, rører vi ikke ved knapperne – den besked
        hører til datoen, ikke til måden man vil spise på */
-    const kunHelDagLukket = iso && !aabne.length;
+    const kunHelDagLukket = iso && !aabneTyperFor(iso).length;
+    const grunde = {};
     knapper.forEach((r) => {
-      const lukket = !kunHelDagLukket && !aabne.includes(r.value);
-      r.disabled = lukket;
+      const grund = kunHelDagLukket ? '' : typeSpaerret(iso, r.value);
+      grunde[r.value] = grund;
+      r.disabled = !!grund;
       const label = r.closest('label');
-      if (label) label.classList.toggle('is-lukket', lukket);
-      if (label) label.title = lukket ? `${TYPENAVN[r.value]} er ikke muligt denne dag` : '';
+      if (!label) return;
+      label.classList.toggle('is-lukket', !!grund);
+      label.title = grund === 'slut'
+        ? `${TYPENAVN[r.value]} er slut for i dag`
+        : (grund ? `${TYPENAVN[r.value]} er ikke muligt denne dag` : '');
     });
-    /* stod man på den lukkede, flyttes man til den der er åben */
+    /* stod man på den spærrede, flyttes man til den der er åben */
     const valgt = knapper.find((r) => r.checked);
     if (valgt && valgt.disabled) {
       const åben = knapper.find((r) => !r.disabled);
       if (åben) åben.checked = true;
     }
+
     const note = $('#typeLukketNote');
-    if (note) {
-      const lukkede = knapper.filter((r) => r.disabled).map((r) => TYPENAVN[r.value]);
-      note.hidden = !lukkede.length;
-      note.textContent = lukkede.length
-        ? `${lukkede.join(' og ')} er ikke muligt denne dag – vælg en anden dag, hvis I hellere vil det.`
-        : '';
+    if (!note) return;
+    const spaerrede = knapper.filter((r) => r.disabled);
+    const aabneKnapper = knapper.filter((r) => !r.disabled);
+    note.hidden = !spaerrede.length;
+    if (!spaerrede.length) { note.textContent = ''; return; }
+    if (!aabneKnapper.length) {
+      note.textContent = 'Der er ikke flere tider tilbage i dag – vælg en af de kommende dage i listen ovenfor.';
+      return;
     }
+    const dele = spaerrede.map((r) => {
+      if (grunde[r.value] !== 'slut') return `${TYPENAVN[r.value]} er ikke muligt denne dag`;
+      const sidste = sidsteTid(iso, r.value);
+      return `${TYPENAVN[r.value]} er slut for i dag${sidste ? ` – sidste bestilling var kl. ${sidste}` : ''}`;
+    });
+    const alternativ = aabneKnapper.map((r) => TYPENAVN[r.value]).join(' eller ');
+    const erSlut = spaerrede.some((r) => grunde[r.value] === 'slut');
+    note.textContent = `${dele.join(' · ')}. Vælg ${alternativ}${erSlut ? ' – eller bestil til i morgen' : ' – eller en anden dag'}.`;
   }
 
   function onOrderDateChange() {
@@ -735,7 +779,13 @@
     /* kun fremtidige tider – to-go stopper kl. 19:30, spis her kl. 20:30 */
     const prev = orderTime.value;
     const slots = slotsFor(iso);
-    orderTime.innerHTML = slots.map((t) => `<option value="${t}">kl. ${t}</option>`).join('');
+    /* Et TOMT tidsfelt er den værste besked, en side kan give: kunden
+       står med en dato og en måde, og der sker bare ingenting. Kan der
+       ikke vælges en tid, skal der stå hvorfor – forklaringen selv
+       står ved knapperne ovenfor. */
+    orderTime.innerHTML = slots.length
+      ? slots.map((t) => `<option value="${t}">kl. ${t}</option>`).join('')
+      : '<option value="">Ingen tider tilbage – se beskeden nedenfor</option>';
     if (slots.includes(prev)) orderTime.value = prev;
     else if (slots.includes('17:30')) orderTime.value = '17:30';
   }
@@ -981,8 +1031,13 @@
       return;
     }
 
-    if (time && (time < orderFrom() || time > orderTo())) {
-      error.textContent = `Bestillinger kan kun vælges mellem kl. ${orderFrom()} og ${orderTo()} – vælg et tidspunkt i det vindue.`;
+    /* Vinduet afhænger af BÅDE dagen og måden – ellers måler vi mod det
+       almindelige vindue på en dag der har sit eget (fx "mandag åbner
+       vi først 17:30"), og siger noget forkert. */
+    const fraTid = orderFrom(iso);
+    const tilTid = orderTo(type, iso);
+    if (time && (time < fraTid || time > tilTid)) {
+      error.textContent = `${TYPENAVN[type] || 'Bestillinger'} kan denne dag kun vælges mellem kl. ${fraTid} og ${tilTid} – vælg et tidspunkt i det vindue.`;
       error.hidden = false;
       return;
     }
