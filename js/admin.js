@@ -289,7 +289,7 @@
           kind: 'order', id: o.id, date: o.date,
           go: { view: 'bestillinger', date: o.date },
           title: `Ny bestilling: ${summary}`,
-          sub: `${o.name} · ${S.formatDate(o.date)} kl. ${o.time} · ${o.type === 'togo' ? 'To-go' : 'Spiser her'}${o.persons ? ` · ${o.persons} pers.` : ''}`,
+          sub: `${o.name} · ${S.formatDate(o.date)} kl. ${o.time} · ${o.type === 'togo' ? 'To-go' : `Spiser her${o.persons ? ` · ${o.persons} pers.` : ''}`}`,
           at: o.createdAt,
         };
       }),
@@ -524,8 +524,20 @@
   /* emballage-/genbrugslinjer er ikke mad – de tælles og produceres ikke */
   const isExtraLine = (l) => l.kind === 'emballage' || l.kind === 'genbrug';
   const foodLines = (o) => orderLines(o).filter((l) => !isExtraLine(l));
-  const personsOf = (o) => (o.persons != null ? Number(o.persons) : Number(o.qty || 0));
+  /* "Antal personer" betyder ÉN ting: hvor mange der skal sidde ved et
+     bord her. Ved to-go spørger vi ikke længere om det – og et gammelt
+     tal fra dengang vi gjorde, må ikke tælle med som gæster i huset.
+     (Faldt før tilbage på antal retter, så en to-go-bestilling så ud
+     som lige så mange spisende gæster som portioner.) */
+  const personsOf = (o) => (o.type === 'togo' ? 0
+    : (o.persons != null ? Number(o.persons) : Number(o.qty || 0)));
   const itemsOf = (o) => foodLines(o).reduce((s, l) => s + Number(l.qty), 0);
+  /* portioner delt op efter måde – DET er tallet der kan sammenlignes,
+     for retter findes på begge sider, personer gør ikke */
+  const retterSplit = (list) => list.reduce((a, o) => {
+    if (o.type === 'togo') a.togo += itemsOf(o); else a.spise += itemsOf(o);
+    return a;
+  }, { togo: 0, spise: 0 });
 
   /* læg alle bestilte retter sammen pr. navn (til produktionslisten) */
   function dishTotals(orders) {
@@ -939,8 +951,7 @@
     const orders = S.getOrders(today);
     const persons = orders.reduce((s, o) => s + personsOf(o), 0);
     const itemsTotal = orders.reduce((s, o) => s + itemsOf(o), 0);
-    const togo = orders.filter((o) => o.type === 'togo').reduce((s, o) => s + personsOf(o), 0);
-    const dineIn = persons - togo;
+    const split = retterSplit(orders);
     const dish = S.getDagensRet(today);
     const dagensSold = S.getSold(today);
     const totalsSplit = dishTotalsSplit(orders);
@@ -1037,7 +1048,7 @@
       ${nyligtHtml}
       <div class="stats">
         <div class="stat stat--accent">
-          <div class="stat__label">Personer i dag</div>
+          <div class="stat__label">Spisende gæster i dag</div>
           <div class="stat__value">${persons}</div>
         </div>
         <div class="stat">
@@ -1049,8 +1060,8 @@
           <div class="stat__value">${dagensSold}${dish && dish.stock != null && dish.stock !== '' ? ` <small>/ ${dish.stock}</small>` : ''}</div>
         </div>
         <div class="stat">
-          <div class="stat__label">To-go / spiser her</div>
-          <div class="stat__value">${togo} <small>/</small> ${dineIn}</div>
+          <div class="stat__label">Retter · to-go / spiser her</div>
+          <div class="stat__value">${split.togo} <small>/</small> ${split.spise}</div>
         </div>
         <div class="stat">
           <div class="stat__label">Nye bookinger</div>
@@ -1170,12 +1181,14 @@
 
   function kalDayInfo(iso) {
     const orders = S.getOrders(iso);
-    const persons = orders.reduce((s, o) => s + personsOf(o), 0);
-    const togo = orders.filter((o) => o.type === 'togo').reduce((s, o) => s + personsOf(o), 0);
+    /* togo/spise står altid ved siden af "retter" ude i visningerne –
+       så det SKAL være portioner, ikke personer */
+    const split = retterSplit(orders);
     return {
       orders,
       items: orders.reduce((s, o) => s + itemsOf(o), 0),
-      persons, togo, spise: persons - togo,
+      persons: orders.reduce((s, o) => s + personsOf(o), 0),
+      togo: split.togo, spise: split.spise,
       bookings: S.getBookings().filter((b) => b.date === iso && b.status !== 'afvist')
         .sort((a, b) => (a.time || '').localeCompare(b.time || '')),
       dish: S.getDagensRet(iso), dishes: S.getDagensRetList(iso),
@@ -1647,6 +1660,7 @@
         <span class="dvchip">🧾 <b>${d.orders.length}</b> bestillinger</span>
         <span class="dvchip">🍲 <b>${d.items}</b> retter</span>
         <span class="dvchip">🥡 <b>${d.togo}</b> · 🍽️ <b>${d.spise}</b></span>
+        ${d.persons ? `<span class="dvchip">👥 <b>${d.persons}</b> spisende gæster</span>` : ''}
         ${d.bookings.length ? `<span class="dvchip">🎉 <b>${d.bookings.length}</b> aftale${d.bookings.length === 1 ? '' : 'r'}</span>` : ''}
       </div>
       <div class="dv__notewrap">
@@ -1947,14 +1961,14 @@
 
     $('#view-uge').innerHTML = `
       ${kalHeader(`Uge ${S.weekNumber(ugeStart)}`,
-        `${esc(S.formatDate(ugeStart, false))} – ${esc(S.formatDate(weekEnd, false))} · <strong>${weekOrders.length}</strong> bestillinger · <strong>${weekItems}</strong> retter · <strong>${weekPersons}</strong> personer · <strong>${weekBookings.length}</strong> booking${weekBookings.length === 1 ? '' : 'er'}`)}
+        `${esc(S.formatDate(ugeStart, false))} – ${esc(S.formatDate(weekEnd, false))} · <strong>${weekOrders.length}</strong> bestillinger · <strong>${weekItems}</strong> retter · <strong>${weekPersons}</strong> spisende gæster · <strong>${weekBookings.length}</strong> booking${weekBookings.length === 1 ? '' : 'er'}`)}
 
       <div class="ugegrid">
         ${days.map((iso) => {
           const orders = S.getOrders(iso);
           const dayItems = orders.reduce((s, o) => s + itemsOf(o), 0);
           const dayPersons = orders.reduce((s, o) => s + personsOf(o), 0);
-          const togo = orders.filter((o) => o.type === 'togo').reduce((s, o) => s + personsOf(o), 0);
+          const dagSplit = retterSplit(orders);
           const dish = S.getDagensRet(iso);
           const sold = S.getSold(iso);
           const totals = dishTotals(orders);
@@ -1982,8 +1996,8 @@
             <div class="ugeday__stats">
               <span><strong>${orders.length}</strong> bestillinger</span>
               <span><strong>${dayItems}</strong> retter</span>
-              <span><strong>${dayPersons}</strong> pers.</span>
-              <span>🥡 <strong>${togo}</strong> · 🍽️ <strong>${dayPersons - togo}</strong></span>
+              <span><strong>${dayPersons}</strong> spisende</span>
+              <span>🥡 <strong>${dagSplit.togo}</strong> · 🍽️ <strong>${dagSplit.spise}</strong></span>
             </div>
             ${totals.length ? `<div class="ugeday__top">${totals.slice(0, 3).map(([n, q]) => `${q} × ${esc(n)}`).join(' · ')}${totals.length > 3 ? ' · …' : ''}</div>` : ''}
             ${bookings.length ? `
@@ -2090,7 +2104,7 @@
           </div>
         </div>
         <p class="sub" style="color:var(--ink-soft);margin-bottom:14px;">
-          ${esc(S.formatDate(ordersDate))} · ${dish ? `Dagens ret: <strong>${esc(dish.title)}</strong> · ` : ''}${orders.length} bestillinger · ${itemsTotal} retter · ${persons} personer
+          ${esc(S.formatDate(ordersDate))} · ${dish ? `Dagens ret: <strong>${esc(dish.title)}</strong> · ` : ''}${orders.length} bestillinger · ${itemsTotal} retter · ${persons} spisende gæster
         </p>
         ${elsewhereHtml}
         ${orders.length ? `<div class="prodlist" style="margin-bottom:16px;">${dishTotals(orders).map(([n, q]) => `<span class="prod"><b>${q}</b>${esc(n)}</span>`).join('')}</div>` : ''}

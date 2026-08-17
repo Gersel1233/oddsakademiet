@@ -256,9 +256,13 @@
               <span>Tidspunkt</span>
               <select id="orderTime" required></select>
             </label>
-            <label class="field">
-              <span>Antal personer</span>
-              <input type="number" id="orderPersons" min="0" max="100" value="0" required />
+            <!-- Antal personer siger kun noget, når man spiser her: så skal
+                 der dækkes bord. Ved to-go er det ligegyldigt, og et felt
+                 man ikke kan svare rigtigt på koster bestillinger. Det
+                 vises og kræves derfor kun ved "Spis her" (styres i js). -->
+            <label class="field" id="personsField">
+              <span>Antal personer <em>(så vi kan dække bord)</em></span>
+              <input type="number" id="orderPersons" min="0" max="100" value="0" />
               <small class="field__hint" id="personsHint"></small>
             </label>
             <div class="field field--full">

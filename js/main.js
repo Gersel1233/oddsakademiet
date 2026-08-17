@@ -728,6 +728,10 @@
       if (åben) åben.checked = true;
     }
 
+    /* Flyttes man programmatisk til den anden måde, kommer der ingen
+       change-hændelse – så personfeltet skal følge med her. */
+    if (typeof syncPersonsField === 'function') syncPersonsField();
+
     const note = $('#typeLukketNote');
     if (!note) return;
     const spaerrede = knapper.filter((r) => r.disabled);
@@ -1010,7 +1014,10 @@
 
     const iso = orderDate.value;
     const time = orderTime.value;
-    const persons = Number($('#orderPersons').value);
+    /* kun spisende gæster tælles – ved to-go sender vi slet intet tal */
+    const persons = $('input[name="orderType"]:checked')?.value === 'spise'
+      ? Number($('#orderPersons').value)
+      : null;
     const type = $('input[name="orderType"]:checked').value;
     const name = $('#orderName').value.trim();
     const phone = $('#orderPhone').value.trim();
@@ -1021,7 +1028,7 @@
     if (!iso) problems.push('vælg en dato');
     if (!time) problems.push('vælg et tidspunkt');
     if (!lines.length) problems.push('læg mindst én ret i bestillingen');
-    if (!persons || persons < 1) problems.push('angiv antal personer');
+    if (type === 'spise' && (!persons || persons < 1)) problems.push('skriv hvor mange I er');
     if (!name) problems.push('skriv dit navn');
     if (!/^[\d+\s-]{6,}$/.test(phone)) problems.push('skriv et gyldigt telefonnummer');
 
@@ -1054,7 +1061,7 @@
       + (total ? `<div class="confirm__line confirm__line--total"><span>I alt</span><span>${kr(total)}</span></div>` : '');
     $('#confirmMeta').innerHTML = `
       <div>📅 ${esc(S.formatDate(o.iso))} · kl. ${esc(o.time)}</div>
-      <div>${o.type === 'togo' ? '🥡 Takeaway' : '🍽️ Spiser her'} · 👥 ${o.persons} person${o.persons === 1 ? '' : 'er'}</div>
+      <div>${o.type === 'togo' ? '🥡 Takeaway' : `🍽️ Spiser her · 👥 ${o.persons} person${o.persons === 1 ? '' : 'er'}`}</div>
       <div>🙋 ${esc(o.name)} · 📞 ${esc(o.phone)}</div>
       ${o.note ? `<div>💬 ${esc(o.note)}</div>` : ''}`;
     confirmWrap.hidden = false;
@@ -1142,8 +1149,11 @@
     $('#orderForm').hidden = true;
     const success = $('#orderSuccess');
     success.hidden = false;
+    const hvordan = o.type === 'togo'
+      ? 'til afhentning'
+      : `til ${o.persons} person${o.persons === 1 ? '' : 'er'} ved bordet`;
     $('#orderSuccessText').textContent =
-      `${o.lines.map((l) => `${l.qty} × ${linjeNavn(l)}`).join(', ')} — til ${o.persons} person${o.persons === 1 ? '' : 'er'} ${o.type === 'togo' ? 'til afhentning' : 'ved bordet'} ${S.formatDate(o.iso).toLowerCase()} kl. ${o.time}. Vi glæder os til at se jer, ${o.name}!`;
+      `${o.lines.map((l) => `${l.qty} × ${linjeNavn(l)}`).join(', ')} — ${hvordan} ${S.formatDate(o.iso).toLowerCase()} kl. ${o.time}. Vi glæder os til at se jer, ${o.name}!`;
     success.scrollIntoView({ behavior: 'smooth', block: 'center' });
     pendingOrder = null;
   });
@@ -1401,6 +1411,19 @@
   /* ---------- personer vs. retter: luk hullet venligt ----------
      4 personer men mad til 2? Kunden får et blidt hint med det samme,
      og køkkenet ser samme advarsel på bestillingen i admin. */
+  /* Feltet findes kun, når det betyder noget. Ved to-go pakker vi mad
+     ned – hvor mange der spiser den derhjemme, er ikke vores sag, og et
+     tal folk gætter på er værre end intet tal. */
+  function syncPersonsField() {
+    const felt = $('#personsField');
+    const input = $('#orderPersons');
+    if (!felt || !input) return;
+    const spiserHer = currentType() === 'spise';
+    felt.hidden = !spiserHer;
+    input.required = spiserHer;
+    if (!spiserHer) input.value = '0';
+  }
+
   function updatePersonsHint() {
     const el = $('#personsHint');
     if (!el) return;
@@ -1418,6 +1441,11 @@
   }
   $('#orderForm')?.addEventListener('input', updatePersonsHint);
   $('#orderForm')?.addEventListener('click', () => setTimeout(updatePersonsHint, 50));
+  $$('input[name="orderType"]').forEach((r) => r.addEventListener('change', () => {
+    syncPersonsField();
+    updatePersonsHint();
+  }));
+  syncPersonsField();
 
   /* ---------- kontakt fra indstillinger ---------- */
   function renderContact() {
