@@ -2267,3 +2267,69 @@ body.orders-paused .nav__cta { display: none !important; }
   display: block; margin-top: 5px;
   font-size: 0.85rem; line-height: 1.45; color: var(--ink-soft);
 }
+
+/* ============================================================
+   FART OG GLØD
+   Siden føles hurtig, når den SVARER hurtigt – ikke når den
+   animerer meget. Derfor: kortere veje at rejse, kortere tider,
+   og alt kører på grafikkortet (kun transform og opacity).
+   Glimtet af orange er holdt nede: nok til at knapperne føles
+   levende, ikke nok til at det larmer.
+   ============================================================ */
+
+/* 1 · Indholdet glider hurtigere på plads, når man scroller.
+        22 px og 0,55 s føltes tungt – 14 px og 0,38 s lander,
+        mens øjet stadig er på vej hen til det. */
+[data-reveal] {
+  transform: translate3d(0, 14px, 0);
+  transition: opacity 0.38s cubic-bezier(0.16, 1, 0.3, 1),
+              transform 0.38s cubic-bezier(0.16, 1, 0.3, 1);
+}
+[data-reveal].is-visible { transform: translate3d(0, 0, 0); }
+
+/* 2 · Knapper svarer med det samme.
+        will-change lå før på ALLE knapper hele tiden – hver knap
+        fik sit eget lag i hukommelsen, også dem ingen rører.
+        Nu løftes de først, når man er på vej til at trykke. */
+.btn { will-change: auto; transition-duration: 0.16s; }
+.btn:hover, .btn:focus-visible, .btn:active { will-change: transform; }
+
+/* 3 · Glød på hovedknappen – og lidt mere, når man rører den */
+.btn--accent {
+  box-shadow: 0 10px 26px -12px rgba(217, 108, 44, 0.75),
+              0 0 0 0 rgba(217, 108, 44, 0);
+}
+.btn--accent:hover,
+.btn--accent:focus-visible {
+  box-shadow: 0 14px 34px -12px rgba(217, 108, 44, 0.85),
+              0 0 22px -4px rgba(232, 130, 60, 0.45);
+}
+.btn--accent:active {
+  box-shadow: 0 6px 16px -10px rgba(217, 108, 44, 0.8),
+              0 0 14px -4px rgba(232, 130, 60, 0.35);
+}
+
+/* 4 · Kokkehuen i toppen får det samme lille skær */
+.logo__hat {
+  filter: drop-shadow(0 0 10px rgba(232, 130, 60, 0.35));
+  transition: filter 0.25s ease;
+}
+.logo:hover .logo__hat { filter: drop-shadow(0 0 16px rgba(232, 130, 60, 0.6)); }
+
+/* 5 · Kortene løfter sig en anelse hurtigere */
+.card, .news, .today { transition-duration: 0.18s; }
+
+/* 6 · Tastatur-fokus skal kunne SES – en tydelig orange ring.
+        Vigtigt for tilgængelighed, og det ser skarpt ud. */
+a:focus-visible, button:focus-visible,
+input:focus-visible, select:focus-visible, textarea:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+  border-radius: 8px;
+}
+
+/* 7 · Intet skær for dem der har slået bevægelse fra
+        (ankerlinks glider allerede blødt – sat øverst i filen) */
+@media (prefers-reduced-motion: reduce) {
+  .logo__hat { filter: none; transition: none; }
+}
