@@ -145,6 +145,7 @@ const SpiisStore = (() => {
       dayMarks: {},     /* hvorfor en dag er lukket { 'YYYY-MM-DD': { e: '👥', t: 'Personaledag' } } */
       closedTypes: {},  /* dage hvor KUN den ene måde er lukket { 'YYYY-MM-DD': ['spise'] } */
       dayTimes: {},     /* egne bestillingstider på én dag { 'YYYY-MM-DD': { from:'17:30' } } */
+      dayMsg: {},       /* besked til KUNDERNE på én dag { 'YYYY-MM-DD': 'Kun take-away i dag' } */
       log: [],
     };
 
@@ -177,6 +178,7 @@ const SpiisStore = (() => {
       if (!parsed.news) parsed.news = [];
       if (!parsed.closure) parsed.closure = { active: false, from: '', reopen: '', message: '' };
       if (!parsed.dayMarks) parsed.dayMarks = {};
+      if (!parsed.dayMsg) parsed.dayMsg = {};
       if (!parsed.closedTypes) parsed.closedTypes = {};
       if (!parsed.dayTimes) parsed.dayTimes = {};
       return parsed;
@@ -243,7 +245,7 @@ const SpiisStore = (() => {
     return res;
   }
 
-  const CONFIG_KEYS = ['settings', 'hours', 'dagensRet', 'menu', 'blockedDates', 'arrangementDates', 'orderClosedDates', 'news', 'closure', 'dayMarks', 'closedTypes', 'dayTimes'];
+  const CONFIG_KEYS = ['settings', 'hours', 'dagensRet', 'menu', 'blockedDates', 'arrangementDates', 'orderClosedDates', 'news', 'closure', 'dayMarks', 'closedTypes', 'dayTimes', 'dayMsg'];
 
   function mergeConfig(remote) {
     if (!remote) return;
@@ -265,6 +267,7 @@ const SpiisStore = (() => {
       arrangementDates: data.arrangementDates || [],
       orderClosedDates: data.orderClosedDates || [],
       dayMarks: data.dayMarks || {},
+      dayMsg: data.dayMsg || {},
       closedTypes: data.closedTypes || {},
       dayTimes: data.dayTimes || {},
       news: data.news || [],
@@ -752,16 +755,30 @@ const SpiisStore = (() => {
     if (cloud) {
       /* lagertjekket (kun dagens ret) sker atomisk i databasen */
       try {
-        const res = await sbFetch('/rest/v1/rpc/place_order', {
-          method: 'POST',
-          body: JSON.stringify({
-            p_date: order.date, p_time: order.time, p_qty: order.qty, p_type: order.type,
-            p_name: order.name, p_phone: order.phone, p_note: order.note || '',
-            p_dish: order.dish || '', p_price: order.price,
-            p_items: order.items || [], p_persons: order.persons || null,
-          }),
+        /* Kvitteringsnummeret følger bestillingen – også gennem et
+           gensend. Nåede den frem sidste gang, siger databasen bare ja
+           igen i stedet for at lave den to gange. */
+        const krop = JSON.stringify({
+          p_date: order.date, p_time: order.time, p_qty: order.qty, p_type: order.type,
+          p_name: order.name, p_phone: order.phone, p_note: order.note || '',
+          p_dish: order.dish || '', p_price: order.price,
+          p_items: order.items || [], p_persons: order.persons || null,
+          p_ref: order.ref || null,
         });
-        if (!res.ok) throw new Error();
+        /* Dårligt wifi i en idrætsforening må ikke koste et salg. Vi
+           prøver tre gange med lidt luft imellem, før vi giver op. */
+        let res = null;
+        for (let forsoeg = 0; forsoeg < 3; forsoeg++) {
+          if (forsoeg) await new Promise((r) => setTimeout(r, forsoeg * 1200));
+          try {
+            res = await sbFetch('/rest/v1/rpc/place_order', { method: 'POST', body: krop });
+            if (res.ok) break;
+            /* databasen svarede – men sagde nej. Det er ikke nettet,
+               så der er ingen grund til at prøve igen */
+            if (res.status < 500) break;
+          } catch { res = null; }
+        }
+        if (!res || !res.ok) throw new Error();
         const out = await res.json();
         if (out.ok) {
           soldByDate[order.date] = (soldByDate[order.date] || 0) + Number(order.qty);
@@ -1290,6 +1307,24 @@ const SpiisStore = (() => {
     const d = getDayTimes(iso);
     return !!(d.from || d.toTogo || d.toDine);
   };
+  /* ============================================================
+     BESKED TIL KUNDERNE PÅ ÉN DAG
+     Er dagen HELT lukket, kan grunden skrives i kalenderen. Men er
+     kun den ene måde lukket – "i dag er der kun take-away" – var der
+     ingen linje at skrive i. Så skrev nogen beskeden som en RET, og
+     den kunne kunden lægge i kurven. Nu har dagen sit eget felt.
+     Denne besked er OFFENTLIG. Personalets egen note er en anden ting.
+     ============================================================ */
+  const getDayMsg = (iso) => String((data.dayMsg || {})[iso] || '');
+  function setDayMsg(iso, tekst) {
+    if (!data.dayMsg) data.dayMsg = {};
+    const rent = String(tekst || '').trim().slice(0, 200);
+    if (rent) data.dayMsg[iso] = rent;
+    else delete data.dayMsg[iso];
+    save();
+    pushConfig();
+  }
+
   function setDayTimes(iso, tider) {
     if (!data.dayTimes) data.dayTimes = {};
     const rent = {};
@@ -1442,6 +1477,28 @@ const SpiisStore = (() => {
   /* ---------- nyheder på forsiden ---------- */
   const getNews = () => (data.news || []).slice()
     .sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || ''));
+
+  /* ============================================================
+     NÅR EN NYHED SKAL VISES
+     Et juleplatte-opslag skal ikke hænge til februar, fordi ingen
+     huskede at slå det fra. Er der sat datoer, passer opslaget sig
+     selv: det dukker op og forsvinder af sig selv. Ingen datoer =
+     som før, altid synlig indtil den slås fra i hånden.
+     ============================================================ */
+  function newsVisibleNow(n, iDag = todayISO()) {
+    if (!n || n.active === false) return false;
+    if (n.from && iDag < n.from) return false;
+    if (n.to && iDag > n.to) return false;
+    return true;
+  }
+  /* status til admin-listen: venter / vises / udløbet / slået fra */
+  function newsStatus(n, iDag = todayISO()) {
+    if (!n) return 'slukket';
+    if (n.active === false) return 'slukket';
+    if (n.from && iDag < n.from) return 'venter';
+    if (n.to && iDag > n.to) return 'udloebet';
+    return 'vises';
+  }
   function addNews(post) {
     const entry = { id: uid(), createdAt: new Date().toISOString(), active: true, ...post };
     data.news = [entry, ...(data.news || [])];
@@ -1470,7 +1527,9 @@ const SpiisStore = (() => {
     const news = (data.news || []).find((n) => n.id === newsId);
     if (!news) return { ok: false, reason: 'findes-ikke' };
     if (!news.orderable) return { ok: false, reason: 'ikke-bestilbar' };
-    if (news.active === false) return { ok: false, reason: 'ikke-aktiv' };
+    /* er nyheden slået fra – eller uden for sin egen periode – må den
+       heller ikke kunne bestilles ad bagvejen */
+    if (!newsVisibleNow(news)) return { ok: false, reason: 'ikke-aktiv' };
     const qty = Number(o.qty);
     if (!qty || qty < 1) return { ok: false, reason: 'antal' };
     if (!o.name || !o.phone) return { ok: false, reason: 'mangler' };
@@ -1569,12 +1628,13 @@ const SpiisStore = (() => {
     getSlettede, gendanOrdre,
     addBooking, getBookings, updateBooking, deleteBooking,
     getBlockedDates, getArrangementDates, isOrderingClosed, blockDate, unblockDate, isDateAvailable,
-    getDayMark, setDayMark, DEFAULT_TAPAS_ITEMS,
+    getDayMark, setDayMark, getDayMsg, setDayMsg, DEFAULT_TAPAS_ITEMS,
     getClosedTypes, setTypeClosed, isTypeClosed, openTypesFor,
     getDayTimes, setDayTimes, harEgneTider, orderFromFor,
     getClosure, setClosure, isClosureNow, isInClosure,
     timeslotsFor, orderSlots, orderToFor,
     getNews, addNews, updateNews, deleteNews, uploadNewsImage, placeNewsOrder,
+    newsVisibleNow, newsStatus,
     getUnread, getSeenRecently, markRead, markUnread, markAllRead, onWriteFail,
     exportData, resetData,
     subscribe,

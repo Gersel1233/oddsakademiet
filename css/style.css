@@ -2333,3 +2333,57 @@ input:focus-visible, select:focus-visible, textarea:focus-visible {
 @media (prefers-reduced-motion: reduce) {
   .logo__hat { filter: none; transition: none; }
 }
+
+/* ============================================================
+   KØKKENETS BESKED PÅ EN BESTEMT DAG
+   Fx "i dag er der kun take-away". Skal kunne ses uden at ligne
+   en ret – ellers ender den i kurven.
+   ============================================================ */
+.dagsbesked {
+  display: block;
+  margin-top: 8px;
+  padding: 7px 11px;
+  border-radius: 11px;
+  background: rgba(214, 106, 42, 0.1);
+  color: var(--ink);
+  font-size: 0.86rem;
+  font-weight: 600;
+  line-height: 1.35;
+  text-align: left;
+}
+.daycard__besked {
+  margin: 0 0 14px;
+  padding: 11px 14px;
+  border-radius: 13px;
+  background: rgba(214, 106, 42, 0.12);
+  border-left: 3px solid var(--accent);
+  font-weight: 600;
+  line-height: 1.45;
+}
+.field__hint--besked {
+  color: var(--ink);
+  font-weight: 600;
+  background: rgba(214, 106, 42, 0.1);
+  border-radius: 9px;
+  padding: 6px 10px;
+  margin-top: 6px;
+}
+
+/* ============================================================
+   NØDUDGANG – nettet svigtede midt i en bestilling
+   Må ALDRIG ligne en kvittering. Den siger ærligt at intet er
+   sendt, og giver to veje igennem der ikke kræver internet.
+   ============================================================ */
+.noed {
+  margin: 18px 0 4px;
+  padding: 18px 20px;
+  border-radius: 18px;
+  border: 2px solid var(--accent);
+  background: rgba(214, 106, 42, 0.07);
+  text-align: left;
+}
+.noed__top { margin: 0 0 8px; font-size: 1.05rem; }
+.noed__brod { margin: 0 0 15px; line-height: 1.5; }
+.noed__knapper { display: flex; flex-wrap: wrap; gap: 10px; }
+.noed__knapper .btn { flex: 1 1 auto; text-align: center; }
+.noed__fod { margin: 14px 0 0; font-size: 0.87rem; color: var(--ink-soft); line-height: 1.45; }

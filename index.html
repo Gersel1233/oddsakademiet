@@ -246,6 +246,8 @@
               <span>Dato</span>
               <select id="orderDate" required></select>
               <small class="field__hint" id="orderDishHint"></small>
+              <!-- køkkenets egen besked på netop denne dag (fx "kun take-away i dag") -->
+              <small class="field__hint field__hint--besked" id="dayMsgNote" hidden></small>
             </label>
             <div class="field field--full">
               <span>Vælg jeres retter</span>
@@ -295,6 +297,9 @@
           </div>
           <p class="form__error" id="orderError" hidden></p>
           <p class="form__error" id="orderOffline" hidden></p>
+          <!-- nettet svigtede midt i afsendelsen: bestillingen står stadig,
+               og der er en vej igennem som ikke kræver internet -->
+          <div class="noed" id="orderNoedudgang" hidden></div>
           <p class="pausenote" id="orderPausedNote" hidden></p>
           <button type="submit" class="btn btn--accent btn--big form__submit">Send bestilling</button>
           <p class="form__note">Din bestilling ryger direkte ind i vores køkken-overblik – ingen mails, ingen ventetid.</p>

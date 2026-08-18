@@ -358,6 +358,13 @@
     return '🚫 Lukket';
   }
 
+  /* køkkenets egen besked til kunderne på en bestemt dag */
+  const dagsBesked = (iso) => (S.getDayMsg ? S.getDayMsg(iso) : '');
+  const dagsBeskedHtml = (iso, klasse = 'dagsbesked') => {
+    const t = dagsBesked(iso);
+    return t ? `<span class="${klasse}">💬 ${esc(t)}</span>` : '';
+  };
+
   function renderWeekPlan() {
     const grid = $('#weekPlan');
     const plan = S.getPlan(7);
@@ -376,6 +383,7 @@
           <span class="dayplan__date">${esc(S.formatDate(day.iso, false))}</span>
           <span class="dayplan__dish">${esc(lukketTekst(day.iso))}</span>
           <span class="dayplan__desc">Lukket for bestillinger denne dag.</span>
+          ${dagsBeskedHtml(day.iso)}
         </button>`;
       }
       const dishes = day.dishes || [];
@@ -411,6 +419,7 @@
         <span class="dayplan__day">${day.weekday}${isToday ? ' · i dag' : ''}</span>
         <span class="dayplan__date">${esc(S.formatDate(day.iso, false))}</span>
         ${dishHtml}
+        ${dagsBeskedHtml(day.iso)}
         <span class="dayplan__mere">Se hele dagen →</span>
       </button>`;
     }).join('');
@@ -463,7 +472,10 @@
       }).join(dishes.length > 1 ? '<div class="daycard__eller">eller</div>' : '');
       krop += `<p class="daycard__note">🕐 ${tiderTekst(iso)}${timer && !timer.closed ? ` · køkkenet har åbent ${esc(timer.open)}–${esc(timer.close)}` : ''}</p>`;
     }
-    $('#dayInfoBody').innerHTML = krop;
+    /* køkkenets egen besked står ØVERST – det er den, der forklarer
+       hvorfor dagen ser anderledes ud end de andre */
+    const besked = dagsBesked(iso);
+    $('#dayInfoBody').innerHTML = (besked ? `<p class="daycard__besked">💬 ${esc(besked)}</p>` : '') + krop;
 
     const cta = $('#dayInfoOrder');
     cta.hidden = !(åben && dishes.length);
@@ -777,6 +789,15 @@
       orderDishHint.classList.add('is-live');
     }
 
+    /* har køkkenet skrevet noget om netop denne dag, skal det stå her –
+       lige under datoen, inden man vælger noget som helst andet */
+    const beskedEl = $('#dayMsgNote');
+    if (beskedEl) {
+      const t = dagsBesked(iso);
+      beskedEl.hidden = !t;
+      beskedEl.textContent = t ? `💬 ${t}` : '';
+    }
+
     syncOrderTypes(iso);
     renderBuilder();
 
@@ -1074,6 +1095,47 @@
   $('#confirmBack').addEventListener('click', closeConfirm);
   confirmWrap.addEventListener('click', (e) => { if (e.target === confirmWrap) closeConfirm(); });
 
+  /* ============================================================
+     NØDUDGANGEN
+     Nettet kan svigte midt i en bestilling – især i en idrætsforening
+     med svingende wifi. Vi lover ALDRIG at have modtaget noget, vi
+     ikke har modtaget. Men kunden skal have en vej igennem alligevel:
+     bestillingen bliver stående, den kan sendes igen (uden risiko for
+     dobbelt), og den kan sendes som sms eller ringes ind med ét tryk.
+     ============================================================ */
+  function ordreSomTekst(o) {
+    const varer = o.lines.map((l) => `${l.qty} × ${linjeNavn(l)}`).join(', ');
+    const maade = o.type === 'togo'
+      ? 'take-away'
+      : `spiser her${o.persons ? `, ${o.persons} pers.` : ''}`;
+    return `Bestilling til Spiis: ${varer}. ${S.formatDate(o.iso, false)} kl. ${o.time}, ${maade}. `
+      + `${o.name}, tlf. ${o.phone}.${o.note ? ` Besked: ${o.note}` : ''}`;
+  }
+
+  function visNoedudgang(o) {
+    const boks = $('#orderNoedudgang');
+    if (!boks) return;
+    const tlf = S.getSettings().phone || '';
+    const rentNr = `+45${tlf.replace(/\D/g, '')}`;
+    const tekst = ordreSomTekst(o);
+    boks.innerHTML = `
+      <p class="noed__top">📴 <strong>Vi kunne ikke få fat i vores system lige nu</strong></p>
+      <p class="noed__brod">Din bestilling er <strong>ikke</strong> sendt endnu – vi siger det ærligt, i stedet for at love noget vi ikke kan holde. Alt hvad du har skrevet står der stadig.</p>
+      <div class="noed__knapper">
+        <button type="button" class="btn btn--accent" id="noedIgen">↻ Prøv at sende igen</button>
+        <a class="btn btn--ghost" href="sms:${esc(rentNr)}?&body=${encodeURIComponent(tekst)}">✉️ Send som sms</a>
+        <a class="btn btn--ghost" href="tel:${esc(rentNr)}">📞 Ring ${esc(tlf)}</a>
+      </div>
+      <p class="noed__fod">Sender du den to gange, får vi den kun én gang – det holder vores system styr på.</p>`;
+    boks.hidden = false;
+    boks.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    $('#noedIgen').addEventListener('click', () => {
+      boks.hidden = true;
+      pendingOrder = o; /* samme bestilling – og samme kvitteringsnummer */
+      openConfirm();
+    });
+  }
+
   /* Trin 2: kunden har set kvitteringen og bekræfter – NU sendes den */
   $('#confirmSend').addEventListener('click', async () => {
     if (!pendingOrder) return;
@@ -1087,7 +1149,12 @@
     /* dagens ret-tal fra selve linjerne – virker også med flere retter pr. dag */
     const dagensLines = o.lines.filter((l) => l.kind === 'dagensret');
     const dagensQty = dagensLines.reduce((s, l) => s + l.qty, 0);
+    /* Kvitteringsnummeret laves ÉN gang pr. bestilling og bliver hængende
+       på den. Trykker kunden "prøv igen", er det stadig det samme – så
+       databasen ved, at det er den samme bestilling og ikke en ny. */
+    if (!o.ref) o.ref = `w-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
     const result = await S.addOrder({
+      ref: o.ref,
       date: o.iso,
       time: o.time,
       qty: dagensQty,
@@ -1106,7 +1173,11 @@
 
     if (!result.ok) {
       if (result.error === 'net') {
-        error.textContent = 'Bestillingen kunne ikke sendes lige nu – prøv igen, eller ring til os.';
+        /* Siden har allerede prøvet tre gange. Nu skal kunden IKKE bare
+           efterlades med en fejl: bestillingen står stadig udfyldt, og
+           der er to veje igennem der ikke kræver internet. */
+        visNoedudgang(o);
+        return;
       } else if (result.reason === 'lukket') {
         error.textContent = `Denne dag er netop blevet lukket for bestillinger (${lukketTekst(o.iso).replace(/^\S+\s/, '').toLowerCase()}) – vælg venligst en anden dag.`;
         if (S.isCloud()) S.refreshPublic();
@@ -1582,7 +1653,9 @@
     const wrap = $('#nyheder');
     const grid = $('#newsGrid');
     if (!wrap || !grid) return;
-    const posts = S.getNews().filter((n) => n.active !== false && n.title);
+    /* et opslag med en periode passer sig selv – det dukker op og
+       forsvinder af sig selv, uden at nogen skal huske det */
+    const posts = S.getNews().filter((n) => n.title && S.newsVisibleNow(n));
     wrap.hidden = posts.length === 0;
     if (!posts.length) { grid.innerHTML = ''; return; }
     const today = S.todayISO();

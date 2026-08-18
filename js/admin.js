@@ -1267,6 +1267,33 @@
     { id: 'spise', navn: '🍽️ Spis her', kort: 'spis her' },
   ];
 
+  /* ============================================================
+     BESKED TIL KUNDERNE PÅ ÉN DAG
+     "I dag er der kun take-away – vi er tilbage med spisning i
+     morgen." Den slags havde ingen plads før, så den blev skrevet
+     som en RET – og så kunne kunden lægge beskeden i kurven.
+     OBS: dette er OFFENTLIGT. Personalets egen note er en anden ting
+     og står længere nede i dagsvinduet.
+     ============================================================ */
+  function dagsbeskedHtml(iso, today) {
+    if (iso < today) return '';
+    const t = S.getDayMsg ? S.getDayMsg(iso) : '';
+    return `
+      <div class="dagsbesked ${t ? 'dagsbesked--aktiv' : ''}">
+        <div class="dagsbesked__head">
+          <strong>💬 Besked til kunderne denne dag</strong>
+          <small>Står på spiis.dk ved netop denne dag – i ugeoversigten og i bestillingen. Lad feltet stå tomt, hvis der ikke er noget at sige.</small>
+        </div>
+        <textarea class="inline-input dagsbesked__felt" rows="2" maxlength="200"
+                  data-dagsbesked="${iso}"
+                  placeholder="Fx: I dag er der kun take-away – vi er tilbage med spisning i morgen">${esc(t)}</textarea>
+        <div class="dagsbesked__fod">
+          <span class="dagsbesked__gemt" data-dagsbesked-gemt="${iso}" aria-live="polite"></span>
+          <small>Dette er <strong>ikke</strong> en personalenote – kunderne kan læse den.</small>
+        </div>
+      </div>`;
+  }
+
   function typeSwitchHtml(iso, today) {
     /* er dagen helt lukket, eller ligger den bag os, er der intet at styre */
     if (iso < today || !S.isOpenDay(iso) || S.isInClosure(iso) || S.isOrderingClosed(iso)) return '';
@@ -1297,7 +1324,8 @@
         ${lukkede.length && !alleLukket ? `
         <p class="typelukning__note">Kunderne kan kun vælge <strong>${TYPER.filter((t) => !lukkede.includes(t.id)).map((t) => t.kort).join(' og ')}</strong> på spiis.dk denne dag. Databasen afviser også resten, hvis nogen prøver udenom.</p>` : ''}
       </div>
-      ${dagstiderHtml(iso, today)}`;
+      ${dagstiderHtml(iso, today)}
+      ${dagsbeskedHtml(iso, today)}`;
   }
 
   /* ============================================================
@@ -1761,6 +1789,23 @@
           : 'Tilbage til de almindelige tider');
         renderDayModal();
         renderView(activeView);
+      });
+      /* dagens besked til kunderne gemmer sig selv, mens der skrives –
+         men uden at gentegne vinduet, så markøren ikke hopper */
+      const beskedTimers = {};
+      mask.addEventListener('input', (e) => {
+        const felt = e.target.closest && e.target.closest('[data-dagsbesked]');
+        if (!felt) return;
+        const iso = felt.dataset.dagsbesked;
+        const kvit = mask.querySelector(`[data-dagsbesked-gemt="${iso}"]`);
+        if (kvit) kvit.textContent = 'Gemmer…';
+        clearTimeout(beskedTimers[iso]);
+        beskedTimers[iso] = setTimeout(() => {
+          S.setDayMsg(iso, felt.value);
+          if (kvit) kvit.textContent = felt.value.trim() ? 'Gemt ✓ – står nu på spiis.dk' : 'Beskeden er fjernet';
+          felt.closest('.dagsbesked')?.classList.toggle('dagsbesked--aktiv', !!felt.value.trim());
+          renderUge();
+        }, 800);
       });
     }
     renderDayModal();
@@ -2470,16 +2515,38 @@
     });
   }
 
+  /* et opslag kan være slået fra, vente på sin startdato, være udløbet
+     eller stå på siden lige nu – og det skal kunne ses på ét blik */
+  const NEWS_STAND = {
+    slukket: { tekst: 'Skjult', klasse: 'tag' },
+    venter: { tekst: '🕓 Venter', klasse: 'tag tag--wait' },
+    udloebet: { tekst: '⌛ Udløbet', klasse: 'tag' },
+    vises: { tekst: 'På siden', klasse: 'tag tag--green' },
+  };
+
   function newsRow(n) {
     const off = n.active === false;
+    const stand = S.newsStatus(n);
+    const mrk = NEWS_STAND[stand] || NEWS_STAND.vises;
     return `
-      <div class="row newsed ${off ? 'newsed--off' : ''}" data-id="${n.id}">
+      <div class="row newsed ${off || stand !== 'vises' ? 'newsed--off' : ''}" data-id="${n.id}">
         ${n.image
           ? `<img class="newsed__thumb" src="${esc(n.image)}" alt="" loading="lazy" />`
           : '<span class="newsed__thumb newsed__thumb--none">📣</span>'}
         <div class="row__main">
           <input class="inline-input" data-nf="title" maxlength="80" value="${esc(n.title)}" />
           <textarea class="inline-input" data-nf="text" rows="2" placeholder="Tekst (valgfrit)">${esc(n.text || '')}</textarea>
+          <!-- Vis fra/til: så et juleopslag ikke hænger til februar,
+               fordi ingen huskede at slå det fra. Tomme felter = som før. -->
+          <div class="newsed__periode">
+            <label>Vis fra <input class="inline-input" data-nf="from" type="date" value="${esc(n.from || '')}" /></label>
+            <label>Vis til og med <input class="inline-input" data-nf="to" type="date" value="${esc(n.to || '')}" /></label>
+            <small>${n.from || n.to
+              ? (stand === 'venter' ? 'Dukker op af sig selv på startdatoen.'
+                : (stand === 'udloebet' ? 'Perioden er forbi – den er væk fra siden af sig selv.'
+                  : 'Forsvinder af sig selv, når perioden er slut.'))
+              : 'Uden datoer bliver den liggende, til I skjuler den.'}</small>
+          </div>
           <div class="newsed__toggles">
             <label class="newsed__cta"><input type="checkbox" data-nf="cta" ${n.cta ? 'checked' : ''} /> "Bestil her"-knap</label>
             <label class="newsed__cta"><input type="checkbox" data-nf="orderable" ${n.orderable ? 'checked' : ''} /> Bestilbar</label>
@@ -2491,7 +2558,7 @@
           </div>
         </div>
         <div class="row__actions">
-          ${off ? '<span class="tag">Skjult</span>' : '<span class="tag tag--green">På siden</span>'}
+          <span class="${mrk.klasse}">${mrk.tekst}</span>
           <button class="abtn ${off ? 'abtn--green' : 'abtn--ghost'}" data-act="news-toggle" data-id="${n.id}">${off ? 'Vis igen' : 'Skjul'}</button>
           <button class="abtn abtn--danger abtn--icon" data-act="news-del" data-id="${n.id}" title="Slet nyheden">✕</button>
         </div>
@@ -2601,11 +2668,16 @@
         price: priceEl.value ? Number(priceEl.value) : null,
         orderBy: $('[data-nf="orderBy"]', rowEl).value || '',
         orderMax: maxEl.value ? Number(maxEl.value) : null,
+        from: $('[data-nf="from"]', rowEl).value || '',
+        to: $('[data-nf="to"]', rowEl).value || '',
       });
       const orderFields = rowEl.querySelector('.newsed__order');
       if (orderFields) orderFields.hidden = !orderable;
       savedToast();
     };
+    /* datoerne ændrer hvad der står på siden LIGE NU – så mærkatet
+       (Venter / På siden / Udløbet) skal opdateres med det samme */
+    const gemOgTegn = (rowEl) => { saveNewsRow(rowEl); renderNyheder(); };
     $('#newsList').oninput = (e) => {
       const rowEl = e.target.closest && e.target.closest('.newsed');
       if (!rowEl || !e.target.matches('[data-nf]')) return;
@@ -2616,7 +2688,8 @@
       const rowEl = e.target.closest && e.target.closest('.newsed');
       if (!rowEl || !e.target.matches('[data-nf]')) return;
       clearTimeout(newsTimers[rowEl.dataset.id]);
-      saveNewsRow(rowEl);
+      const erDato = e.target.dataset.nf === 'from' || e.target.dataset.nf === 'to';
+      if (erDato) gemOgTegn(rowEl); else saveNewsRow(rowEl);
     };
   }
 
@@ -3606,6 +3679,34 @@
 
   /* databasen sagde nej – sig det højt, aldrig i stilhed */
   S.onWriteFail((hvad) => toast(`⚠️ ${hvad}. Tjek nettet og prøv igen.`, true));
+
+  /* ============================================================
+     NÅR WIFI'ET FALDER UD MIDT I EN VAGT
+     Skærmen bliver ikke hvid længere – siden er gemt lokalt. Men så
+     SKAL der stå tydeligt, at tallene er de sidst kendte, så ingen
+     pakker mad efter en liste der er en time gammel uden at vide det.
+     ============================================================ */
+  (function offlinevagt() {
+    let bjaelke = document.getElementById('offlinebar');
+    if (!bjaelke) {
+      bjaelke = document.createElement('div');
+      bjaelke.id = 'offlinebar';
+      bjaelke.className = 'offlinebar';
+      bjaelke.hidden = true;
+      document.body.appendChild(bjaelke);
+    }
+    const tegn = () => {
+      const nede = !navigator.onLine;
+      bjaelke.hidden = !nede;
+      document.body.classList.toggle('er-offline', nede);
+      if (nede) {
+        bjaelke.textContent = '📴 Ingen forbindelse – det du ser er sidst kendte. Nye bestillinger kommer ind, så snart nettet er tilbage.';
+      }
+    };
+    window.addEventListener('online', () => { tegn(); S.refreshAdmin && S.refreshAdmin(); });
+    window.addEventListener('offline', tegn);
+    tegn();
+  })();
 
   /* ============================================================
      ALDRIG EN GAMMEL APP I KØKKENET

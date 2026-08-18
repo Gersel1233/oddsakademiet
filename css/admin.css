@@ -2094,3 +2094,49 @@ body.dv-open { overflow: hidden; }
     align-self: center;
   }
 }
+
+/* besked til kunderne på én dag – ikke at forveksle med personalets note */
+.dagsbesked {
+  margin-top: 12px;
+  padding: 14px 16px;
+  border: 1px dashed var(--line);
+  border-radius: 16px;
+  background: var(--card);
+}
+.dagsbesked--aktiv { border-style: solid; border-color: var(--accent); background: #fff8f1; }
+.dagsbesked__head { display: flex; flex-direction: column; gap: 3px; margin-bottom: 9px; }
+.dagsbesked__head small { color: var(--ink-soft); line-height: 1.4; }
+.dagsbesked__felt { width: 100%; resize: vertical; }
+.dagsbesked__fod {
+  display: flex; flex-wrap: wrap; gap: 8px 14px;
+  align-items: baseline; justify-content: space-between; margin-top: 7px;
+}
+.dagsbesked__fod small { color: var(--ink-soft); }
+.dagsbesked__gemt { font-weight: 600; color: var(--accent); font-size: 0.88rem; }
+
+/* nyhedens egen periode – vis fra / vis til og med */
+.newsed__periode {
+  display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: flex-end;
+  margin: 8px 0 4px;
+}
+.newsed__periode label {
+  display: flex; flex-direction: column; gap: 3px;
+  font-size: 0.84rem; font-weight: 600; color: var(--ink-soft);
+}
+.newsed__periode small { flex: 1 1 100%; color: var(--ink-soft); line-height: 1.4; }
+
+/* wifi'et faldt ud midt i vagten – sig det tydeligt, i stedet for at
+   lade folk pakke mad efter en liste der er en time gammel */
+.offlinebar {
+  position: fixed;
+  left: 0; right: 0; top: 0;
+  z-index: 300;
+  padding: 10px 16px calc(10px + env(safe-area-inset-top));
+  background: #8a2f14;
+  color: #fff;
+  font-weight: 700;
+  font-size: 0.92rem;
+  text-align: center;
+  line-height: 1.35;
+  box-shadow: 0 6px 20px -8px rgba(0, 0, 0, 0.5);
+}
