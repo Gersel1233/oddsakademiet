@@ -1,11 +1,15 @@
 name: Deploy to GitHub Pages
 
+# KUN denne ene gren går live på spiis.dk.
+#
+# Udviklingsgrenen (claude/spiis-restaurant-site-hbq4ik) udgiver med
+# vilje IKKE længere. Sådan kan nyt arbejde ligge færdigt og testet,
+# uden at det rammer et køkken midt i en vagt. Når chefen siger go,
+# flyttes det herover – og først dér går det live.
 on:
   push:
     branches:
-      - claude/spiis-restaurant-site-hbq4ik
       - claude/zen-davinci-m2j0ah
-      - main
   workflow_dispatch:
 
 permissions:
