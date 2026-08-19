@@ -393,9 +393,14 @@
         /* dage i en SENERE uge er ikke planlagt endnu – køkkenet lægger
            ugens menu op hen over weekenden. Sig det, i stedet for et
            uklart "følger snart", så folk ved hvornår de skal kigge igen. */
-        dishHtml = S.weekStart(day.iso) > S.weekStart(S.todayISO())
-          ? '<span class="dayplan__dish dayplan__dish--kommer">Menuen for den uge lægges op i løbet af weekenden</span>'
-          : '<span class="dayplan__dish">Dagens ret følger snart…</span>';
+        /* "følger snart" er et løfte. Har køkkenet skrevet en besked på
+           dagen, er der IKKE nogen ret på vej – så skal vi ikke love det.
+           Så taler beskeden for sig selv. */
+        dishHtml = dagsBesked(day.iso)
+          ? ''
+          : (S.weekStart(day.iso) > S.weekStart(S.todayISO())
+            ? '<span class="dayplan__dish dayplan__dish--kommer">Menuen for den uge lægges op i løbet af weekenden</span>'
+            : '<span class="dayplan__dish">Dagens ret følger snart…</span>');
       } else if (dishes.length === 1) {
         const d0 = dishes[0];
         const rem = S.getRemainingFor(day.iso, d0.title);
@@ -454,9 +459,13 @@
       krop = `<p class="daycard__lukket">${esc(lukketTekst(iso))}</p>
         <p class="daycard__note">Vi tager ikke imod bestillinger denne dag – vælg en anden dag, så er vi klar. 💛</p>`;
     } else if (!dishes.length) {
-      krop = S.weekStart(iso) > S.weekStart(S.todayISO())
-        ? '<p class="daycard__note">🗓️ Menuen for den uge er ikke lagt op endnu. Køkkenet planlægger ugen hen over weekenden – kig forbi igen søndag eller mandag.</p>'
-        : '<p class="daycard__note">Dagens ret er ikke lagt ind endnu – kig forbi igen, eller ring til os på 93 99 58 58.</p>';
+      /* har dagen sin egen besked, siger DEN hvad der sker – så skal vi
+         ikke samtidig love en ret der ikke kommer */
+      krop = dagsBesked(iso)
+        ? ''
+        : (S.weekStart(iso) > S.weekStart(S.todayISO())
+          ? '<p class="daycard__note">🗓️ Menuen for den uge er ikke lagt op endnu. Køkkenet planlægger ugen hen over weekenden – kig forbi igen søndag eller mandag.</p>'
+          : '<p class="daycard__note">Dagens ret er ikke lagt ind endnu – kig forbi igen, eller ring til os på 93 99 58 58.</p>');
     } else {
       krop = dishes.map((d) => {
         const rem = S.getRemainingFor(iso, d.title);

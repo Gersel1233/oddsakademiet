@@ -852,6 +852,30 @@
     return null;
   }
 
+  /* ============================================================
+     UDEBLIVELSER
+     Bestilte, kom aldrig. Maden er lavet, og pengene er der ikke.
+     Foer kunne man kun vaelge mellem "Faerdig" og "Slet" - og saa
+     forsvandt viden om det helt. Nu faar dagen sit eget svar, og
+     naar samme telefonnummer goer det igen, staar det paa raekken.
+     Det bruger status-feltet der allerede findes - ingen ny SQL.
+     ============================================================ */
+  const UDEBLEVET = 'udeblevet';
+  const erUdeblevet = (o) => o.status === UDEBLEVET;
+  const telNoegle = (t) => String(t || '').replace(/\D/g, '').slice(-8);
+
+  /* hvor mange gange har DETTE nummer svigtet foer - inden for et halvt
+     aar. AEldre end det siger ikke noget om nogen laengere. */
+  function udeblivelserFor(o) {
+    const nr = telNoegle(o.phone);
+    if (!nr) return 0;
+    const graense = S.addDays(S.todayISO(), -180);
+    return S.getOrders().filter((x) => x.id !== o.id
+      && erUdeblevet(x)
+      && x.date >= graense
+      && telNoegle(x.phone) === nr).length;
+  }
+
   function orderRow(o, showDate = false) {
     const all = orderLines(o).filter((l) => !isExtraLine(l));
     const extras = orderLines(o).filter(isExtraLine);
@@ -872,6 +896,8 @@
             ${personsOf(o) ? `<span class="tag">👥 ${personsOf(o)} pers.</span>` : ''}
             <span class="tag ${o.type === 'togo' ? 'tag--accent' : 'tag--ink'}">${o.type === 'togo' ? '🥡 To-go' : '🍽️ Spiser her'}</span>
             ${o.type !== 'togo' && itemsOf(o) > 0 && personsOf(o) > itemsOf(o) ? `<span class="tag tag--wait">⚠️ ${personsOf(o)} pers. – mad til ${itemsOf(o)}</span>` : ''}
+            ${erUdeblevet(o) ? '<span class="tag tag--red">🚫 Udeblevet</span>' : ''}
+            ${!erUdeblevet(o) && udeblivelserFor(o) ? `<span class="tag tag--wait" title="Samme telefonnummer er udeblevet før">⚠️ udeblevet ${udeblivelserFor(o)} gang${udeblivelserFor(o) === 1 ? '' : 'e'} før</span>` : ''}
             ${done ? '' : '<span class="tag tag--red">Ny</span>'}
           </div>
           ${food.length ? `<ul class="olist">${food.map(li).join('')}</ul>` : ''}
@@ -893,6 +919,14 @@
           <button class="abtn abtn--ghost abtn--icon" data-act="row-more" aria-label="Flere valg" title="Flere valg">⋯</button>
         </div>
         <div class="row__danger" ${aabneRaekker.has(o.id) ? '' : 'hidden'}>
+          <span class="row__danger-linje">
+            ${erUdeblevet(o)
+              ? 'Markeret som udeblevet. Fortryder du, lægges den tilbage på listen.'
+              : 'Mødte kunden ikke op? Markér det her – så står det på nummeret næste gang.'}
+            <button class="abtn ${erUdeblevet(o) ? 'abtn--green' : 'abtn--ghost'}" data-act="order-noshow" data-id="${o.id}">
+              ${erUdeblevet(o) ? '↩ Kom alligevel' : '🚫 Udeblevet'}
+            </button>
+          </span>
           <span>Bestillingen forsvinder for altid – køkkenet kan ikke få den tilbage.</span>
           <button class="abtn abtn--danger" data-act="order-del" data-id="${o.id}">🗑 Slet bestillingen</button>
         </div>
@@ -1425,20 +1459,28 @@
     /* beløb pr. bestilling = summen af linjerne (emballage tæller med,
        for kunden betaler den) */
     const beloeb = (o) => orderLines(o).reduce((s, l) => s + (Number(l.price) || 0) * (Number(l.qty) || 0), 0);
-    const omsaetning = ordrer.reduce((s, o) => s + beloeb(o), 0);
-    const retter = ordrer.reduce((s, o) => s + itemsOf(o), 0);
+    /* En udeblivelse er mad der er lavet, men ikke betalt. Den maa
+       ikke taelle med i omsaetningen - saa ville tallet lyve. Den
+       staar for sig selv, saa man kan se hvad det koster. */
+    const udeblevne = ordrer.filter(erUdeblevet);
+    const tabt = udeblevne.reduce((s, o) => s + beloeb(o), 0);
+    const solgte = ordrer.filter((o) => !erUdeblevet(o));
+    const omsaetning = solgte.reduce((s, o) => s + beloeb(o), 0);
+    const retter = solgte.reduce((s, o) => s + itemsOf(o), 0);
     const koert = ordrer.filter((o) => o.status !== 'ny');
     const mangler = ordrer.length - koert.length;
-    const togo = ordrer.filter((o) => o.type === 'togo');
-    const spise = ordrer.filter((o) => o.type !== 'togo');
-    const snit = ordrer.length ? omsaetning / ordrer.length : 0;
-    const emballage = ordrer.reduce((s, o) => s + orderLines(o)
+    /* ogsaa splittet maaler paa det SOLGTE - ellers stod der
+       "Solgt for 300 kr." lige over "3 to-go - 600 kr." */
+    const togo = solgte.filter((o) => o.type === 'togo');
+    const spise = solgte.filter((o) => o.type !== 'togo');
+    const snit = solgte.length ? omsaetning / solgte.length : 0;
+    const emballage = solgte.reduce((s, o) => s + orderLines(o)
       .filter((l) => l.kind === 'emballage')
       .reduce((x, l) => x + (Number(l.price) || 0) * (Number(l.qty) || 0), 0), 0);
 
     /* pr. ret – delt op efter valg, så man kan se hvad der sælger */
     const pr = new Map();
-    ordrer.forEach((o) => foodLines(o).forEach((l) => {
+    solgte.forEach((o) => foodLines(o).forEach((l) => {
       const n = linjeNavn(l);
       const e = pr.get(n) || { antal: 0, kroner: 0 };
       e.antal += Number(l.qty) || 0;
@@ -1449,7 +1491,7 @@
 
     /* dag for dag – så man kan se hvilke dage der trækker */
     const dage = new Map();
-    ordrer.forEach((o) => {
+    solgte.forEach((o) => {
       const e = dage.get(o.date) || { antal: 0, kroner: 0 };
       e.antal += 1; e.kroner += beloeb(o);
       dage.set(o.date, e);
@@ -1485,7 +1527,7 @@
           </div>
           <div class="stat">
             <div class="stat__label">Bestillinger</div>
-            <div class="stat__value">${ordrer.length}</div>
+            <div class="stat__value">${solgte.length}</div>
           </div>
           <div class="stat">
             <div class="stat__label">Retter</div>
@@ -1503,6 +1545,7 @@
           ${emballage ? `<span class="dvchip">📦 emballage · ${esc(krSalg(emballage))}</span>` : ''}
           ${mangler ? `<span class="dvchip dvchip--ny">🔥 <b>${mangler}</b> ikke kørt endnu</span>`
             : '<span class="dvchip">✅ alle kørt</span>'}
+          ${udeblevne.length ? `<span class="dvchip dvchip--tabt" title="Mad der er lavet, men ikke betalt – tæller ikke med i 'Solgt for'">🚫 <b>${udeblevne.length}</b> udeblevet · ${esc(krSalg(tabt))} tabt</span>` : ''}
         </div>
 
         <h3 class="kp__sub">🍲 Hvad solgte bedst</h3>
@@ -2713,6 +2756,41 @@
   /* ============================================================
      DAGENS RET – planlægger
      ============================================================ */
+  /* ============================================================
+     VAGTHUNDEN
+     "Cafeen er lukket, der kan ikke bestilles" blev skrevet som en
+     RET - og saa kunne kunden laegge beskeden i kurven og bestille
+     den. Det var ikke sjusk: der var ikke noget andet felt dengang.
+     Nu er der, og saa skal vi fange det i det sekund det sker.
+     Det er en ADVARSEL, ikke en spaerring - koekkenet ved bedst.
+     ============================================================ */
+  const BESKED_TEGN = [
+    /er lukket/i, /holder lukket/i, /lukket i dag/i,
+    /kan ikke bestille/i, /ingen bestilling/i, /ikke muligt at bestille/i,
+    /vi (?:har|holder|er)\b/i, /aabner igen/i, /åbner igen/i,
+    /kun take.?away/i, /kun afhentning/i,
+  ];
+  function lignerBesked(titel, pris) {
+    const t = String(titel || '').trim();
+    if (t.length < 6) return false;
+    if (BESKED_TEGN.some((r) => r.test(t))) return true;
+    /* en hel saetning uden pris er heller ikke en ret */
+    const tomPris = pris === '' || pris === null || pris === undefined;
+    return tomPris && t.length > 42 && /\s/.test(t) && /[.!?,]/.test(t);
+  }
+
+  function vagthundHtml(iso, titel) {
+    return `
+      <div class="vagthund" data-vagthund>
+        <span class="vagthund__top">⚠️ Det her ligner en <strong>besked</strong> – ikke en ret</span>
+        <span class="vagthund__brod">Skrives det som en ret, kan kunderne lægge det i kurven og bestille det. Beskeder hører hjemme under <strong>💬 Besked til kunderne</strong> på dagen.</span>
+        <span class="vagthund__knapper">
+          <button type="button" class="abtn abtn--accent" data-flytbesked data-iso="${iso}">💬 Flyt til dagens besked</button>
+          <button type="button" class="abtn abtn--ghost" data-vagthund-luk>Nej, det ER en ret</button>
+        </span>
+      </div>`;
+  }
+
   function pdDishRow(day, d) {
     const on = day.open;
     const sold = d.title ? S.getSoldFor(day.iso, d.title) : 0;
@@ -2735,6 +2813,7 @@
         </div>
         <!-- valgmuligheder er FRIVILLIGE. Er der ingen, bestilles retten
              præcis som før. Er der to eller flere, kan kunden vælge. -->
+        ${lignerBesked(d.title, d.price) ? vagthundHtml(day.iso, d.title) : ''}
         <div class="pd-valg" data-valg>
           ${(Array.isArray(d.valg) ? d.valg : []).filter((v) => v && v.navn).map((v) => valgRaekke(v, on)).join('')}
           <button type="button" class="abtn abtn--ghost pd-valg__add" data-addvalg ${on ? '' : 'disabled'}>
@@ -2794,6 +2873,19 @@
       if (e.target.matches('[data-f="title"]')) {
         const dish = e.target.closest('.pd-dish');
         if (dish) dish.dataset.navn = e.target.value.trim() ? '1' : '';
+        /* vagthunden reagerer MENS der skrives - ikke foerst naar nogen
+           opdager det tre dage senere */
+        if (dish && !dish.dataset.vagthundLukket) {
+          const pris = dish.querySelector('[data-f="price"]').value;
+          const skalAdvare = lignerBesked(e.target.value, pris);
+          const findes = dish.querySelector('[data-vagthund]');
+          if (skalAdvare && !findes) {
+            dish.querySelector('[data-valg]')
+              .insertAdjacentHTML('beforebegin', vagthundHtml(row.dataset.iso, e.target.value));
+          } else if (!skalAdvare && findes) {
+            findes.remove();
+          }
+        }
       }
       const iso = row.dataset.iso;
       clearTimeout(dayTimers[iso]);
@@ -2825,6 +2917,30 @@
     $('#view-dagensret').onclick = (e) => {
       const row = e.target.closest && e.target.closest('.planday');
       if (!row) return;
+      /* "Flyt til dagens besked": teksten hoerer hjemme et andet sted -
+         saa flytter vi den DERHEN, i stedet for bare at skaelde ud */
+      const flyt = e.target.closest('[data-flytbesked]');
+      if (flyt) {
+        const dishEl = flyt.closest('.pd-dish');
+        const titel = dishEl.querySelector('[data-f="title"]').value.trim();
+        const iso = flyt.dataset.iso;
+        const nuvaerende = S.getDayMsg(iso);
+        S.setDayMsg(iso, nuvaerende ? `${nuvaerende} ${titel}` : titel);
+        /* retten ryddes, saa beskeden ikke ogsaa staar som noget bestilbart */
+        dishEl.querySelector('[data-f="title"]').value = '';
+        dishEl.querySelector('[data-f="price"]').value = '';
+        saveDay(row, true);
+        renderDagensRetEditor();
+        toast('Flyttet til dagens besked ✓ – står nu på spiis.dk som besked, ikke som ret');
+        return;
+      }
+      if (e.target.closest('[data-vagthund-luk]')) {
+        const dishEl = e.target.closest('.pd-dish');
+        dishEl.dataset.vagthundLukket = '1';
+        dishEl.querySelector('[data-vagthund]')?.remove();
+        return;
+      }
+
       const soBtn = e.target.closest('[data-soldout]');
       if (soBtn) {
         const dishEl = soBtn.closest('.pd-dish');
@@ -3475,6 +3591,17 @@
     if (act === 'order-toggle') {
       const o = S.getOrders().find((x) => x.id === id);
       if (o) S.updateOrder(id, { status: o.status === 'ny' ? 'haandteret' : 'ny', read: true });
+    }
+    else if (act === 'order-noshow') {
+      const o = S.getOrders().find((x) => x.id === id);
+      if (o) {
+        const nu = erUdeblevet(o);
+        S.updateOrder(id, { status: nu ? 'haandteret' : UDEBLEVET, read: true });
+        toast(nu ? 'Lagt tilbage som håndteret ✓' : `${o.name} er markeret som udeblevet 🚫`);
+      }
+      renderBell();
+      renderListViews();
+      return;
     }
     else if (act === 'row-more') {
       const række = btn.closest('.row');

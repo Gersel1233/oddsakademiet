@@ -2174,3 +2174,29 @@ body.dv-open { overflow: hidden; }
 /* færdige rækker skal falde til ro – også de særlige */
 .row--done.row--tapas,
 .row--done.row--special { background: none; opacity: 0.72; }
+
+/* ============================================================
+   VAGTHUNDEN
+   Fanger en besked der er ved at blive skrevet som en ret. Skal
+   ses med det samme, men må ikke ligne en fejl – køkkenet har
+   ikke gjort noget forkert, systemet manglede bare et felt.
+   ============================================================ */
+.vagthund {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  margin: 8px 0 2px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  border: 2px solid #c9761f;
+  background: #fff6ea;
+}
+.vagthund__top { font-weight: 800; color: #8a4d10; }
+.vagthund__brod { color: var(--ink-soft); line-height: 1.45; font-size: 0.9rem; }
+.vagthund__knapper { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 3px; }
+
+/* udeblivelser: mad lavet, penge ikke kommet – skal ses, ikke gemmes */
+.dvchip--tabt { background: var(--red-soft); color: var(--red); font-weight: 700; }
+.row--noshow { border-left: 5px solid var(--red); }
+.row__danger-linje { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
