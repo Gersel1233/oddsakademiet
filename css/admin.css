@@ -2140,3 +2140,37 @@ body.dv-open { overflow: hidden; }
   line-height: 1.35;
   box-shadow: 0 6px 20px -8px rgba(0, 0, 0, 0.5);
 }
+
+/* ============================================================
+   SÆRLIGE BESTILLINGER SKAL SES
+   En dagens ret ligner de 40 andre – det er meningen, den skal gå
+   hurtigt. Men tapas og specials er forberedt og bestilt i forvejen.
+   De må ikke drukne i mængden, så de får deres egen farve hele
+   vejen rundt om rækken.
+   ============================================================ */
+.row--tapas,
+.row--special {
+  position: relative;
+  border-left: 5px solid #7a4bd6;
+  background: linear-gradient(90deg, rgba(122, 75, 214, 0.09), transparent 240px);
+  padding-top: 26px;
+}
+.row--special { border-left-color: #1f7a55; background: linear-gradient(90deg, rgba(31, 122, 85, 0.09), transparent 240px); }
+
+.row__slags {
+  position: absolute;
+  top: 0;
+  left: 0;
+  padding: 3px 12px 4px;
+  border-radius: 0 0 12px 0;
+  background: #7a4bd6;
+  color: #fff;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+}
+.row--special .row__slags { background: #1f7a55; }
+
+/* færdige rækker skal falde til ro – også de særlige */
+.row--done.row--tapas,
+.row--done.row--special { background: none; opacity: 0.72; }

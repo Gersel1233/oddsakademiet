@@ -836,6 +836,22 @@
     tegn();
   }
 
+  /* Hvad slags bestilling er det egentlig?
+     En almindelig dagens ret ligner de 40 andre - og det er fint, den
+     skal gaa hurtigt. Men tapas og nyheds-bestillinger er noget andet:
+     de er forberedt, bestilt i forvejen, og maa ikke drukne i maengden.
+     De faar deres egen farve hele vejen rundt om raekken. */
+  function ordreSlags(o) {
+    const linjer = orderLines(o);
+    if (linjer.some((l) => l.kind === 'tapas')) {
+      return { key: 'tapas', klasse: 'row--tapas', navn: '🧀 TAPAS' };
+    }
+    if (linjer.some((l) => l.kind === 'nyhed')) {
+      return { key: 'nyhed', klasse: 'row--special', navn: '📣 SPECIAL' };
+    }
+    return null;
+  }
+
   function orderRow(o, showDate = false) {
     const all = orderLines(o).filter((l) => !isExtraLine(l));
     const extras = orderLines(o).filter(isExtraLine);
@@ -847,13 +863,14 @@
     const drink = all.filter(isDrink);
     const li = (l) => `<li><b>${l.qty} ×</b> ${esc(linjeNavn(l))}${l.kind === 'dagensret' ? '<span class="tag tag--accent">Dagens ret</span>' : ''}${l.kind === 'nyhed' ? '<span class="tag tag--ink">📣 Nyhed</span>' : ''}</li>`;
     const done = o.status !== 'ny';
+    const slags = ordreSlags(o);
     return `
-      <div class="row ${done ? 'row--done' : 'row--new'}">
+      <div class="row ${done ? 'row--done' : 'row--new'} ${slags ? slags.klasse : ''}">
+        ${slags ? `<span class="row__slags">${slags.navn}</span>` : ''}
         <div class="row__main">
           <div class="row__title">${esc(o.name)}
             ${personsOf(o) ? `<span class="tag">👥 ${personsOf(o)} pers.</span>` : ''}
             <span class="tag ${o.type === 'togo' ? 'tag--accent' : 'tag--ink'}">${o.type === 'togo' ? '🥡 To-go' : '🍽️ Spiser her'}</span>
-            ${all.some((l) => l.kind === 'tapas') ? '<span class="tag tag--accent">🧀 Tapas</span>' : ''}
             ${o.type !== 'togo' && itemsOf(o) > 0 && personsOf(o) > itemsOf(o) ? `<span class="tag tag--wait">⚠️ ${personsOf(o)} pers. – mad til ${itemsOf(o)}</span>` : ''}
             ${done ? '' : '<span class="tag tag--red">Ny</span>'}
           </div>

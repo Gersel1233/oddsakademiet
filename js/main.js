@@ -1076,6 +1076,10 @@
 
   function openConfirm() {
     const o = pendingOrder;
+    /* Bekræftelsen er den SAMME for alle slags bestillinger. En tapas-
+       bestilling er lige så bindende som en dagens ret - så den skal
+       igennem det samme ene sidste kig. */
+    $('#confirmTitle').textContent = o.titel || 'Tjek jeres bestilling';
     const total = o.lines.reduce((s, l) => s + (l.price ? l.price * l.qty : 0), 0);
     $('#confirmLines').innerHTML = o.lines.map((l) => `
       <div class="confirm__line"><span><b>${l.qty} ×</b> ${esc(linjeNavn(l))}</span><span>${l.price ? kr(l.price * l.qty) : ''}</span></div>`).join('')
@@ -1141,7 +1145,8 @@
     if (!pendingOrder) return;
     const o = pendingOrder;
     const btn = $('#confirmSend');
-    const error = $('#orderError');
+    const erTapas = o.slags === 'tapas';
+    const error = $(erTapas ? '#tapasError' : '#orderError');
     error.hidden = true;
     btn.disabled = true;
     btn.textContent = 'Sender…';
@@ -1153,20 +1158,20 @@
        på den. Trykker kunden "prøv igen", er det stadig det samme – så
        databasen ved, at det er den samme bestilling og ikke en ny. */
     if (!o.ref) o.ref = `w-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
-    const result = await S.addOrder({
+    const result = await S.addOrder(Object.assign({
       ref: o.ref,
       date: o.iso,
       time: o.time,
-      qty: dagensQty,
+      qty: erTapas ? o.persons : dagensQty,
       type: o.type,
       name: o.name,
       phone: o.phone,
       note: o.note,
-      dish: dagensLines.length ? dagensLines[0].name : '',
-      price: dagensLines.length === 1 ? (dagensLines[0].price ?? null) : null,
+      dish: !erTapas && dagensLines.length ? dagensLines[0].name : '',
+      price: !erTapas && dagensLines.length === 1 ? (dagensLines[0].price ?? null) : null,
       items: o.lines,
       persons: o.persons,
-    });
+    }));
     btn.disabled = false;
     btn.textContent = '✓ Bekræft & send';
     closeConfirm();
@@ -1204,16 +1209,37 @@
       } else if (result.reason === 'forbi' || result.reason === 'dato') {
         error.textContent = 'Tidspunktet er nået, mens siden stod åben – vælg venligst en ny tid eller en kommende dag.';
         renderOrderDates();
+      } else if (result.reason === 'tapas-dato') {
+        error.textContent = 'Tapas skal bestilles senest dagen før – vælg en dato fra i morgen.';
+      } else if (result.reason === 'dag') {
+        error.textContent = 'Køkkenet holder lukket den ugedag – vælg en anden dag.';
+      } else if (result.reason === 'pauset') {
+        error.textContent = `Vi tager ikke imod online bestillinger lige nu – ring til os på ${esc(S.getSettings().phone)}, så finder vi ud af det.`;
       } else if (result.reason === 'tom' || result.reason === 'mangler' || result.reason === 'ugyldig') {
-        error.textContent = 'Tjek lige bestillingen: vælg mindst én ret og udfyld navn og telefon.';
+        error.textContent = erTapas
+          ? 'Tjek lige bestillingen: antal personer, navn og telefonnummer.'
+          : 'Tjek lige bestillingen: vælg mindst én ret og udfyld navn og telefon.';
       } else {
         error.textContent = result.remaining > 0
           ? `Åh nej – der er kun ${result.remaining} portion${result.remaining === 1 ? '' : 'er'} dagens ret tilbage denne dag. Sæt antallet ned eller vælg en anden dag.`
           : 'Dagens ret er desværre lige blevet udsolgt – fjern den fra bestillingen eller vælg en anden dag.';
       }
       error.hidden = false;
-      onOrderDateChange();
+      /* datolisten og kurven hoerer til dagens ret – de maa ikke
+         gentegnes af en tapas-bestilling */
+      if (!erTapas) onOrderDateChange();
       error.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      return;
+    }
+
+    if (erTapas) {
+      $('#tapasForm').hidden = true;
+      const suc = $('#tapasSuccess');
+      suc.hidden = false;
+      $('#tapasSuccessText').textContent =
+        `Jeres tapas til ${o.persons} ${o.persons === 1 ? 'person' : 'personer'} er bestilt til ${S.formatDate(o.iso).toLowerCase()} kl. ${o.time}. Vi glæder os! 🧀`;
+      suc.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      pendingOrder = null;
       return;
     }
 
@@ -1379,43 +1405,23 @@
       const cavaQty = Math.max(0, Math.min(20, Number($('#tapasCava').value) || 0));
       const items = [{ name: 'Spiis Tapas', qty: n, price: price(), kind: 'tapas' }];
       if (cavaQty > 0) items.push({ name: 'Cava Brut Nature', qty: cavaQty, price: cavaPrice() });
-      const btn = form.querySelector('button[type="submit"]');
-      btn.disabled = true;
-      btn.textContent = 'Sender…';
-      const res = await S.addOrder({
-        date: iso, time, qty: n, type: typeSel.value,
-        name, phone, note: $('#tapasNote').value.trim(),
-        dish: '', price: null, items, persons: n,
-      });
-      btn.disabled = false;
-      btn.textContent = '🧀 Bestil tapas';
-      if (!res.ok) {
-        /* kunden skal ALTID have at vide hvorfor – aldrig bare
-           "noget gik galt", som man ikke kan gøre noget ved */
-        const grunde = {
-          'tapas-dato': 'Tapas skal bestilles senest dagen før – vælg en dato fra i morgen.',
-          'type-lukket': 'Den måde at spise på er desværre ikke mulig den dag – vælg den anden mulighed, eller en anden dag.',
-          pauset: 'Vi tager ikke imod online bestillinger lige nu – ring til os på 93 99 58 58, så finder vi ud af det.',
-          lukket: `Vi holder lukket den dag (${lukketTekst(iso).replace(/^\S+\s/, '').toLowerCase()}) – vælg en anden dag.`,
-          dag: 'Køkkenet holder lukket den ugedag – vælg en anden dag.',
-          tid: 'Vælg et afhentningstidspunkt inden for åbningstiden.',
-          forbi: 'Tidspunktet er passeret, mens siden stod åben – vælg en ny tid.',
-          dato: 'Vælg en dato fra i morgen og frem.',
-          tom: 'Udfyld antal personer, navn og telefon.',
-          mangler: 'Udfyld antal personer, navn og telefon.',
-          ugyldig: 'Tjek lige antal personer, navn og telefonnummer.',
-        };
-        err.textContent = (res.error === 'net')
-          ? 'Bestillingen kunne ikke sendes lige nu – tjek nettet, prøv igen, eller ring til os på 93 99 58 58.'
-          : (grunde[res.reason] || 'Bestillingen kunne ikke sendes lige nu – ring til os på 93 99 58 58, så hjælper vi.');
-        err.hidden = false;
-        return;
-      }
-      form.hidden = true;
-      const suc = $('#tapasSuccess');
-      suc.hidden = false;
-      $('#tapasSuccessText').textContent = `Jeres tapas til ${n} ${n === 1 ? 'person' : 'personer'} er bestilt til ${S.formatDate(iso).toLowerCase()} kl. ${time}. Vi glæder os! 🧀`;
-      suc.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      /* Tapas gik foer direkte afsted med ét tryk. Det var for nemt for
+         en bestilling der er lige saa bindende som alle andre - og den
+         gik glip af baade kvitteringsnummeret og noedudgangen. Nu gaar
+         den gennem præcis samme ene sidste kig som resten. */
+      pendingOrder = {
+        slags: 'tapas',
+        titel: 'Tjek jeres tapas-bestilling',
+        iso,
+        time,
+        persons: n,
+        type: typeSel.value,
+        name,
+        phone,
+        note: $('#tapasNote').value.trim(),
+        lines: items,
+      };
+      openConfirm();
     });
   })();
 
