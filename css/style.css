@@ -1177,6 +1177,93 @@ body.menupage { padding-bottom: 0 !important; }
   line-height: 1.15;
 }
 .today__desc { color: var(--ink-soft); margin-top: 10px; max-width: 560px; }
+
+/* FLERE DAGENS RETTER SAMME DAG
+   Retterne står under hinanden, hver med sin egen pris og sit eget mærke,
+   så det læses som et valg og ikke som ét meget langt retnavn. */
+.today__retter { max-width: 640px; }
+.today__retter[hidden] { display: none; }
+.today__vaelg {
+  font-size: 0.74rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--accent-deep);
+  margin-bottom: 16px;
+}
+.today__ret { display: flex; align-items: flex-start; gap: 16px; }
+.today__rettekst { flex: 1 1 auto; min-width: 0; }
+.today__retnavn {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: clamp(1.3rem, 2.4vw, 1.8rem);
+  line-height: 1.2;
+  text-wrap: balance;
+}
+.today__retdesc { color: var(--ink-soft); margin-top: 6px; font-size: 0.95rem; line-height: 1.55; }
+.today__retvalg { color: var(--ink-soft); margin-top: 6px; font-size: 0.88rem; }
+.today__retfoto {
+  width: 80px;
+  height: 80px;
+  border-radius: 16px;
+  object-fit: cover;
+  flex: 0 0 auto;
+}
+.today__retside {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+  flex: 0 0 auto;
+}
+.today__retpris {
+  font-family: var(--font-display);
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--accent-deep);
+  background: var(--accent-soft);
+  border-radius: 999px;
+  padding: 3px 15px;
+  white-space: nowrap;
+}
+.today__rettag {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--ink-soft);
+  background: var(--cream-2);
+  border-radius: 999px;
+  padding: 4px 12px;
+  white-space: nowrap;
+}
+.today__rettag.is-low { background: var(--accent-soft); color: var(--accent-deep); }
+.today__rettag.is-soldout { background: #FBEAE7; color: #B3372B; }
+.today__ret.is-udsolgt .today__retnavn { opacity: 0.5; text-decoration: line-through; }
+.today__ret.is-udsolgt .today__retfoto { filter: grayscale(1); opacity: 0.55; }
+.today__eller {
+  margin: 18px 0;
+  text-align: center;
+  font-size: 0.74rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+  position: relative;
+}
+.today__eller::before, .today__eller::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  width: calc(50% - 34px);
+  height: 1px;
+  background: var(--line);
+}
+.today__eller::before { left: 0; }
+.today__eller::after { right: 0; }
+@media (max-width: 560px) {
+  .today__ret { gap: 12px; flex-wrap: wrap; }
+  .today__retfoto { width: 62px; height: 62px; }
+  .today__retside { flex-direction: row; align-items: center; width: 100%; }
+}
+
 .today__meta {
   display: flex;
   align-items: center;

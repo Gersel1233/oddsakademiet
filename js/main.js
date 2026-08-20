@@ -240,6 +240,14 @@
     const today = S.todayISO();
     const orderBtn = $('#todayOrderBtn');
 
+    /* Kortet tegnes forfra hver gang køkkenet ændrer noget. Start altid med
+       ét-rets-udseendet, så listen med flere retter aldrig bliver stående
+       fra sidste optegning. */
+    const retterEl = $('#todayRetter');
+    if (retterEl) { retterEl.hidden = true; retterEl.innerHTML = ''; }
+    $('#todayDish').hidden = false;
+    $('#todayDesc').hidden = false;
+
     /* ferie: hele dagens ret-sektionen viser luk-beskeden i stedet for en ret */
     if (S.isClosureNow()) {
       const c = S.getClosure();
@@ -301,23 +309,34 @@
       return;
     }
     label.textContent = iso === today ? 'I dag' : S.formatDate(iso);
-    title.textContent = dishes.length > 1 ? dishes.map((d) => d.title).join(' · ') : dish.title;
-    desc.innerHTML = dishes.length > 1 ? '' : descHtml(dish.desc || '');
-    price.textContent = dishes.length === 1 && dish.price ? kr(dish.price) : '';
 
-    /* med flere retter: udsolgt først når ALLE er udsolgte; "få tilbage"
-       vises for den ret, der er tættest på at slippe op */
+    /* ER DER FLERE RETTER SAMME DAG?
+       Før blev navnene klistret sammen til én lang overskrift
+       ("Asiatiske kødboller · Kalvecuvette i flødetomatsauce med ris"),
+       og både priser og beskrivelser forsvandt helt. Nu står retterne
+       under hinanden med hver sin pris og sit eget mærke – nøjagtig som
+       de gør i ugeoversigten og i dagsvinduet. */
+    const flere = dishes.length > 1;
+    title.hidden = flere;
+    desc.hidden = flere;
+    if (retterEl) {
+      retterEl.hidden = !flere;
+      retterEl.innerHTML = flere ? retterHtml(iso, dishes) : '';
+    }
+    title.textContent = flere ? '' : dish.title;
+    desc.innerHTML = flere ? '' : descHtml(dish.desc || '');
+    price.textContent = !flere && dish.price ? kr(dish.price) : '';
+
+    /* med flere retter har HVER ret sit eget mærke i listen – her nedenfor
+       siger vi kun noget, hvis alt er udsolgt */
     stockEl.className = 'today__stock';
-    if (dishes.length > 1 && S.dagensAllSoldOut(iso)) {
-      stockEl.textContent = 'Udsolgt i dag – vi ses i morgen!';
-      stockEl.classList.add('is-soldout');
-    } else if (dishes.length > 1) {
-      const low = dishes
-        .map((d) => ({ t: d.title, r: S.getRemainingFor(iso, d.title) }))
-        .filter((x) => x.r !== null && x.r > 0 && x.r <= 5)
-        .sort((a, b) => a.r - b.r)[0];
-      stockEl.textContent = low ? `🔥 Kun ${low.r} × ${low.t} tilbage!` : '';
-      if (low) stockEl.classList.add('is-low');
+    if (flere) {
+      if (S.dagensAllSoldOut(iso)) {
+        stockEl.textContent = 'Udsolgt i dag – vi ses i morgen!';
+        stockEl.classList.add('is-soldout');
+      } else {
+        stockEl.textContent = '';
+      }
     } else {
       const remaining = S.getRemainingFor(iso, dish.title);
       if (remaining === null) {
@@ -337,6 +356,34 @@
         && kitchenStateToday() === 'aaben') {
       stockEl.classList.add('is-live');
     }
+  }
+
+  /* HAR KØKKENET LAGT TO (ELLER FLERE) RETTER IND SAMME DAG,
+     skal de læses som et VALG – ikke som én ret med et meget langt navn.
+     Hver ret får derfor sin egen linje med navn, pris, beskrivelse,
+     tilvalg og sit eget udsolgt-mærke, adskilt af et "eller". */
+  function retterHtml(iso, dishes) {
+    const raekker = dishes.map((d) => {
+      const rem = S.getRemainingFor(iso, d.title);
+      const udsolgt = rem !== null && rem <= 0;
+      let maerke = '';
+      if (udsolgt) maerke = '<span class="today__rettag is-soldout">Udsolgt</span>';
+      else if (rem !== null && rem <= 5) maerke = `<span class="today__rettag is-low">🔥 Kun ${rem} tilbage</span>`;
+      const valg = valgFor(d);
+      return `<div class="today__ret${udsolgt ? ' is-udsolgt' : ''}">
+        ${d.img ? `<img class="today__retfoto" src="${esc(d.img)}" alt="${esc(d.title)}" loading="lazy" />` : ''}
+        <div class="today__rettekst">
+          <h3 class="today__retnavn">${esc(d.title)}</h3>
+          ${d.desc ? `<div class="today__retdesc">${descHtml(d.desc)}</div>` : ''}
+          ${valg.length ? `<p class="today__retvalg">Vælg til: ${valg.map((v) => `${esc(v.navn)}${Number(v.pris) ? ` (+ ${kr(Number(v.pris))})` : ''}`).join(' · ')}</p>` : ''}
+        </div>
+        <div class="today__retside">
+          ${d.price ? `<span class="today__retpris">${kr(d.price)}</span>` : ''}
+          ${maerke}
+        </div>
+      </div>`;
+    });
+    return `<p class="today__vaelg">Vælg mellem</p>${raekker.join('<div class="today__eller">eller</div>')}`;
   }
 
   /* beskrivelser kan skrives i PUNKTFORM: hver linje bliver sit eget punkt
