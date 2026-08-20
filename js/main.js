@@ -1601,11 +1601,15 @@
       phoneLink.lastElementChild.textContent = s.phone;
     }
     /* alle numre, man kan trykke på, henter deres nummer samme sted –
-       så retter chefen det ét sted i admin, og det følger med overalt */
-    $$('[data-spiistel]').forEach((a) => {
-      a.href = tel;
-      if (a.lastElementChild) a.lastElementChild.textContent = s.phone;
-    });
+       så retter chefen det ét sted i admin, og det følger med overalt.
+       Er feltet tomt, bliver nummeret i siden stående: et blankt
+       telefonnummer er værre end et lidt gammelt. */
+    if (s.phone) {
+      $$('[data-spiistel]').forEach((a) => {
+        a.href = tel;
+        if (a.lastElementChild) a.lastElementChild.textContent = s.phone;
+      });
+    }
     const emailLink = $('#contactEmail');
     if (emailLink) {
       emailLink.href = `mailto:${s.email}`;
