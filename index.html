@@ -398,6 +398,16 @@
                 <input type="text" id="tapasNote" placeholder="Fx allergier eller særlige ønsker" /></label>
             </div>
             <div class="tapas__sum" id="tapasSum" aria-live="polite"></div>
+            <!-- Vilkårene skal stå FØR knappen: man skal vide, at det er
+                 bindende, inden man binder sig. Selve opfordringen til at
+                 ringe står derimod på kvitteringen – køkkenet skal kunne
+                 finde bestillingen frem, når telefonen ringer. -->
+            <div class="tapasvilkaar">
+              <b>Inden I bestiller</b>
+              <p>Bestillingen er <b>bindende</b>, og afbestilling skal ske <b>senest dagen før</b> – vi køber ind og laver fadet i hånden til netop jer.</p>
+              <p>Ønsker I noget til eller fra fadet, eller har I andre særlige ønsker, så <b>ring til os, når bestillingen er sendt</b> – så kan vi finde den frem og skrive ønskerne på. Jeres dato og tidspunkt bliver ikke lavet om.</p>
+              <p>Vil I ikke ændre noget, er det helt fint. Så får I det klassiske tapasbord, præcis som det står her på siden. På forhånd tak 🧀</p>
+            </div>
             <p class="pausenote" id="tapasPausedNote" hidden></p>
             <p class="form__error" id="tapasError" hidden></p>
             <button type="submit" class="btn btn--accent btn--big form__submit">🧀 Bestil tapas</button>
@@ -410,6 +420,9 @@
             </div>
             <h3>Tak for jeres bestilling! 🧀</h3>
             <p id="tapasSuccessText"></p>
+            <!-- nummeret kan trykkes: på en telefon ringer den med det samme -->
+            <p class="tapas__ring">Ønsker I noget til eller fra fadet? Ring til os nu på
+              <a href="tel:+4593995858" data-spiistel><span>93 99 58 58</span></a> – så skriver vi det på jeres bestilling. 📞</p>
           </div>
         </div>
       </div>
@@ -580,7 +593,9 @@
       <h3 class="confirm__title" id="confirmTitle">Tjek jeres bestilling</h3>
       <div class="confirm__lines" id="confirmLines"></div>
       <div class="confirm__meta" id="confirmMeta"></div>
-      <p class="confirm__policy">🔔 Bestillingen er <b>bindende</b>. Kan du ikke komme, så ring og afbestil <b>senest 1 time før</b> – ellers opkræves beløbet, da maden allerede er forberedt og gjort klar.</p>
+      <!-- teksten skiftes af js: tapas har en anden frist end dagens ret,
+           fordi der købes ind og anrettes dagen i forvejen -->
+      <p class="confirm__policy" id="confirmPolicy">🔔 Bestillingen er <b>bindende</b>. Kan du ikke komme, så ring og afbestil <b>senest 1 time før</b> – ellers opkræves beløbet, da maden allerede er forberedt og gjort klar.</p>
       <div class="confirm__btns">
         <button type="button" class="btn btn--ghost-dark" id="confirmBack">← Ret noget</button>
         <button type="button" class="btn btn--accent" id="confirmSend">✓ Bekræft &amp; send</button>

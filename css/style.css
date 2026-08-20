@@ -677,7 +677,45 @@ body.menupage { padding-bottom: 0 !important; }
 .tsum__line { display: flex; justify-content: space-between; gap: 12px; font-size: 0.94rem; color: var(--ink-soft); }
 .tsum__line b { color: var(--ink); font-weight: 700; }
 .tsum__line--total { border-top: 1.4px dashed rgba(28, 24, 20, 0.18); padding-top: 8px; margin-top: 2px; font-weight: 800; color: var(--ink); font-size: 1.02rem; }
+/* vilkårene lige før knappen: rolige, men ikke til at overse */
+.tapasvilkaar {
+  background: var(--cream-2);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 15px 17px;
+  margin: 14px 0 4px;
+  font-size: 0.88rem;
+  line-height: 1.55;
+  color: var(--ink-soft);
+}
+.tapasvilkaar b { color: var(--ink); font-weight: 700; }
+.tapasvilkaar > b {
+  display: block;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 1.02rem;
+  margin-bottom: 8px;
+}
+.tapasvilkaar p { margin-bottom: 8px; }
+.tapasvilkaar p:last-child { margin-bottom: 0; }
+
 .tapas__success { max-width: 560px; margin: 0 auto; }
+/* nummeret på kvitteringen – det er HER man skal ringe, ikke før */
+.tapas__ring {
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+  font-size: 0.92rem;
+  color: var(--ink-soft);
+  line-height: 1.55;
+}
+.tapas__ring a {
+  font-weight: 700;
+  color: var(--accent-deep);
+  white-space: nowrap;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
 @media (max-width: 900px) {
   .tapas { grid-template-columns: 1fr; }
   /* på telefonen får fadene lov at fylde mere – billedet er højformat */

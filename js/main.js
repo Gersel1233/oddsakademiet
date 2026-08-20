@@ -1145,6 +1145,17 @@
       <div>${o.type === 'togo' ? '🥡 Takeaway' : `🍽️ Spiser her · 👥 ${o.persons} person${o.persons === 1 ? '' : 'er'}`}</div>
       <div>🙋 ${esc(o.name)} · 📞 ${esc(o.phone)}</div>
       ${o.note ? `<div>💬 ${esc(o.note)}</div>` : ''}`;
+    /* FRISTEN ER IKKE DEN SAMME.
+       Dagens ret laves på dagen, så en time før er nok. Et tapasfad
+       købes ind og anrettes dagen i forvejen – dér er en time før for
+       sent til nogen som helst. Da tapas arvede det fælles
+       bekræftelsesvindue, arvede den også den forkerte frist. */
+    const pol = $('#confirmPolicy');
+    if (pol) {
+      pol.innerHTML = o.slags === 'tapas'
+        ? '🔔 Bestillingen er <b>bindende</b>. Skal I afbestille, så ring <b>senest dagen før</b> – ellers opkræves beløbet, da vi køber ind og anretter fadet til jer.'
+        : '🔔 Bestillingen er <b>bindende</b>. Kan du ikke komme, så ring og afbestil <b>senest 1 time før</b> – ellers opkræves beløbet, da maden allerede er forberedt og gjort klar.';
+    }
     confirmWrap.hidden = false;
     document.body.style.overflow = 'hidden';
   }
@@ -1589,6 +1600,12 @@
       phoneLink.href = tel;
       phoneLink.lastElementChild.textContent = s.phone;
     }
+    /* alle numre, man kan trykke på, henter deres nummer samme sted –
+       så retter chefen det ét sted i admin, og det følger med overalt */
+    $$('[data-spiistel]').forEach((a) => {
+      a.href = tel;
+      if (a.lastElementChild) a.lastElementChild.textContent = s.phone;
+    });
     const emailLink = $('#contactEmail');
     if (emailLink) {
       emailLink.href = `mailto:${s.email}`;
