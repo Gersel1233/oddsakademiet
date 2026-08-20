@@ -398,16 +398,10 @@
                 <input type="text" id="tapasNote" placeholder="Fx allergier eller særlige ønsker" /></label>
             </div>
             <div class="tapas__sum" id="tapasSum" aria-live="polite"></div>
-            <!-- Vilkårene skal stå FØR knappen: man skal vide, at det er
-                 bindende, inden man binder sig. Selve opfordringen til at
-                 ringe står derimod på kvitteringen – køkkenet skal kunne
-                 finde bestillingen frem, når telefonen ringer. -->
-            <div class="tapasvilkaar">
-              <b>Inden I bestiller</b>
-              <p>Bestillingen er <b>bindende</b>, og afbestilling skal ske <b>senest dagen før</b> – vi køber ind og laver fadet i hånden til netop jer.</p>
-              <p>Ønsker I noget til eller fra fadet, eller har I andre særlige ønsker, så <b>ring til os, når bestillingen er sendt</b> – så kan vi finde den frem og skrive ønskerne på. Jeres dato og tidspunkt bliver ikke lavet om.</p>
-              <p>Vil I ikke ændre noget, er det helt fint. Så får I det klassiske tapasbord, præcis som det står her på siden. På forhånd tak 🧀</p>
-            </div>
+            <!-- Kun ÉT sted står der, at bestillingen er bindende: på
+                 bekræftelsen, lige inden man trykker send. Her står bare
+                 det, man ikke kan gætte – at man må ringe bagefter. -->
+            <p class="tapasvilkaar">💬 Ønsker I noget til eller fra fadet? Ring til os, <b>når bestillingen er sendt</b> – så skriver vi det på. Ellers får I det klassiske tapasbord.</p>
             <p class="pausenote" id="tapasPausedNote" hidden></p>
             <p class="form__error" id="tapasError" hidden></p>
             <button type="submit" class="btn btn--accent btn--big form__submit">🧀 Bestil tapas</button>
