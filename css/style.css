@@ -1560,6 +1560,36 @@ body.menupage { padding-bottom: 0 !important; }
   padding: 14px 16px;
   box-shadow: 0 10px 26px -16px rgba(217, 108, 44, 0.5);
 }
+/* dagens ret uden pris: den findes, men den kan ikke bestilles i blinde.
+   Beskeden er for bred til at stå ved siden af navnet – den får sin egen linje,
+   ellers klemmes retten sammen til én bogstav pr. ord på en telefon. */
+.builder__dagens--ingenpris { display: block; }
+.builder__dagens--ingenpris .bitem__info { margin-bottom: 12px; }
+.builder__ingenpris {
+  display: block;
+  font-size: 0.86rem;
+  font-weight: 600;
+  color: var(--accent-deep);
+  background: var(--accent-soft);
+  border-radius: 12px;
+  padding: 9px 13px;
+  line-height: 1.5;
+}
+.builder__ingenpris a {
+  color: var(--accent-deep);
+  font-weight: 700;
+  white-space: nowrap;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.basketbar__ukendt {
+  display: block;
+  font-style: normal;
+  font-weight: 600;
+  font-size: 0.82rem;
+  opacity: 0.9;
+  margin-top: 2px;
+}
 .builder__soldout {
   font-size: 0.78rem;
   font-weight: 700;

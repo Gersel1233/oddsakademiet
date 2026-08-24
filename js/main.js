@@ -909,6 +909,8 @@
         builderIndex['d::' + d.title] = {
           name: d.title, price: d.price ?? null, kind: 'dagensret', cat: 'Dagens ret',
           soldout: rem !== null && rem <= 0, left: rem,
+          /* uden pris kan den ikke bestilles – se noten ved builder__ingenpris */
+          manglerPris: !d.price,
         };
         return;
       }
@@ -941,7 +943,7 @@
        Er der kun få tilbage, sættes antallet i kurven automatisk ned. */
     Object.keys(basket).forEach((key) => {
       const inf = builderIndex[key];
-      if (!inf || inf.soldout) { delete basket[key]; return; }
+      if (!inf || inf.soldout || inf.manglerPris) { delete basket[key]; return; }
       if (inf.left != null && basket[key].qty > Number(inf.left)) {
         basket[key].qty = Number(inf.left);
         if (!basket[key].qty) delete basket[key];
@@ -969,6 +971,20 @@
           ${d.desc ? `<small>${esc(d.desc)}</small>` : ''}
           ${d.price ? `<em>${kr(d.price)}</em>` : ''}
         </div>`;
+      /* DAGENS RET UDEN PRIS.
+         Køkkenet har glemt at skrive prisen. Før kunne man bestille alligevel,
+         og kurven sagde "i alt 10 kr." – altså kun emballagen. Kunden fik en
+         kvittering på 10 kr. på en ret, der koster 75, og køkkenet stod med
+         den samtale ved lugen. Nu siger vi det ærligt og giver telefonen. */
+      const manglerPris = !d.price && !inf.soldout;
+      if (manglerPris) {
+        html += `<div class="builder__dagens builder__dagens--ingenpris">
+          ${hoved}
+          <span class="builder__ingenpris">Prisen er ikke lagt ind endnu – ring til os på
+            <a href="tel:+4593995858" data-spiistel><span>93 99 58 58</span></a>, så tager vi bestillingen</span>
+        </div>`;
+        return;
+      }
       if (!valg.length) {
         html += `<div class="builder__dagens">
           ${hoved}
@@ -1054,10 +1070,14 @@
     const total = sendLines.reduce((s, l) => s + (l.price ? l.price * l.qty : 0), 0);
     const packLine = sendLines.find((l) => l.kind === 'emballage');
     const reuseLine = sendLines.find((l) => l.kind === 'genbrug');
+    /* Er der en vare i kurven UDEN pris, er totalen ikke hele beløbet.
+       At skrive "i alt 10 kr." når kunden også har bestilt mad, er et
+       løfte, køkkenet ikke kan holde ved lugen. Så siger vi det i stedet. */
+    const udenPris = sendLines.some((l) => l.qty > 0 && !l.price);
     basketBar.innerHTML = `<strong>Jeres bestilling:</strong> ${lines.map((l) => `${l.qty} × ${esc(linjeNavn(l))}`).join(' · ')}
       ${packLine ? `<span class="basketbar__pack">+ emballage ${packLine.qty} × ${EMBALLAGE_PRIS} kr.</span>` : ''}
       ${reuseLine ? '<span class="basketbar__pack basketbar__pack--free">♻️ egen emballage til dagens ret</span>' : ''}
-      <span class="basketbar__total">${totalItems} ret${totalItems === 1 ? '' : 'ter'}${total ? ` · i alt ${total} kr.` : ''}</span>`;
+      <span class="basketbar__total">${totalItems} ret${totalItems === 1 ? '' : 'ter'}${total ? ` · i alt ${total} kr.` : ''}${udenPris ? '<em class="basketbar__ukendt">+ varer uden pris – dem oplyser vi ved afhentning</em>' : ''}</span>`;
   }
 
   /* vis/skjul genbrugs-fluebenet og forklar emballage-tillægget */

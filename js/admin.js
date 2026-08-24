@@ -2791,14 +2791,24 @@
       </div>`;
   }
 
+  /* EN RET UDEN PRIS KAN IKKE BESTILLES.
+     Den 24. august stod fire dage i træk uden pris. Kunden kunne bestille
+     alligevel, og kurven sagde "i alt 10 kr." – kun emballagen. Nu kan
+     retten ikke bestilles, og her siger vi hvorfor, så det bliver fanget
+     før gæsterne ser det. */
+  const manglerPris = (d) => !!d.title && !d.soldout
+    && (d.price === '' || d.price === null || d.price === undefined);
+
   function pdDishRow(day, d) {
     const on = day.open;
     const sold = d.title ? S.getSoldFor(day.iso, d.title) : 0;
+    const utilgaengelig = on && manglerPris(d);
     return `
-      <div class="pd-dish ${d.soldout ? 'pd-dish--soldout' : ''}" data-out="${d.soldout ? '1' : ''}" data-navn="${d.title ? '1' : ''}">
+      <div class="pd-dish ${d.soldout ? 'pd-dish--soldout' : ''} ${utilgaengelig ? 'pd-dish--ingenpris' : ''}" data-out="${d.soldout ? '1' : ''}" data-navn="${d.title ? '1' : ''}">
         <input class="inline-input" data-f="title" placeholder="${on ? 'Ret, fx Boller i karry' : 'Lukket'}" value="${esc(d.title || '')}" ${on ? '' : 'disabled'} />
         <textarea class="inline-input pd-dish__desc" data-f="desc" rows="1" placeholder="Beskrivelse – én linje pr. punkt (fx alt i en tapas)" ${on ? '' : 'disabled'}>${esc(d.desc || '')}</textarea>
-        <input class="inline-input" data-f="price" type="number" min="0" placeholder="Pris" value="${esc(d.price ?? '')}" ${on ? '' : 'disabled'} />
+        <input class="inline-input ${utilgaengelig ? 'inline-input--mangler' : ''}" data-f="price" type="number" min="0" placeholder="Pris" value="${esc(d.price ?? '')}" ${on ? '' : 'disabled'} />
+        ${utilgaengelig ? '<span class="pd-dish__advarsel">⚠️ Uden pris kan retten ikke bestilles på siden. Skriv prisen, så åbner den.</span>' : ''}
         <input class="inline-input" data-f="stock" type="number" min="0" placeholder="Antal" title="Antal portioner – lad stå tomt for ubegrænset" value="${esc(d.stock ?? '')}" ${on ? '' : 'disabled'} />
         <button type="button" class="abtn ${d.soldout ? 'abtn--green' : 'abtn--ghost'} pd-dish__so" data-soldout title="${d.soldout ? 'Åbn for bestilling igen' : 'Meld retten udsolgt med ét tryk'}" ${on ? '' : 'disabled'}>${d.soldout ? '✅ Åbn igen' : '🚫 Udsolgt'}</button>
         <button type="button" class="abtn abtn--danger abtn--icon" data-delret title="Fjern retten" ${on ? '' : 'disabled'}>✕</button>
