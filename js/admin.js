@@ -2803,16 +2803,31 @@
     const on = day.open;
     const sold = d.title ? S.getSoldFor(day.iso, d.title) : 0;
     const utilgaengelig = on && manglerPris(d);
+    /* loftet er nået: alt er solgt, uden at nogen har trykket på udsolgt-knappen */
+    const harLoft = d.stock != null && d.stock !== '';
+    const opbrugt = on && !!d.title && !d.soldout && harLoft && sold >= Number(d.stock);
     return `
       <div class="pd-dish ${d.soldout ? 'pd-dish--soldout' : ''} ${utilgaengelig ? 'pd-dish--ingenpris' : ''}" data-out="${d.soldout ? '1' : ''}" data-navn="${d.title ? '1' : ''}">
         <input class="inline-input" data-f="title" placeholder="${on ? 'Ret, fx Boller i karry' : 'Lukket'}" value="${esc(d.title || '')}" ${on ? '' : 'disabled'} />
         <textarea class="inline-input pd-dish__desc" data-f="desc" rows="1" placeholder="Beskrivelse – én linje pr. punkt (fx alt i en tapas)" ${on ? '' : 'disabled'}>${esc(d.desc || '')}</textarea>
         <input class="inline-input ${utilgaengelig ? 'inline-input--mangler' : ''}" data-f="price" type="number" min="0" placeholder="Pris" value="${esc(d.price ?? '')}" ${on ? '' : 'disabled'} />
         ${utilgaengelig ? '<span class="pd-dish__advarsel">⚠️ Uden pris kan retten ikke bestilles på siden. Skriv prisen, så åbner den.</span>' : ''}
-        <input class="inline-input" data-f="stock" type="number" min="0" placeholder="Antal" title="Antal portioner – lad stå tomt for ubegrænset" value="${esc(d.stock ?? '')}" ${on ? '' : 'disabled'} />
+        <input class="inline-input ${opbrugt ? 'inline-input--mangler' : ''}" data-f="stock" type="number" min="0" placeholder="Antal" title="Hvor mange I laver I ALT i dag – ikke hvor mange der er tilbage. Lad stå tomt for ubegrænset." value="${esc(d.stock ?? '')}" ${on ? '' : 'disabled'} />
         <button type="button" class="abtn ${d.soldout ? 'abtn--green' : 'abtn--ghost'} pd-dish__so" data-soldout title="${d.soldout ? 'Åbn for bestilling igen' : 'Meld retten udsolgt med ét tryk'}" ${on ? '' : 'disabled'}>${d.soldout ? '✅ Åbn igen' : '🚫 Udsolgt'}</button>
         <button type="button" class="abtn abtn--danger abtn--icon" data-delret title="Fjern retten" ${on ? '' : 'disabled'}>✕</button>
         ${sold ? `<small class="pd-dish__sold">solgt: ${sold}${d.stock != null && d.stock !== '' ? ` / ${d.stock}` : ''}</small>` : ''}
+        ${/* ANTAL ER EN TOTAL, IKKE EN REST.
+              Køkkenet fandt 10 ekstra portioner, skrev 10 i feltet – og retten
+              blev ved med at stå udsolgt, fordi 10 minus 30 solgte er nul.
+              Feltet betyder "hvor mange vi laver i alt", men midt i en vagt
+              læser man det som "hvor mange der er tilbage". Så her regner vi
+              det ud for dem og giver knappen, der gør det rigtige. */
+          opbrugt ? `<span class="pd-dish__opbrugt">
+            <b>Udsolgt</b> – der er solgt ${sold} af ${d.stock}.
+            Feltet er <b>hvor mange I laver i alt i dag</b>, ikke hvor mange der er tilbage.
+            Har I flere, så læg dem til: <button type="button" class="abtn abtn--ghost pd-dish__flere" data-flere="10" data-solgt="${sold}">+10 portioner (${sold + 10})</button>
+            <button type="button" class="abtn abtn--ghost pd-dish__flere" data-flere="5" data-solgt="${sold}">+5 (${sold + 5})</button>
+          </span>` : ''}
         <!-- billede er FRIVILLIGT. Er der intet, ser forsiden ud præcis
              som den plejer – kortet ændrer sig kun, når der ER et. -->
         <div class="pd-dish__foto" data-img="${esc(d.img || '')}">
@@ -2948,6 +2963,20 @@
         const dishEl = e.target.closest('.pd-dish');
         dishEl.dataset.vagthundLukket = '1';
         dishEl.querySelector('[data-vagthund]')?.remove();
+        return;
+      }
+
+      /* "vi fandt 10 mere" – lægger dem til det, der allerede er solgt,
+         så køkkenet slipper for at regne 30 + 10 midt i en vagt */
+      const flereBtn = e.target.closest('[data-flere]');
+      if (flereBtn) {
+        const dishEl = flereBtn.closest('.pd-dish');
+        const feltet = dishEl.querySelector('[data-f="stock"]');
+        const solgt = Number(flereBtn.dataset.solgt || 0);
+        feltet.value = solgt + Number(flereBtn.dataset.flere || 0);
+        saveDay(row);
+        renderDagensRetEditor();
+        toast(`${flereBtn.dataset.flere} portioner mere – retten kan bestilles igen`);
         return;
       }
 

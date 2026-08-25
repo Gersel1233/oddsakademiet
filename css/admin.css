@@ -986,6 +986,23 @@ button { font-family: var(--font-body); }
 .pd-dish__sold { grid-column: 1 / -1; color: var(--ink-soft); font-weight: 600; }
 /* mangler prisen, kan retten ikke bestilles – det skal ses, ikke gættes */
 .inline-input--mangler { border-color: #C9531F !important; background: #FFF4EC; }
+/* loftet er ramt, men køkkenet har fundet flere portioner */
+.pd-dish__opbrugt {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  font-size: 0.86rem;
+  color: #2F4F2C;
+  background: #EAF3E8;
+  border: 1px solid #BEDAB9;
+  border-radius: 9px;
+  padding: 8px 12px;
+  line-height: 1.5;
+}
+.pd-dish__opbrugt b { font-weight: 700; }
+.pd-dish__flere { white-space: nowrap; }
 .pd-dish__advarsel {
   grid-column: 1 / -1;
   font-size: 0.84rem;
