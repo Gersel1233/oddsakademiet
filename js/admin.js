@@ -3051,6 +3051,36 @@
   /* ============================================================
      MENUKORT – editor
      ============================================================ */
+  /* ------------------------------------------------------------
+     VALGMULIGHEDER PÅ EN MENUKORT-VARE
+     Panini findes med to slags fyld. Pommes kommer med dip, og
+     dippen skal vælges. Før stod det bare i beskrivelsen – og så
+     kom bestillingen ind i køkkenet som "Panini", uden at nogen
+     kunne se hvilken. Nu vælger kunden, og valget står på sedlen.
+     Retterne har haft det her længe; det er de samme felter.
+     ------------------------------------------------------------ */
+  function mValgRaekke(v = { navn: '', pris: '' }) {
+    return `
+      <div class="menued__valgrk">
+        <input class="inline-input" data-vf="navn" value="${esc(v.navn || '')}" placeholder="Fx Skinke og ost" />
+        <input class="inline-input" data-vf="pris" type="number" min="0" value="${esc(v.pris || '')}" placeholder="Tillæg" title="Valgfrit: koster denne mulighed ekstra?" />
+        <button type="button" class="abtn abtn--danger abtn--icon" data-act="del-mvalg" title="Fjern muligheden">✕</button>
+      </div>`;
+  }
+  function mValgBlok(item) {
+    const valg = (Array.isArray(item.valg) ? item.valg : []).filter((v) => v && v.navn);
+    return `
+      <div class="menued__valg" data-mvalg>
+        ${valg.length ? `
+          <input class="inline-input menued__valgtitel" data-f="valgtitel" value="${esc(item.valgTitel || '')}" placeholder="Overskrift til kunden – fx „Vælg dip&quot;" />
+          <div class="menued__valgrows">${valg.map((v) => mValgRaekke(v)).join('')}</div>`
+          : '<div class="menued__valgrows"></div>'}
+        <button type="button" class="abtn abtn--ghost menued__valgadd" data-act="add-mvalg">
+          ${valg.length ? '＋ Tilføj mulighed' : '＋ Kunden skal vælge <em>(fx dip eller fyld)</em>'}
+        </button>
+      </div>`;
+  }
+
   function renderMenuEditor() {
     const menu = S.getMenu();
     const st = S.getSettings();
@@ -3098,6 +3128,7 @@
                     <input class="inline-input" data-f="left" type="number" min="1" max="99" value="${esc(item.left ?? '')}" placeholder="Få tilbage?" title="Valgfrit: skriv fx 2, så viser hjemmesiden 'Kun 2 tilbage'" />
                     <button class="soldbtn ${item.soldout ? 'is-out' : ''}" data-act="toggle-soldout" data-f="soldout" data-on="${item.soldout ? 1 : 0}" title="${item.soldout ? 'Tryk for at sætte retten til salg igen' : 'Tryk, når retten er udsolgt i dag'}">${item.soldout ? 'UDSOLGT ✕' : 'Udsolgt?'}</button>
                     <button class="abtn abtn--danger abtn--icon" data-act="del-item" title="Fjern ret">✕</button>
+                    ${mValgBlok(item)}
                   </div>`).join('')}
               </div>
               <button class="abtn abtn--ghost" data-act="add-item">+ Tilføj ret</button>
@@ -3129,6 +3160,14 @@
         </div>
       </div>`;
 
+    /* ét sted der læser valgmulighederne af en vare – tomme rækker
+       tæller ikke med, så en halvskrevet mulighed aldrig når kunderne */
+    const laesValg = (itemEl) => $$('.menued__valgrk', itemEl).map((vr) => ({
+      navn: $('[data-vf="navn"]', vr).value.trim(),
+      pris: Number($('[data-vf="pris"]', vr).value) || 0,
+    })).filter((v) => v.navn);
+    const laesValgTitel = (itemEl) => ($('[data-f="valgtitel"]', itemEl)?.value || '').trim();
+
     function collectMenu() {
       const categories = $$('#menuCats .menued__cat').map((catEl) => ({
         id: `cat-${Math.random().toString(36).slice(2, 8)}`,
@@ -3140,6 +3179,8 @@
           price: $('[data-f="price"]', itemEl).value ? Number($('[data-f="price"]', itemEl).value) : null,
           soldout: $('[data-f="soldout"]', itemEl)?.dataset.on === '1',
           left: $('[data-f="left"]', itemEl)?.value ? Number($('[data-f="left"]', itemEl).value) : null,
+          valg: laesValg(itemEl),
+          valgTitel: laesValgTitel(itemEl),
         })).filter((i) => i.name),
       }));
       const weekly = $$('#menuWeekly .menued__cat').map((dayEl) =>
@@ -3205,6 +3246,8 @@
             price: $('[data-f="price"]', itemEl).value ? Number($('[data-f="price"]', itemEl).value) : null,
             soldout: $('[data-f="soldout"]', itemEl)?.dataset.on === '1',
             left: $('[data-f="left"]', itemEl)?.value ? Number($('[data-f="left"]', itemEl).value) : null,
+            valg: laesValg(itemEl),
+            valgTitel: laesValgTitel(itemEl),
           })),
         })),
         weekly: $$('#menuWeekly .menued__cat').map((dayEl) =>
@@ -3234,6 +3277,26 @@
         const name = $('[data-f="name"]', btn.closest('.menued__item')).value.trim() || 'Retten';
         collectAndSave();
         toast(on ? `„${name}" er til salg igen ✓` : `„${name}" er markeret UDSOLGT – kan ikke bestilles ✓`);
+      } else if (act === 'add-mvalg') {
+        /* rækken sættes ind uden at gen-tegne siden, så markøren kan
+           blive stående og køkkenet kan skrive videre med det samme.
+           Den gemmes af sig selv, i samme øjeblik der står noget i den. */
+        const blok = btn.closest('[data-mvalg]');
+        let rows = blok.querySelector('.menued__valgrows');
+        if (!blok.querySelector('[data-f="valgtitel"]')) {
+          blok.insertAdjacentHTML('afterbegin',
+            '<input class="inline-input menued__valgtitel" data-f="valgtitel" value="" placeholder="Overskrift til kunden – fx „Vælg dip&quot;" />');
+          rows = blok.querySelector('.menued__valgrows');
+        }
+        rows.insertAdjacentHTML('beforeend', mValgRaekke());
+        btn.innerHTML = '＋ Tilføj mulighed';
+        rows.querySelector('.menued__valgrk:last-child [data-vf="navn"]')?.focus();
+      } else if (act === 'del-mvalg') {
+        btn.closest('.menued__valgrk').remove();
+        const menu2 = collectCurrent();
+        S.setMenu(menu2);
+        renderMenuEditor();
+        savedToast();
       } else if (act === 'add-item' || act === 'add-witem') {
         const menu2 = collectCurrent();
         if (act === 'add-item') {

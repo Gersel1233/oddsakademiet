@@ -8,8 +8,14 @@
   const esc = (str) => String(str ?? '').replace(/[&<>"']/g, (c) => (
     { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
-  /* en ret kan have valgmuligheder – fx to slags bolle */
+  /* en ret ELLER en vare på menukortet kan have valgmuligheder – fx to
+     slags bolle, to slags panini-fyld eller tre slags dip */
   const valgFor = (d) => (Array.isArray(d && d.valg) ? d.valg.filter((v) => v && v.navn) : []);
+  /* køkkenet kan give listen sin egen overskrift, fx "Vælg dip" */
+  const valgTitel = (o, fald) => String((o && o.valgTitel) || '').trim() || fald;
+  const valgLinje = (o, fald) => (valgFor(o).length
+    ? `${esc(valgTitel(o, fald))}: ${valgFor(o).map((v) => `${esc(v.navn)}${Number(v.pris) ? ` (+ ${kr(Number(v.pris))})` : ''}`).join(' · ')}`
+    : '');
 
   /* beskrivelser kan skrives i PUNKTFORM: hver linje bliver sit eget punkt */
   function descHtml(desc) {
@@ -40,7 +46,7 @@
           <div>
             <div class="menuline__name">${esc(d.title)}<span class="menuline__badge">Dagens ret</span>${tag}</div>
             ${d.desc ? `<div class="menuline__desc">${descHtml(d.desc)}</div>` : ''}
-            ${valgFor(d).length ? `<div class="menuline__valg">Vælg mellem: ${valgFor(d).map((v) => `${esc(v.navn)}${Number(v.pris) ? ` (+ ${kr(Number(v.pris))})` : ''}`).join(' · ')}</div>` : ''}
+            ${valgFor(d).length ? `<div class="menuline__valg">${valgLinje(d, 'Vælg mellem')}</div>` : ''}
           </div>
           <span class="menuline__price">${d.price ? kr(d.price) : ''}</span>
         </div>`;
@@ -84,6 +90,7 @@
             <div>
               <div class="menuline__name">${esc(item.name)}${item.soldout ? '<span class="menuline__badge menuline__badge--out">Udsolgt i dag</span>' : (item.left ? `<span class="menuline__badge menuline__badge--few">Kun ${esc(item.left)} tilbage</span>` : '')}</div>
               ${item.desc ? `<div class="menuline__desc">${descHtml(item.desc)}</div>` : ''}
+              ${valgFor(item).length ? `<div class="menuline__valg">${valgLinje(item, 'Vælg')}</div>` : ''}
             </div>
             <span class="menuline__price">${item.price ? kr(item.price) : ''}</span>
           </div>`).join('')}
@@ -140,7 +147,7 @@
         <div class="ugerow__ret">
           <span class="ugerow__navn">${esc(d.title)}</span>
           ${d.desc ? `<span class="ugerow__desc">${descHtml(d.desc)}</span>` : ''}
-          ${valgFor(d).length ? `<span class="ugerow__valg">Vælg mellem: ${valgFor(d).map((v) => esc(v.navn)).join(' · ')}</span>` : ''}
+          ${valgFor(d).length ? `<span class="ugerow__valg">${esc(valgTitel(d, 'Vælg mellem'))}: ${valgFor(d).map((v) => esc(v.navn)).join(' · ')}</span>` : ''}
           ${d.price ? `<span class="ugerow__pris">${kr(d.price)}</span>` : ''}
         </div>`).join('');
       return `<div class="ugerow ${lukket ? 'ugerow--lukket' : ''} ${day.iso === iDag ? 'ugerow--idag' : ''}">

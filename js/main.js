@@ -881,12 +881,22 @@
      muligheder, ser den ud og virker præcis som før.
      ============================================================ */
   const valgFor = (d) => (Array.isArray(d && d.valg) ? d.valg.filter((v) => v && v.navn) : []);
-  const valgNoegle = (titel, valgNavn) => `d::${titel}::${valgNavn}`;
-  /* hvor mange af SAMME ret ligger allerede i kurven under en anden
+  /* Nøglen til ÉN bestemt mulighed. 'd' er dagens ret, 'm' er menukortet –
+     så en panini med to slags fyld opfører sig præcis som en dagens ret
+     med to slags bolle. Samme kode, samme kurv, samme seddel i køkkenet. */
+  const valgNoegle = (pre, navn, valgNavn) => `${pre}::${navn}::${valgNavn}`;
+  /* overskriften over mulighederne – køkkenet kan skrive fx "Vælg dip" */
+  const valgTitel = (o, fald) => `${String((o && o.valgTitel) || '').trim() || fald}:`;
+  /* hvor mange af SAMME vare ligger allerede i kurven under en anden
      mulighed? De trækker fra det samme antal portioner. */
-  function andreValgAfSammeRet(titel, undtagNoegle) {
+  function andreValgAfSamme(pre, navn, undtagNoegle) {
     return Object.entries(basket).reduce((sum, [k, l]) => (
-      k !== undtagNoegle && k.startsWith(`d::${titel}::`) ? sum + Number(l.qty || 0) : sum), 0);
+      k !== undtagNoegle && k.startsWith(`${pre}::${navn}::`) ? sum + Number(l.qty || 0) : sum), 0);
+  }
+  /* alt i kurven af én menukort-vare – både med og uden valgmuligheder */
+  function kurvAntalAfVare(navn) {
+    return Object.entries(basket).reduce((sum, [k, l]) => (
+      k === `m::${navn}` || k.startsWith(`m::${navn}::`) ? sum + Number(l.qty || 0) : sum), 0);
   }
 
   /* kurv-opbyggeren: dagens ret øverst, menukortets kategorier under */
@@ -917,7 +927,7 @@
       /* ret MED valgmuligheder: hver mulighed får sin egen linje, så man
          kan bestille fx to almindelige og én glutenfri på én gang */
       valg.forEach((v) => {
-        builderIndex[valgNoegle(d.title, v.navn)] = {
+        builderIndex[valgNoegle('d', d.title, v.navn)] = {
           name: d.title, valg: v.navn,
           price: (d.price ?? 0) + Number(v.pris || 0),
           tillaeg: Number(v.pris || 0),
@@ -933,10 +943,28 @@
       .filter((cat) => cat.availability !== 'hverdage' || !weekend)
       .forEach((cat) => groups.push({ name: cat.name, items: cat.items.filter((i) => i.name) }));
     groups.forEach((g) => g.items.forEach((item) => {
-      builderIndex['m::' + item.name] = {
-        name: item.name, price: item.price ?? null, kind: 'menu', cat: g.name,
-        soldout: !!item.soldout, left: item.left ?? null,
-      };
+      const ivalg = valgFor(item);
+      if (!ivalg.length) {
+        builderIndex['m::' + item.name] = {
+          name: item.name, price: item.price ?? null, kind: 'menu', cat: g.name,
+          soldout: !!item.soldout, left: item.left ?? null,
+        };
+        return;
+      }
+      /* Vare MED valgmuligheder – fx panini med to slags fyld, eller
+         pommes hvor dippen skal vælges. Hver mulighed får sin egen linje,
+         så man kan bestille to med mayo og én med ketchup på én gang.
+         Uden pris på varen bliver prisen ved med at være ukendt – så
+         lover kurven ikke et beløb, køkkenet ikke kan holde. */
+      ivalg.forEach((v) => {
+        builderIndex[valgNoegle('m', item.name, v.navn)] = {
+          name: item.name, valg: v.navn,
+          price: item.price == null ? null : Number(item.price) + Number(v.pris || 0),
+          tillaeg: Number(v.pris || 0),
+          kind: 'menu', cat: g.name,
+          soldout: !!item.soldout, left: item.left ?? null,
+        };
+      });
     }));
 
     /* ryd kurven for varer, der ikke findes på den valgte dag – eller er udsolgt.
@@ -963,7 +991,7 @@
     let html = '';
     dishes.forEach((d) => {
       const valg = valgFor(d);
-      const inf = builderIndex[valg.length ? valgNoegle(d.title, valg[0].navn) : 'd::' + d.title];
+      const inf = builderIndex[valg.length ? valgNoegle('d', d.title, valg[0].navn) : 'd::' + d.title];
       const rem = inf.left;
       const hoved = `
         <div class="bitem__info">
@@ -997,10 +1025,10 @@
         ${hoved}
         ${inf.soldout ? '<span class="builder__soldout">Udsolgt</span>' : `
         <div class="valgliste">
-          <span class="valgliste__titel">Vælg hvilken:</span>
+          <span class="valgliste__titel">${esc(valgTitel(d, 'Vælg hvilken'))}</span>
           ${valg.map((v) => {
-            const key = valgNoegle(d.title, v.navn);
-            const brugtAndre = andreValgAfSammeRet(d.title, key);
+            const key = valgNoegle('d', d.title, v.navn);
+            const brugtAndre = andreValgAfSamme('d', d.title, key);
             const maxHer = rem === null ? null : Math.max(0, rem - brugtAndre);
             return `
             <div class="valgrow">
@@ -1012,19 +1040,45 @@
       </div>`;
     });
     html += groups.map((g) => {
-      const count = g.items.reduce((s, item) => s + ((basket['m::' + item.name] || {}).qty || 0), 0);
+      const count = g.items.reduce((s, item) => s + kurvAntalAfVare(item.name), 0);
       const open = openCats.has(g.name) || count > 0;
       return `<details class="bcat" data-cat="${esc(g.name)}" ${open ? 'open' : ''}>
         <summary><span>${esc(g.name)}</span>${count ? `<span class="bcat__count">${count} valgt</span>` : '<span class="bcat__hint">+ tilføj</span>'}</summary>
-        ${g.items.map((item) => `
-          <div class="bitem ${item.soldout ? 'bitem--soldout' : ''}">
+        ${g.items.map((item) => {
+          const ivalg = valgFor(item);
+          const maxVare = item.left != null ? Number(item.left) : 50;
+          const info = `
             <div class="bitem__info">
               <strong>${esc(item.name)}${item.soldout ? '<span class="menuline__badge menuline__badge--out">Udsolgt i dag</span>' : (item.left ? `<span class="menuline__badge menuline__badge--few">Kun ${esc(item.left)} tilbage</span>` : '')}</strong>
               ${item.desc ? `<small>${esc(item.desc)}</small>` : ''}
               ${item.price ? `<em>${kr(item.price)}</em>` : ''}
-            </div>
-            ${item.soldout ? '<span class="builder__soldout">Udsolgt</span>' : stepper('m::' + item.name, item.left != null ? Number(item.left) : 50)}
-          </div>`).join('')}
+            </div>`;
+          if (!ivalg.length) {
+            return `<div class="bitem ${item.soldout ? 'bitem--soldout' : ''}">
+              ${info}
+              ${item.soldout ? '<span class="builder__soldout">Udsolgt</span>' : stepper('m::' + item.name, maxVare)}
+            </div>`;
+          }
+          /* Varen SKAL vælges til. Der findes ingen linje uden et valg,
+             så man kan ikke komme til at bestille "bare en panini" –
+             og køkkenet står aldrig med en seddel, de ikke kan læse. */
+          return `<div class="bitem bitem--valg ${item.soldout ? 'bitem--soldout' : ''}">
+            ${info}
+            ${item.soldout ? '<span class="builder__soldout">Udsolgt</span>' : `
+            <div class="valgliste">
+              <span class="valgliste__titel">${esc(valgTitel(item, 'Vælg'))}</span>
+              ${ivalg.map((v) => {
+                const key = valgNoegle('m', item.name, v.navn);
+                const brugtAndre = andreValgAfSamme('m', item.name, key);
+                return `
+                <div class="valgrow">
+                  <span class="valgrow__navn">${esc(v.navn)}${Number(v.pris) ? `<em class="valgrow__tillaeg">+ ${kr(Number(v.pris))}</em>` : ''}</span>
+                  ${stepper(key, Math.max(0, maxVare - brugtAndre))}
+                </div>`;
+              }).join('')}
+            </div>`}
+          </div>`;
+        }).join('')}
       </details>`;
     }).join('');
 
@@ -1049,8 +1103,10 @@
     let max = key.startsWith('d::')
       ? S.getRemainingFor(orderDate.value, info.name)
       : (info.left != null ? Number(info.left) : 50);
-    /* har retten valgmuligheder, deler de det SAMME antal portioner */
-    if (max !== null && info.valg) max = Math.max(0, max - andreValgAfSammeRet(info.name, key));
+    /* har varen valgmuligheder, deler de det SAMME antal portioner */
+    if (max !== null && info.valg) {
+      max = Math.max(0, max - andreValgAfSamme(key.startsWith('d::') ? 'd' : 'm', info.name, key));
+    }
     if (max !== null && next > max) next = max;
     if (next <= 0) delete basket[key];
     else {

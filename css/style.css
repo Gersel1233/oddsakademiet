@@ -2420,8 +2420,13 @@ body.orders-paused .nav__cta { display: none !important; }
   color: var(--ink); line-height: 1.5;
 }
 
-/* ---------- vælg mellem flere udgaver af dagens ret ---------- */
+/* ---------- vælg mellem flere udgaver af den samme ret/vare ---------- */
 .builder__dagens--valg { display: block; }
+/* menukortets varer ligger normalt som en flex-række med ét tælleværk til
+   højre. Skal der vælges (panini-fyld, dip), lægges mulighederne under
+   varen i stedet – ellers bliver rækken for smal til dem. */
+.bitem--valg { display: block; }
+.bitem--valg .valgliste { margin-top: 10px; padding-top: 10px; }
 .valgliste {
   margin-top: 12px; padding-top: 12px;
   border-top: 1px dashed rgba(28, 24, 20, 0.16);
@@ -2435,7 +2440,9 @@ body.orders-paused .nav__cta { display: none !important; }
   background: #fff;
 }
 .valgrow__navn { font-weight: 600; line-height: 1.35; }
-.valgrow__tillaeg { font-style: normal; font-weight: 500; color: var(--ink-soft); margin-left: 7px; }
+/* tillægget må aldrig knække midt over, så "+" står alene på én linje
+   og "5 kr." på den næste – det læses som to ting i stedet for én pris */
+.valgrow__tillaeg { font-style: normal; font-weight: 500; color: var(--ink-soft); margin-left: 7px; white-space: nowrap; }
 .daycard__valg, .menuline__valg, .ugerow__valg {
   display: block; margin-top: 5px;
   font-size: 0.85rem; line-height: 1.45; color: var(--ink-soft);
