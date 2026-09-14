@@ -85,10 +85,47 @@
     liveAlerts(); /* sæt live-alarmens nulpunkt til det, der allerede er hentet */
   }
 
-  /* skift login-formularen til e-mail/adgangskode, når skyen er aktiv */
+  /* ------------------------------------------------------------
+     LOGIN-SKÆRMEN HAR TRE TILSTANDE – og det er vigtigt, at den
+     aldrig lyver om hvilken den er i.
+
+     Før kunne den vise en PIN-boks, mens databasen var nede. Koden
+     blev så målt op mod en gammel nød-PIN, ingen i køkkenet kender,
+     og skærmen svarede "Forkert PIN". Personalet stod og skrev den
+     rigtige adgangskode igen og igen og troede, de tastede forkert.
+     De gjorde ikke. Skærmen spurgte bare om noget andet, end de tror.
+
+     Nu: er databasen nede, kan man slet ikke taste. Der står hvorfor,
+     og siden prøver selv at komme på igen. I det sekund den er der,
+     skifter feltet af sig selv til e-mail og adgangskode.
+     ------------------------------------------------------------ */
   function syncLoginMode() {
     const emailInput = $('#loginEmail');
     const pinInput = $('#loginPin');
+    const submit = $('#loginSubmit');
+    /* to slags "ikke klar": vi er lige landet på siden og er ved at
+       forbinde (helt normalt, varer et øjeblik), eller databasen har
+       faktisk sagt fra. Kun den anden skal lyde alvorlig. */
+    const forbinder = S.isCloudConfigured() && !S.isCloud() && !S.isCloudDown();
+    const nede = S.isCloudConfigured() && S.isCloudDown();
+
+    if (forbinder || nede) {
+      pinInput.disabled = true;
+      submit.disabled = true;
+      pinInput.value = '';
+      submit.textContent = nede ? 'Venter på databasen…' : 'Et øjeblik…';
+      $('#loginHint').innerHTML = nede
+        ? '⏳ <strong>Vi kan ikke få fat i databasen lige nu.</strong><br>'
+          + 'Det er ikke jer – koden er ikke forkert. Siden prøver selv igen '
+          + 'og åbner af sig selv, så snart der er hul igennem.'
+        : 'Forbinder til databasen…';
+      $('#loginError').hidden = true;
+      return;
+    }
+
+    pinInput.disabled = false;
+    submit.disabled = false;
+    submit.textContent = 'Log ind';
     if (S.isCloud() && emailInput.hidden) {
       emailInput.hidden = false;
       emailInput.value = S.getSettings().email || '';
@@ -96,14 +133,15 @@
       pinInput.maxLength = 64;
       pinInput.removeAttribute('inputmode');
       pinInput.classList.add('is-password');
-      $('#loginHint').textContent = 'Log ind med chefens e-mail og adgangskode.';
       $('#loginError').textContent = 'Forkert e-mail eller adgangskode.';
     }
-    if (S.isCloudConfigured() && S.isCloudDown()) {
-      $('#loginHint').textContent = '⚠️ Ingen forbindelse til databasen lige nu – tjek internettet og genindlæs siden.';
-    }
+    $('#loginHint').textContent = S.isCloud()
+      ? 'Log ind med chefens e-mail og adgangskode.'
+      : 'Indtast din PIN-kode for at åbne dashboardet.';
   }
   syncLoginMode();
+  /* kommer databasen op, mens de står og kigger, åbner skærmen selv */
+  S.subscribe(() => { if (loginScreen && !loginScreen.hidden) syncLoginMode(); });
 
   $('#loginForm').addEventListener('submit', async (e) => {
     e.preventDefault();

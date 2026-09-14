@@ -451,6 +451,9 @@ const SpiisStore = (() => {
      Kræver supabase-js (indlæses kun i admin) og at tabellerne er meldt
      til i databasen (update-9). Polling kører altid som sikkerhedsnet. */
   let rtClient = null;
+  /* true = den direkte linje til databasen er oppe, og vi får besked
+     om ændringer af os selv i stedet for at skulle spørge hele tiden */
+  let rtLive = false;
   function startRealtime() {
     if (rtClient || !cloud || !session || typeof window === 'undefined' || !window.supabase) return;
     try {
@@ -465,8 +468,11 @@ const SpiisStore = (() => {
         .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, kick)
         .on('postgres_changes', { event: '*', schema: 'public', table: 'bookings' }, kick)
         .on('postgres_changes', { event: '*', schema: 'public', table: 'config' }, kick)
-        .subscribe();
-    } catch { rtClient = null; /* realtime er en bonus – polling dækker */ }
+        /* Virker den direkte linje, får vi besked om hver eneste ændring
+           inden for et sekund – og så behøver vi ikke spørge databasen
+           hvert tiende. Falder den ud, går vi tilbage til at spørge tit. */
+        .subscribe((status) => { rtLive = status === 'SUBSCRIBED'; });
+    } catch { rtClient = null; rtLive = false; /* realtime er en bonus – polling dækker */ }
   }
 
   /* kundesiden: ændringer fra admin (menu, dagens ret, nyheder, ferie, lukkede
@@ -486,14 +492,37 @@ const SpiisStore = (() => {
     } catch { rtPublic = null; }
   }
 
+  /* ------------------------------------------------------------
+     HVOR OFTE SKAL ADMIN SPØRGE DATABASEN?
+
+     Før: hvert tiende sekund, altid – også når iPad'en lå slukket på
+     køkkenbordet. Hver gang blev ALLE bestillinger fra 60 dage hentet
+     forfra. Én skærm tændt en arbejdsdag blev til omkring 3.600
+     hentninger, og det var dét, der brugte databasens datamængde op.
+
+     Nu: er den direkte linje (realtime) oppe, får vi alligevel besked
+     om hver ændring med det samme – så spørger vi kun én gang i
+     minuttet for en sikkerheds skyld. Er linjen faldet ud, spørger vi
+     hvert tiende sekund som før. Og er skærmen slukket eller fanen i
+     baggrunden, henter vi ingenting: den henter friske data i samme
+     sekund, den vågner (wakeRefresh nedenfor).
+
+     Køkkenet mærker ingen forskel – nye bestillinger kommer ind lige
+     så hurtigt som før, fordi det er realtime der leverer dem.
+     ------------------------------------------------------------ */
+  const pollPause = () => (rtLive ? 60000 : 10000);
+
   function startAdminPolling() {
     if (!cloud || adminPollTimer) return;
     startRealtime();
-    adminPollTimer = setInterval(() => {
+    const tjek = () => {
+      adminPollTimer = setTimeout(tjek, pollPause());
+      if (typeof document !== 'undefined' && document.hidden) return;
       fetchAdminData().catch(() => {});
       /* menukortet (fx "få tilbage"-antal, der tæller ned) skal også følge med */
       refreshPublic();
-    }, 10000);
+    };
+    adminPollTimer = setTimeout(tjek, pollPause());
     /* telefonen fryser appen i baggrunden – hent friske data i SAMME
        sekund den åbnes igen, i stedet for at vente på næste tjek */
     document.addEventListener('visibilitychange', () => {
@@ -504,38 +533,61 @@ const SpiisStore = (() => {
     window.addEventListener('online', wakeRefresh);
   }
 
+  /* timere og lyttere må kun sættes op ÉN gang, uanset hvor mange
+     gange vi har måttet prøve at få fat i databasen */
+  let cloudOpsat = false;
+
+  async function forbindTilSkyen(forsoeg = 0) {
+    try {
+      const res = await sbFetch('/rest/v1/config?id=eq.1&select=data');
+      if (!res.ok) throw new Error();
+      cloud = true;
+      cloudDown = false;
+      /* i sky-tilstand ejes bestillinger/bookinger/noter af databasen */
+      data.orders = [];
+      data.bookings = [];
+      data.notes = {};
+      const rows = await res.json();
+      if (rows[0]) mergeConfig(rows[0].data);
+      await refreshPublic();
+      if (hasSession()) await fetchAdminData().catch(() => {});
+      save(false);
+      emit();
+      if (cloudOpsat) return;
+      cloudOpsat = true;
+      startPublicRealtime();
+      /* Ligger telefonen i lommen eller fanen i baggrunden, er der ingen
+         der kigger – så er der heller ingen grund til at hente. Den
+         henter alligevel med det samme, når skærmen vågner (nedenfor). */
+      setInterval(() => {
+        if (typeof document !== 'undefined' && document.hidden) return;
+        refreshPublic();
+      }, 60000);
+      document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible') {
+          refreshPublic();
+          if (hasSession()) fetchAdminData().catch(() => {});
+        }
+      });
+    } catch {
+      /* Databasen svarer ikke. Kør lokalt og lad siderne sige det ærligt.
+         FØR gav vi op efter første forsøg – og så var siden død, til
+         nogen huskede at genindlæse den. Det kostede en aften, hvor
+         databasen var oppe igen længe før køkkenet opdagede det.
+         Nu bliver vi ved med at prøve i stilhed, med lidt længere
+         mellemrum hver gang, og i det sekund databasen svarer, henter
+         siden sig selv ind igen – uden at nogen rører noget. */
+      cloud = false;
+      cloudDown = true;
+      emit();
+      const vent = Math.min(30000, 2000 * 2 ** Math.min(forsoeg, 4));
+      setTimeout(() => { forbindTilSkyen(forsoeg + 1); }, vent);
+    }
+  }
+
   function initCloud() {
     if (!CLOUD) return;
-    cloudReady = (async () => {
-      try {
-        const res = await sbFetch('/rest/v1/config?id=eq.1&select=data');
-        if (!res.ok) throw new Error();
-        cloud = true;
-        /* i sky-tilstand ejes bestillinger/bookinger/noter af databasen */
-        data.orders = [];
-        data.bookings = [];
-        data.notes = {};
-        const rows = await res.json();
-        if (rows[0]) mergeConfig(rows[0].data);
-        await refreshPublic();
-        if (hasSession()) await fetchAdminData().catch(() => {});
-        save(false);
-        emit();
-        startPublicRealtime();
-        setInterval(refreshPublic, 60000);
-        document.addEventListener('visibilitychange', () => {
-          if (document.visibilityState === 'visible') {
-            refreshPublic();
-            if (hasSession()) fetchAdminData().catch(() => {});
-          }
-        });
-      } catch {
-        /* databasen svarer ikke – kør lokalt og lad siderne vise besked */
-        cloud = false;
-        cloudDown = true;
-        emit();
-      }
-    })();
+    cloudReady = forbindTilSkyen();
   }
   initCloud();
 
