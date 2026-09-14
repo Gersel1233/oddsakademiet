@@ -1203,8 +1203,52 @@
     }
 
     pendingOrder = { iso, time, persons, type, name, phone, note, lines };
-    openConfirm();
+    friskeTalFoerst(() => openConfirm());
   });
+
+  /* ------------------------------------------------------------
+     EN SIDE, DER HAR STÅET ÅBEN FOR LÆNGE
+
+     En telefon kan have haft spiis.dk liggende i en fane siden i går.
+     Imens kan køkkenet have lukket dagen, taget en ret af eller sat
+     noget til udsolgt. Kunden ser stadig det gamle.
+
+     Databasen siger nu nej til alt det – den er den sidste dør, og
+     den kan ikke narres af en gammel side. Men det er en dårlig
+     oplevelse at få nej FØRST, efter man har bekræftet.
+
+     Derfor: er tallene på siden blevet gamle, henter vi friske, før
+     kunden overhovedet får kvitteringen at se. Så bygger de deres
+     bestilling på det, der gælder lige nu.
+     ------------------------------------------------------------ */
+  const DATA_FOR_GAMMELT = 30000; /* et halvt minut */
+  function friskeTalFoerst(saa) {
+    if (!S.isCloud() || S.dataAlder() < DATA_FOR_GAMMELT) { saa(); return; }
+    const knap = $('#orderForm button[type="submit"]');
+    const gammelTekst = knap ? knap.textContent : '';
+    if (knap) { knap.disabled = true; knap.textContent = 'Tjekker…'; }
+    /* venter aldrig længere end 4 sekunder – dårligt wifi må ikke
+       spærre for en bestilling, databasen alligevel skal godkende */
+    Promise.race([
+      S.refreshPublic(),
+      new Promise((r) => setTimeout(r, 4000)),
+    ]).then(() => {
+      if (knap) { knap.disabled = false; knap.textContent = gammelTekst; }
+      const o = pendingOrder;
+      if (!o) return;
+      /* nåede køkkenet at lukke dagen, mens siden lå åben? */
+      if (S.isOrderingClosed(o.iso) || S.getSettings().ordersPaused) {
+        const error = $('#orderError');
+        error.textContent = 'Denne dag er blevet lukket for bestillinger, mens siden stod åben. '
+          + 'Vi har lige opdateret dagene – vælg venligst en anden dag.';
+        error.hidden = false;
+        pendingOrder = null;
+        renderOrderDates();
+        return;
+      }
+      saa();
+    });
+  }
 
   function openConfirm() {
     const o = pendingOrder;

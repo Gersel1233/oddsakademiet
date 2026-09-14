@@ -294,6 +294,12 @@ const SpiisStore = (() => {
   /* spring gen-tegning over, når polling ikke bragte nyt – ellers
      genopbygges siden hvert minut uden grund */
   let lastPublicSnap = '';
+  /* hvornår hentede vi sidst friske tal fra databasen? Bruges til at
+     opdage en side, der har stået åben så længe, at det den viser kan
+     være forældet – fx en dag køkkenet har lukket i mellemtiden. */
+  let sidsteFriske = 0;
+  const dataAlder = () => (sidsteFriske ? Date.now() - sidsteFriske : Infinity);
+
   async function refreshPublic() {
     if (!cloud) return;
     try {
@@ -313,6 +319,10 @@ const SpiisStore = (() => {
       if (soldRes.ok) remoteSold = await soldRes.json();
       let remoteDish = null;
       if (dishRes && dishRes.ok) { try { remoteDish = await dishRes.json(); } catch { remoteDish = null; } }
+
+      /* vi NÅEDE databasen – uanset om der var noget nyt. Tidspunktet
+         bruges til at se, om siden har stået åben og er blevet gammel */
+      sidsteFriske = Date.now();
 
       const snap = JSON.stringify([remoteCfg, remoteSold, remoteDish]);
       if (snap === lastPublicSnap) return;
@@ -500,29 +510,70 @@ const SpiisStore = (() => {
      forfra. Én skærm tændt en arbejdsdag blev til omkring 3.600
      hentninger, og det var dét, der brugte databasens datamængde op.
 
-     Nu: er den direkte linje (realtime) oppe, får vi alligevel besked
-     om hver ændring med det samme – så spørger vi kun én gang i
-     minuttet for en sikkerheds skyld. Er linjen faldet ud, spørger vi
-     hvert tiende sekund som før. Og er skærmen slukket eller fanen i
-     baggrunden, henter vi ingenting: den henter friske data i samme
-     sekund, den vågner (wakeRefresh nedenfor).
+     Nu spørger vi stadig hvert tiende sekund – men vi stiller et
+     LILLE spørgsmål: "hvornår kom den nyeste bestilling ind?". Svaret
+     er én dato. Er den den samme som sidst, er der ingen nye
+     bestillinger, og så henter vi ingenting.
 
-     Køkkenet mærker ingen forskel – nye bestillinger kommer ind lige
-     så hurtigt som før, fordi det er realtime der leverer dem.
+     Er der noget nyt, hentes hele listen med det samme. Derfor kan en
+     ny bestilling ALDRIG ligge mere end ti sekunder, uden at køkkenet
+     ser den – heller ikke hvis den direkte linje (realtime) er faldet
+     ud uden at sige det. Til daglig kommer den alligevel inden for et
+     sekund, fordi realtime skubber den ud.
+
+     Hele listen hentes derudover en gang imellem for en sikkerheds
+     skyld: hvert 5. minut når realtime kører, hvert minut når den
+     ikke gør. Det fanger ændringer, en ANDEN skærm har lavet.
+
+     Og er skærmen slukket eller fanen i baggrunden, henter vi
+     ingenting: den henter friske data i samme sekund, den vågner
+     (wakeRefresh nedenfor).
      ------------------------------------------------------------ */
-  const pollPause = () => (rtLive ? 60000 : 10000);
+  const POLL_KORT = 10000;  /* det lille spørgsmål – kører altid */
+  /* hele hentningen: er den direkte linje oppe, kommer ændringer
+     alligevel af sig selv, så den her er bare et sikkerhedsnet */
+  const pollHelt = () => (rtLive ? 300000 : 60000);
+  let sidsteHele = 0;
+  let sidsteOrdreStempel = null;
+
+  /* Et spørgsmål der kun henter ÉN dato: "hvornår kom den nyeste
+     bestilling ind?". Svaret fylder under hundrede tegn – mod flere
+     titusinder for hele listen. Er datoen den samme som sidst, er der
+     ingen nye bestillinger, og så er der intet at hente. */
+  async function erDerNyeBestillinger() {
+    const rows = await sbRows('/rest/v1/orders?select=created_at&order=created_at.desc&limit=1');
+    const stempel = rows[0] ? rows[0].created_at : '';
+    if (stempel === sidsteOrdreStempel) return false;
+    sidsteOrdreStempel = stempel;
+    return true;
+  }
+
+  async function adminTjek() {
+    try {
+      const nyeOrdrer = await erDerNyeBestillinger();
+      const forfalden = Date.now() - sidsteHele >= pollHelt();
+      if (!nyeOrdrer && !forfalden) return;
+      sidsteHele = Date.now();
+      await fetchAdminData().catch(() => {});
+      /* menukortet (fx "få tilbage"-antal, der tæller ned) skal også følge med */
+      refreshPublic();
+    } catch {
+      /* nettet driller – næste tjek om ti sekunder prøver igen.
+         Vi nulstiller stemplet, så vi hellere henter én gang for
+         meget end går glip af en bestilling, der kom imens. */
+      sidsteOrdreStempel = null;
+    }
+  }
 
   function startAdminPolling() {
     if (!cloud || adminPollTimer) return;
     startRealtime();
     const tjek = () => {
-      adminPollTimer = setTimeout(tjek, pollPause());
+      adminPollTimer = setTimeout(tjek, POLL_KORT);
       if (typeof document !== 'undefined' && document.hidden) return;
-      fetchAdminData().catch(() => {});
-      /* menukortet (fx "få tilbage"-antal, der tæller ned) skal også følge med */
-      refreshPublic();
+      adminTjek();
     };
-    adminPollTimer = setTimeout(tjek, pollPause());
+    adminPollTimer = setTimeout(tjek, POLL_KORT);
     /* telefonen fryser appen i baggrunden – hent friske data i SAMME
        sekund den åbnes igen, i stedet for at vente på næste tjek */
     document.addEventListener('visibilitychange', () => {
@@ -1691,7 +1742,7 @@ const SpiisStore = (() => {
     exportData, resetData,
     subscribe,
     /* sky */
-    isCloud, isCloudConfigured, isCloudDown,
+    isCloud, isCloudConfigured, isCloudDown, dataAlder,
     hasSession, adminLogin, logout, startAdminPolling,
     refreshAdmin: fetchAdminData, refreshPublic,
     savePushSubscription, deletePushSubscription,
