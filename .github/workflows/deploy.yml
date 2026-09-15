@@ -47,6 +47,12 @@ jobs:
         with:
           enablement: true
 
+      # Værktøjsfiler til udvikling hører ikke til på restaurantens
+      # hjemmeside. Deployet lægger hele mappen op, så de fjernes her –
+      # kun fra kopien på byggeserveren, aldrig fra selve repoet.
+      - name: Fjern udviklingsfiler
+        run: rm -rf .claude CLAUDE.md LAERT-AF-SPIIS.md supabase
+
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
