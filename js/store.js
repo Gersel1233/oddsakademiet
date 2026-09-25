@@ -69,7 +69,6 @@ const SpiisStore = (() => {
         address: 'Karlslunde Idrætsforening, Kongens Enge 42, 2690 Karlslunde',
         phone: '93 99 58 58',
         email: 'spiis.bestilling@gmail.com',
-        pin: '9399',
         orderFrom: '16:00', /* bestillinger kan tidligst vælges kl. */
         orderTo: '21:00',   /* bestillinger kan senest vælges kl. */
       },
@@ -252,8 +251,6 @@ const SpiisStore = (() => {
     CONFIG_KEYS.forEach((k) => {
       if (remote[k] != null) data[k] = remote[k];
     });
-    /* pin bruges kun lokalt og ligger aldrig i skyen */
-    if (!data.settings.pin) data.settings.pin = '9399';
   }
 
   function configSlice() {

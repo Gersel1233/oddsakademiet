@@ -71,9 +71,27 @@
   const loginScreen = $('#loginScreen');
   const app = $('#app');
 
+  /* ------------------------------------------------------------
+     ER MAN LOGGET IND?
+
+     Her stod: et rigtigt login ELLER et flag i browserens eget
+     lager. Flaget var meningen som en nødløsning til udvikling
+     uden database — men det gjaldt også på den rigtige side, og
+     alle kan sætte et flag i deres egen browser. To linjer i
+     konsollen åbnede altså admin-skærmen på spiis.dk.
+
+     Der kom ingen data frem (databasen svarer ikke uden login, og
+     enhver ændring blev afvist), men skærmen så ægte ud. Det er
+     ikke godt nok.
+
+     Nu: er databasen sat op, gælder KUN et rigtigt login. Flaget
+     kan ikke åbne noget. Kører siden uden database — altså på en
+     udviklers egen maskine med opdigtede data — er der intet at
+     beskytte, og så er der ingen login-skærm.
+     ------------------------------------------------------------ */
   function isAuthed() {
-    /* sky: rigtigt login · lokalt: PIN-flag */
-    return S.hasSession() || localStorage.getItem(AUTH_KEY) === '1';
+    if (S.isCloudConfigured()) return S.hasSession();
+    return true;
   }
   function showApp() {
     loginScreen.hidden = true;
@@ -137,7 +155,7 @@
     }
     $('#loginHint').textContent = S.isCloud()
       ? 'Log ind med chefens e-mail og adgangskode.'
-      : 'Indtast din PIN-kode for at åbne dashboardet.';
+      : 'Log ind med chefens e-mail og adgangskode.';
   }
   syncLoginMode();
   /* kommer databasen op, mens de står og kigger, åbner skærmen selv */
@@ -162,16 +180,11 @@
       }
       return;
     }
-    const pin = $('#loginPin').value.trim();
-    if (pin === S.getSettings().pin) {
-      localStorage.setItem(AUTH_KEY, '1');
-      errorEl.hidden = true;
-      showApp();
-    } else {
-      errorEl.hidden = false;
-      $('#loginPin').value = '';
-      $('#loginPin').focus();
-    }
+    /* Uden database er der ingen login-skaerm (se isAuthed), saa
+       her kommer vi aldrig hen. Skulle det alligevel ske, siger vi
+       fra i stedet for at lukke nogen ind paa et gaet. */
+    errorEl.textContent = 'Log ind med chefens e-mail og adgangskode.';
+    errorEl.hidden = false;
   });
   $('#logoutBtn').addEventListener('click', () => {
     S.logout();
@@ -3547,11 +3560,12 @@
         </p>
       </div>` : `
       <div class="acard">
-        <div class="acard__head"><h2>🔑 PIN-kode til admin</h2></div>
-        <div class="formgrid">
-          <label class="afield"><span>Ny PIN (4-8 cifre)</span><input id="setPin" inputmode="numeric" maxlength="8" placeholder="••••" /></label>
-        </div>
-        <button class="abtn" id="pinSave" style="margin-top:16px;">Skift PIN</button>
+        <div class="acard__head"><h2>🔑 Adgang</h2></div>
+        <p class="sub" style="color:var(--ink-soft);">
+          Siden koerer uden database lige nu, saa der er ingen login. Saet
+          databasen op i <code>js/config.js</code>, saa kraeves chefens
+          e-mail og adgangskode.
+        </p>
       </div>`}
 
       <div class="acard">
@@ -3588,14 +3602,6 @@
       savedToast();
     }, 900);
     $('#setGrid').addEventListener('input', autosaveSettings);
-
-    $('#pinSave')?.addEventListener('click', () => {
-      const pin = $('#setPin').value.trim();
-      if (!/^\d{4,8}$/.test(pin)) { toast('PIN skal være 4-8 cifre'); return; }
-      S.updateSettings({ pin });
-      $('#setPin').value = '';
-      toast('PIN-koden er skiftet ✓');
-    });
 
     $('#pushEnableBtn')?.addEventListener('click', async () => {
       await enablePush();
