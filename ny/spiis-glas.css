@@ -199,3 +199,11 @@ body[data-ny] .dayplan--closed .dayplan__date{ grid-row:1; grid-column:1; align-
   body[data-ny] .dayplan__dish--kommer{ font-size:15px !important; }
   body[data-ny] .dayplan--closed .dayplan__dish{ font-size:15px !important; }
 }
+
+/* tapas on a pause: the order form gives way to a short, calm note */
+.ny-tapas-pause{ display:grid; align-content:start; gap:12px; padding:clamp(22px, 3vw, 32px) !important; }
+.ny-tapas-pause__dot{ width:10px; height:10px; border-radius:50%; background:var(--accent); box-shadow:0 0 0 4px rgba(233,121,58,.2); }
+.ny-tapas-pause h3{ font:500 clamp(24px, 2.4vw, 30px)/1.1 var(--sans); letter-spacing:-.03em; }
+.ny-tapas-pause p{ font:400 16px/1.55 var(--sans); color:var(--t2); max-width:30em; }
+.ny-tapas-pause .btn{ justify-self:start; margin-top:6px; }
+@media (max-width:767px){ .ny-tapas-pause .btn{ justify-self:stretch; } }

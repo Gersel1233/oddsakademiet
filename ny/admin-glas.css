@@ -1,0 +1,223 @@
+/* Spiis admin /ny/: the same admin, in Spiis' signature.
+   Warm stone, Chivo all the way, Lesreg's glass materials (Film for cards,
+   Lens for what you touch), Spiis' orange for what matters now.
+   Loaded after css/admin.css; it only restyles, the admin works as before. */
+
+@font-face{ font-family:'Chivo'; font-weight:300; font-display:swap; src:url(assets/fonts/chivo-300.woff2) format('woff2'); }
+@font-face{ font-family:'Chivo'; font-weight:400; font-display:swap; src:url(assets/fonts/chivo-400.woff2) format('woff2'); }
+@font-face{ font-family:'Chivo'; font-weight:500; font-display:swap; src:url(assets/fonts/chivo-500.woff2) format('woff2'); }
+@font-face{ font-family:'Chivo'; font-weight:600; font-display:swap; src:url(assets/fonts/chivo-600.woff2) format('woff2'); }
+@font-face{ font-family:'Fragment Mono'; font-weight:400; font-display:swap; src:url(assets/fonts/fragmentmono-400.woff2) format('woff2'); }
+
+:root{
+  /* the admin's own names, pointed at the signature */
+  --cream:#D9D1C6; --cream-2:rgba(255,255,255,.4);
+  --ink:#1A1410; --ink-soft:rgba(26,20,16,.66);
+  --accent:#E9793A; --accent-deep:#B24E18; --accent-soft:rgba(233,121,58,.14);
+  --green:#1E7A3C; --green-soft:rgba(52,199,89,.14);
+  --red:#B3372B; --red-soft:rgba(255,69,58,.12);
+  --moede:#2F5D9A; --moede-soft:rgba(47,93,154,.12);
+  --line:rgba(26,20,16,.13);
+  --shadow:6px 12px 32px rgba(13,13,15,.16);
+  --radius:22px;
+  --font-display:'Chivo', system-ui, sans-serif; --font-body:'Chivo', system-ui, sans-serif; --font-logo:'Chivo', system-ui, sans-serif;
+  --mono:'Fragment Mono', ui-monospace, monospace;
+  /* the library's materials */
+  --film:rgba(255,255,255,.16); --film-sh:2px 4px 12px rgba(13,13,15,.10);
+  --pane-sh:6px 12px 32px rgba(13,13,15,.16);
+  --lens:rgba(255,255,255,.38); --lens-sh:3px 6px 16px rgba(13,13,15,.16);
+  --dense:rgba(244,240,234,.9);
+  --edge:linear-gradient(135deg, rgba(255,255,255,.85), rgba(255,255,255,.12) 45%, rgba(255,255,255,.4));
+  --field:rgba(255,255,255,.34);
+  --blur:blur(24px) saturate(1.6);
+  --t3:rgba(26,20,16,.52);
+}
+
+html{ background:var(--cream); color-scheme:light; }
+body[data-ny]{ background:transparent; color:var(--ink); font-family:var(--font-body); font-size:15.5px; letter-spacing:-.003em; -webkit-font-smoothing:antialiased; }
+body[data-ny] *{ font-style:normal; }
+.ny-bg{ position:fixed; inset:0; z-index:-1; pointer-events:none; overflow:hidden; background:linear-gradient(180deg, #D3CABE, var(--cream) 40%, #CEC4B7); }
+.ny-bg i{ position:absolute; border-radius:50%; filter:blur(60px); }
+.ny-bg .b1{ left:-12%; top:6%; width:55vw; height:55vw; background:radial-gradient(closest-side, rgba(233,121,58,.22), transparent); }
+.ny-bg .b2{ right:-15%; top:40%; width:60vw; height:60vw; background:radial-gradient(closest-side, rgba(236,160,96,.24), transparent); }
+.ny-bg .b3{ left:30%; top:-20%; width:45vw; height:45vw; background:radial-gradient(closest-side, rgba(110,84,64,.18), transparent); }
+
+/* the specular edge, for every glass surface below */
+body[data-ny] .acard::after, body[data-ny] .stat::after, body[data-ny] .login__card::after, body[data-ny] .sidebar::after, body[data-ny] .ny-site::after{
+  content:""; position:absolute; inset:0; border-radius:inherit; padding:1px; pointer-events:none; background:var(--edge);
+  -webkit-mask:linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite:xor; mask:linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0); }
+
+/* ---------- type: Chivo, two weights that carry, no serif ---------- */
+body[data-ny] h1, body[data-ny] h2, body[data-ny] h3, body[data-ny] h4{ font-family:var(--font-display); letter-spacing:-.02em; }
+body[data-ny] .topbar__title{ font:500 28px/1.1 var(--font-display); letter-spacing:-.035em; }
+body[data-ny] .topbar__date{ font:400 13.5px/1.4 var(--font-body); color:var(--ink-soft); }
+body[data-ny] .acard__head h2{ font:600 18px/1.25 var(--font-display); letter-spacing:-.015em; }
+body[data-ny] .acard__head .sub{ font-size:13px; color:var(--ink-soft); }
+
+/* ---------- login ---------- */
+body[data-ny] .login{ background:none; }
+body[data-ny] .login__card{ position:relative; background:var(--film); box-shadow:var(--pane-sh); -webkit-backdrop-filter:var(--blur); backdrop-filter:var(--blur); border-radius:32px; }
+body[data-ny] .login__card h1{ font:500 34px/1 var(--font-display); letter-spacing:-.04em; }
+body[data-ny] .login__card h1 span{ color:rgba(26,20,16,.45); font:inherit; }
+body[data-ny] .login__hat{ color:var(--accent); }
+body[data-ny] .login input{ background:var(--field); border:0; box-shadow:inset 0 0 0 1px rgba(255,255,255,.6); border-radius:16px; font-family:var(--font-body); }
+
+/* ---------- the side: a floating pane of glass ---------- */
+body[data-ny] .app{ grid-template-columns:268px 1fr; }
+body[data-ny] .sidebar{ position:sticky; top:14px; height:calc(100svh - 28px); margin:14px 0 14px 14px; padding:22px 14px; border-radius:30px; color:var(--ink);
+  background:linear-gradient(180deg, rgba(255,255,255,.42), rgba(255,255,255,.24)); box-shadow:var(--pane-sh); -webkit-backdrop-filter:var(--blur); backdrop-filter:var(--blur); }
+body[data-ny] .sidebar__logo{ padding:0 10px 22px; gap:10px; }
+body[data-ny] .sidebar__logo svg{ color:var(--accent); width:28px; height:28px; margin-top:-6px; }
+body[data-ny] .sidebar__logo span{ font:600 21px/1 var(--font-logo); letter-spacing:-.02em; color:var(--ink); }
+body[data-ny] .sidebar__logo em{ font:500 13px/1 var(--font-body); color:rgba(26,20,16,.45); letter-spacing:0; margin-left:6px; }
+body[data-ny] .navitem{ color:rgba(26,20,16,.74); font:500 15px/1.2 var(--font-body); padding:11px 14px; border-radius:16px; }
+body[data-ny] .navitem:hover{ background:rgba(255,255,255,.4); color:var(--ink); }
+body[data-ny] .navitem.is-active{ color:#fff; font-weight:600; background:linear-gradient(180deg, #F2914F, #D9692E); box-shadow:inset 0 1px 0 rgba(255,255,255,.35), 0 10px 22px -10px rgba(233,121,58,.7); }
+body[data-ny] .navitem__badge{ font:600 11px/1 var(--font-body); }
+body[data-ny] .sidebar__foot{ border-top-color:var(--line); }
+body[data-ny] .sidebar__foot a, body[data-ny] .sidebar__foot button{ color:rgba(26,20,16,.62); font:500 13.5px/1.3 var(--font-body); }
+body[data-ny] .sidebar__foot a:hover, body[data-ny] .sidebar__foot button:hover{ color:var(--accent-deep); }
+
+/* ---------- the top: clear, it lets the page show through ---------- */
+body[data-ny] .topbar{ background:rgba(217,209,198,.55); border-bottom:0; box-shadow:0 1px 0 rgba(255,255,255,.4); -webkit-backdrop-filter:blur(24px) saturate(1.6); backdrop-filter:blur(24px) saturate(1.6); }
+body[data-ny] .bell{ background:var(--lens); border:0; box-shadow:var(--lens-sh), inset 0 1px 0 rgba(255,255,255,.85); }
+body[data-ny] .bell__badge{ border-color:var(--cream); }
+
+/* ---------- cards: Film ---------- */
+body[data-ny] .acard, body[data-ny] .stat, body[data-ny] .pwa, body[data-ny] .logbox, body[data-ny] .typekort, body[data-ny] .typelukning, body[data-ny] .vagthund, body[data-ny] .staffnote,
+body[data-ny] .nyecard__log, body[data-ny] .dagstid, body[data-ny] .dagsbesked--aktiv, body[data-ny] .salgrk{
+  position:relative; background:var(--film); border:0; box-shadow:var(--film-sh); -webkit-backdrop-filter:var(--blur); backdrop-filter:var(--blur); }
+body[data-ny] .acard{ border-radius:26px; padding:24px 26px; box-shadow:var(--pane-sh); }
+body[data-ny] .acard + .acard{ margin-top:16px; }
+
+/* the numbers: a figure, light and large, with its label above */
+body[data-ny] .stat{ border-radius:24px; padding:18px 20px; }
+body[data-ny] .stat__label{ font:600 11px/14px var(--font-body); letter-spacing:.06em; color:var(--t3); }
+body[data-ny] .stat__value{ font:300 44px/1.05 var(--font-display); letter-spacing:-.04em; font-variant-numeric:tabular-nums; margin-top:8px; }
+body[data-ny] .stat__value small{ font:400 17px/1 var(--font-body); letter-spacing:0; }
+body[data-ny] .stat--accent{ background:linear-gradient(160deg, #F2914F, #D9692E); box-shadow:inset 0 1px 0 rgba(255,255,255,.35), 0 18px 34px -16px rgba(233,121,58,.75); }
+body[data-ny] .stat--accent .stat__label{ color:rgba(255,255,255,.82); }
+
+/* ---------- rows: a soft field with a hairline; the state in the left edge ---------- */
+body[data-ny] .row, body[data-ny] .planday, body[data-ny] .logrow, body[data-ny] .nyrow, body[data-ny] .notelist__row, body[data-ny] .hoursrow, body[data-ny] .menued__item, body[data-ny] .menued__cat{
+  background:var(--field); border:0; box-shadow:inset 0 0 0 1px rgba(255,255,255,.5); border-radius:16px; }
+body[data-ny] .row:hover{ box-shadow:inset 0 0 0 1px rgba(233,121,58,.45); }
+body[data-ny] .row__title{ font-weight:600; letter-spacing:-.01em; }
+body[data-ny] .row--new{ background:rgba(233,121,58,.12); box-shadow:inset 4px 0 0 var(--accent), inset 0 0 0 1px rgba(233,121,58,.35); }
+body[data-ny] .row--done{ opacity:.85; background:rgba(52,199,89,.1); box-shadow:inset 4px 0 0 #1E7A3C, inset 0 0 0 1px rgba(52,199,89,.28); }
+body[data-ny] .row--arr{ box-shadow:inset 5px 0 0 var(--accent), inset 0 0 0 1px rgba(255,255,255,.5); border:0; }
+body[data-ny] .row--moede{ box-shadow:inset 5px 0 0 var(--moede), inset 0 0 0 1px rgba(255,255,255,.5); border:0; }
+body[data-ny] .rowlist--arr .row{ background:rgba(233,121,58,.1); }
+body[data-ny] .empty{ border:1px dashed rgba(26,20,16,.2); background:rgba(255,255,255,.12); border-radius:18px; color:var(--ink-soft); }
+
+/* ---------- fields ---------- */
+body[data-ny] .afield > span{ font:600 13px/1.3 var(--font-body); color:rgba(26,20,16,.78); }
+body[data-ny] .afield input, body[data-ny] .afield select, body[data-ny] .afield textarea, body[data-ny] .inline-input{
+  font-family:var(--font-body); background:var(--field); border:0; border-radius:14px; box-shadow:inset 0 0 0 1px rgba(255,255,255,.6), inset 0 1px 2px rgba(26,20,16,.06); color:var(--ink); }
+body[data-ny] .afield input:focus, body[data-ny] .afield select:focus, body[data-ny] .afield textarea:focus, body[data-ny] .inline-input:focus{
+  background:rgba(255,255,255,.55); box-shadow:0 0 0 3px rgba(233,121,58,.28), inset 0 0 0 1px var(--accent); }
+body[data-ny] ::placeholder{ color:rgba(26,20,16,.45); }
+
+/* ---------- buttons: pills of lens; the main one in Spiis' orange ---------- */
+body[data-ny] .abtn{ font:600 14px/1 var(--font-body); border:0; background:var(--lens); color:var(--ink); box-shadow:var(--lens-sh), inset 0 1px 0 rgba(255,255,255,.85); min-height:40px; }
+body[data-ny] .abtn:hover{ background:rgba(255,255,255,.55); }
+body[data-ny] .abtn:active{ transform:scale(.96); }
+body[data-ny] .abtn--accent{ color:#fff; background:linear-gradient(180deg, #F2914F, #D9692E); box-shadow:inset 0 1px 0 rgba(255,255,255,.35), 0 10px 22px -10px rgba(233,121,58,.7); }
+body[data-ny] .abtn--accent:hover{ background:linear-gradient(180deg, #F59B5C, #DE7034); }
+body[data-ny] .abtn--ghost{ background:transparent; box-shadow:inset 0 0 0 1px var(--line); }
+body[data-ny] .abtn--danger{ background:rgba(255,69,58,.12); color:var(--red); box-shadow:inset 0 0 0 1px rgba(255,69,58,.28); }
+body[data-ny] .abtn--danger:hover{ background:var(--red); color:#fff; }
+body[data-ny] .abtn--green{ background:rgba(52,199,89,.16); color:var(--green); box-shadow:inset 0 0 0 1px rgba(52,199,89,.32); }
+body[data-ny] .abtn--green:hover{ background:#1E7A3C; color:#fff; }
+body[data-ny] .checkbtn, body[data-ny] .soldbtn, body[data-ny] .dvchip, body[data-ny] .kaltoggle, body[data-ny] .pipebar__chip, body[data-ny] .ldtype, body[data-ny] .ld__count, body[data-ny] .salgdato,
+body[data-ny] .dv__navbtn, body[data-ny] .dv__close, body[data-ny] .belldrop__foot button, body[data-ny] .moreitem{
+  background:var(--lens); border:0; box-shadow:var(--lens-sh), inset 0 1px 0 rgba(255,255,255,.85); }
+
+/* tags */
+body[data-ny] .tag{ font:600 12px/1 var(--font-body); padding:5px 9px; border-radius:9px; background:rgba(26,20,16,.07); color:rgba(26,20,16,.72); }
+body[data-ny] .tag--accent{ background:rgba(233,121,58,.16); color:var(--accent-deep); }
+body[data-ny] .tag--green{ background:rgba(52,199,89,.16); color:var(--green); }
+body[data-ny] .tag--red{ background:rgba(255,69,58,.14); color:var(--red); }
+body[data-ny] .tag--ink{ background:var(--ink); color:#F4F0EA; }
+
+/* ---------- things that lie on top: dense glass so they read ---------- */
+body[data-ny] .belldrop, body[data-ny] .dv, body[data-ny] .farlig, body[data-ny] .moresheet__panel{
+  background:var(--dense); border:0; -webkit-backdrop-filter:blur(30px) saturate(1.6); backdrop-filter:blur(30px) saturate(1.6); box-shadow:12px 24px 56px rgba(13,13,15,.28), inset 0 1px 0 rgba(255,255,255,.9); }
+body[data-ny] .dv__head{ background:var(--dense); }
+body[data-ny] .dvmask, body[data-ny] .moresheet, body[data-ny] .farligmask{ background:rgba(26,20,16,.32); }
+body[data-ny] .toast{ font-family:var(--font-body); background:rgba(26,20,16,.88); color:#F4F0EA; -webkit-backdrop-filter:blur(20px); backdrop-filter:blur(20px); border-radius:18px; }
+
+/* ---------- phone: a slim glass bar on top, a floating tab bar below ---------- */
+@media (max-width:900px){
+  body[data-ny] .app{ grid-template-columns:1fr; }
+  body[data-ny] .sidebar{ position:static; height:auto; margin:10px 10px 0; border-radius:24px; }
+}
+@media (max-width:760px){
+  body[data-ny] .sidebar{ margin:calc(8px + env(safe-area-inset-top)) 10px 0; padding:8px 14px; border-radius:22px; }
+  body[data-ny] .sidebar::after{ display:none; }
+  body[data-ny] .sidebar__logo{ padding:0; }
+  body[data-ny] .sidebar__logo span{ font-size:18px; }
+  body[data-ny] .sidebar__logo em{ font-size:12px; }
+  body[data-ny] .sidebar__foot a, body[data-ny] .sidebar__foot button{ font-size:13px; opacity:1; }
+  body[data-ny] .topbar{ background:transparent; box-shadow:none; -webkit-backdrop-filter:none; backdrop-filter:none; position:static; padding:14px 18px 4px; }
+  body[data-ny] .topbar__title{ font-size:26px; }
+  body[data-ny] .content{ padding:12px 12px calc(110px + env(safe-area-inset-bottom)); }
+  body[data-ny] .sidebar__nav{ left:10px; right:10px; bottom:calc(10px + env(safe-area-inset-bottom)); padding:6px; border-radius:26px; border:0;
+    background:rgba(250,247,243,.72); -webkit-backdrop-filter:blur(24px) saturate(1.8); backdrop-filter:blur(24px) saturate(1.8);
+    box-shadow:var(--lens-sh), 0 18px 40px -16px rgba(13,13,15,.35), inset 0 1px 0 rgba(255,255,255,.9), inset 0 0 0 1px rgba(255,255,255,.5); }
+  body[data-ny] .navitem{ color:rgba(26,20,16,.62); font:500 11px/1.1 var(--font-body); padding:7px 4px 6px; border-radius:20px; gap:3px; }
+  body[data-ny] .navitem span{ font-size:19px; }
+  body[data-ny] .navitem.is-active{ color:var(--accent-deep); font-weight:600; background:rgba(255,255,255,.7); box-shadow:inset 0 1px 0 #fff, 0 4px 12px -6px rgba(13,13,15,.25); }
+  body[data-ny] .navitem.is-active span{ filter:none; }
+  body[data-ny] .navitem.is-active::after{ display:none; }
+  body[data-ny] .acard{ padding:18px 16px; border-radius:22px; }
+  body[data-ny] .stat{ padding:15px 16px; border-radius:20px; }
+  body[data-ny] .stat__value{ font-size:36px; }
+  body[data-ny] .abtn{ min-height:46px; border-radius:23px; font-size:14.5px; }
+  body[data-ny] .acard, body[data-ny] .stat, body[data-ny] .sidebar{ -webkit-backdrop-filter:none; backdrop-filter:none; }
+  body[data-ny] .acard{ background:rgba(255,255,255,.2); }
+  body[data-ny] .stat:not(.stat--accent){ background:rgba(255,255,255,.22); }
+  body[data-ny] .sidebar{ background:rgba(250,247,243,.5); }
+  body[data-ny] .toast{ bottom:calc(100px + env(safe-area-inset-bottom)); }
+}
+
+/* ======================================================================
+   "Det viser hjemmesiden": the card the kitchen uses to decide what the
+   site shows. Built by admin-plus.js.
+   ====================================================================== */
+.ny-site{ position:relative; }
+.ny-site__top{ display:flex; align-items:flex-start; justify-content:space-between; gap:16px; flex-wrap:wrap; }
+.ny-site__now{ display:inline-flex; align-items:center; gap:8px; padding:7px 12px; border-radius:14px; font:600 13px/1 var(--font-body); }
+.ny-site__now i{ width:8px; height:8px; border-radius:50%; background:currentColor; box-shadow:0 0 0 3px color-mix(in srgb, currentColor 22%, transparent); }
+.ny-site__now.is-on{ color:var(--green); background:rgba(52,199,89,.14); }
+.ny-site__now.is-pause{ color:var(--accent-deep); background:rgba(233,121,58,.16); }
+.ny-site__now.is-off{ color:rgba(26,20,16,.7); background:rgba(26,20,16,.08); }
+.ny-site__item{ margin-top:18px; padding-top:18px; border-top:1px solid var(--line); }
+.ny-site__item h3{ font:600 16px/1.3 var(--font-display); display:flex; align-items:center; gap:10px; }
+.ny-site__item p{ margin-top:4px; font-size:14px; color:var(--ink-soft); max-width:46em; }
+.ny-seg{ display:grid; grid-template-columns:repeat(3, minmax(0, 1fr)); gap:6px; margin-top:14px; padding:5px; border-radius:22px; background:rgba(255,255,255,.22); box-shadow:inset 0 0 0 1px rgba(255,255,255,.5); }
+.ny-seg button{ display:grid; gap:3px; align-content:center; min-height:58px; padding:8px 12px; border:0; border-radius:17px; background:none; cursor:pointer; text-align:left;
+  font:600 14px/1.2 var(--font-body); color:var(--ink); transition:background .2s ease, box-shadow .2s ease, transform .15s ease; -webkit-tap-highlight-color:transparent; }
+.ny-seg button small{ font:400 12.5px/1.3 var(--font-body); color:var(--ink-soft); }
+.ny-seg button:hover{ background:rgba(255,255,255,.3); }
+.ny-seg button:active{ transform:scale(.97); }
+.ny-seg button[aria-pressed="true"]{ background:rgba(255,255,255,.75); box-shadow:var(--lens-sh), inset 0 1px 0 #fff; }
+.ny-seg button[aria-pressed="true"][data-v="on"]{ box-shadow:var(--lens-sh), inset 0 0 0 1.5px rgba(52,199,89,.6); }
+.ny-seg button[aria-pressed="true"][data-v="pause"]{ box-shadow:var(--lens-sh), inset 0 0 0 1.5px rgba(233,121,58,.7); }
+.ny-seg button[aria-pressed="true"][data-v="off"]{ box-shadow:var(--lens-sh), inset 0 0 0 1.5px rgba(26,20,16,.45); }
+.ny-site__msg{ margin-top:12px; }
+.ny-site__note{ margin-top:16px; padding:12px 14px; border-radius:14px; font-size:13px; line-height:1.45; color:var(--ink-soft); background:rgba(255,255,255,.18); box-shadow:inset 0 0 0 1px rgba(255,255,255,.4); }
+@media (max-width:640px){ .ny-seg{ grid-template-columns:1fr; } .ny-seg button{ min-height:54px; } }
+@media (max-width:900px){ body[data-ny] .sidebar::after{ display:none; } }
+
+/* the calendar: days as soft fields, today with the orange edge */
+body[data-ny] .kalcell{ background:var(--field); border:0; box-shadow:inset 0 0 0 1px rgba(255,255,255,.5); border-radius:14px; }
+body[data-ny] .kalcell:hover{ box-shadow:inset 0 0 0 1px rgba(233,121,58,.45); }
+body[data-ny] .kalcell--today{ background:rgba(255,255,255,.6); box-shadow:inset 0 0 0 1.5px var(--accent); }
+body[data-ny] .kalcell--sel{ box-shadow:inset 0 0 0 2px var(--accent); }
+body[data-ny] .kalcell--out{ opacity:.5; }
+body[data-ny] .kaltoggle{ background:rgba(255,255,255,.22); box-shadow:inset 0 0 0 1px rgba(255,255,255,.5); border:0; }
+body[data-ny] .kaltoggle button{ font-family:var(--font-body); }
+body[data-ny] .kaltoggle button.is-on{ background:linear-gradient(180deg, #F2914F, #D9692E); color:#fff; box-shadow:inset 0 1px 0 rgba(255,255,255,.35); }
+body[data-ny] input[type="file"]{ font-family:var(--font-body); }
+body[data-ny] .switch i{ box-shadow:inset 0 0 0 1px rgba(26,20,16,.12); }

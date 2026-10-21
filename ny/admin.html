@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>Spiis Admin – Dashboard</title>
+  <meta name="robots" content="noindex, nofollow" />
+  <!-- hvilken udgave af appen kører vi? Bruges til at fange en telefon,
+       der stadig sidder med en gammel version i cachen -->
+  <meta name="spiis-version" content="ny1" />
+  <meta name="theme-color" content="#D9D1C6" />
+  <link rel="icon" href="../assets/favicon.svg" type="image/svg+xml" />
+  <link rel="apple-touch-icon" href="../assets/icon-192.png" />
+  <link rel="preconnect" href="https://jhdlxexgrwvuoqetcgbt.supabase.co" crossorigin />
+  <link rel="preload" href="assets/fonts/chivo-500.woff2" as="font" type="font/woff2" crossorigin />
+  <link rel="stylesheet" href="../css/admin.css?v=ny1" />
+  <link rel="stylesheet" href="../css/datepicker.css?v=ny1" />
+  <link rel="stylesheet" href="admin-glas.css?v=2" />
+</head>
+<body data-ny="admin">
+  <div class="ny-bg" aria-hidden="true"><i class="b1"></i><i class="b2"></i><i class="b3"></i></div>
+
+  <!-- ====== LOGIN ====== -->
+  <div class="login" id="loginScreen">
+    <div class="login__card">
+      <svg class="login__hat" viewBox="0 0 48 48" aria-hidden="true">
+        <path d="M15 30v7c0 1.7 1.3 3 3 3h12c1.7 0 3-1.3 3-3v-7" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>
+        <path d="M14.5 31c-4.7-.6-8.5-4.6-8.5-9.4 0-4.6 3.4-8.4 7.9-9.3C15.2 8.5 19.2 6 24 6s8.8 2.5 10.1 6.3c4.5.9 7.9 4.7 7.9 9.3 0 4.8-3.8 8.8-8.5 9.4" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>
+        <path d="M20 30v4M24 30v4M28 30v4" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/>
+      </svg>
+      <h1>Spiis <span>Admin</span></h1>
+      <p id="loginHint">Indtast din PIN-kode for at åbne dashboardet.</p>
+      <form id="loginForm">
+        <input type="email" id="loginEmail" placeholder="E-mail" autocomplete="username" hidden />
+        <input type="password" id="loginPin" inputmode="numeric" maxlength="8" placeholder="••••" autocomplete="current-password" autofocus />
+        <p class="login__error" id="loginError" hidden>Forkert PIN – prøv igen.</p>
+        <button type="submit" class="abtn abtn--accent abtn--big" id="loginSubmit">Log ind</button>
+      </form>
+      <a href="./" class="login__back">← Tilbage til hjemmesiden</a>
+    </div>
+  </div>
+
+  <!-- ====== DASHBOARD ====== -->
+  <div class="app" id="app" hidden>
+    <aside class="sidebar">
+      <div class="sidebar__logo">
+        <svg viewBox="0 0 48 48" aria-hidden="true">
+          <path d="M15 30v7c0 1.7 1.3 3 3 3h12c1.7 0 3-1.3 3-3v-7" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>
+          <path d="M14.5 31c-4.7-.6-8.5-4.6-8.5-9.4 0-4.6 3.4-8.4 7.9-9.3C15.2 8.5 19.2 6 24 6s8.8 2.5 10.1 6.3c4.5.9 7.9 4.7 7.9 9.3 0 4.8-3.8 8.8-8.5 9.4" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>
+          <path d="M20 30v4M24 30v4M28 30v4" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/>
+        </svg>
+        <span>Spiis<em>Admin</em></span>
+      </div>
+      <nav class="sidebar__nav" id="sideNav">
+        <button class="navitem is-active" data-view="overblik" data-nav="primary"><span>📊</span>Overblik<b class="navitem__badge" id="badgeOverblik" hidden></b></button>
+        <button class="navitem" data-view="bestillinger" data-nav="primary"><span>🥡</span>Bestillinger<b class="navitem__badge" id="badgeOrders" hidden></b></button>
+        <button class="navitem" data-view="bookinger" data-nav="primary"><span>📅</span>Bookinger<b class="navitem__badge" id="badgeBookings" hidden></b></button>
+        <button class="navitem" data-view="dagensret" data-nav="primary"><span>🍲</span>Dagens ret</button>
+        <button class="navitem" data-view="uge" data-nav="secondary"><span>📆</span>Kalender</button>
+        <button class="navitem" data-view="salg" data-nav="secondary"><span>💰</span>Salg</button>
+        <button class="navitem" data-view="menukort" data-nav="secondary"><span>📖</span>Menukort</button>
+        <button class="navitem" data-view="nyheder" data-nav="secondary"><span>📣</span>Nyheder</button>
+        <button class="navitem" data-view="tider" data-nav="secondary"><span>🕐</span>Åbningstider</button>
+        <button class="navitem" data-view="indstillinger" data-nav="secondary"><span>⚙️</span>Indstillinger</button>
+        <button class="navitem navitem--more" id="moreBtn" type="button"><span>⋯</span>Mere</button>
+      </nav>
+      <div class="sidebar__foot">
+        <a href="./" target="_blank" rel="noopener">↗ Se hjemmesiden</a>
+        <button id="logoutBtn" type="button">Log ud</button>
+      </div>
+    </aside>
+
+    <div class="main">
+      <header class="topbar">
+        <div>
+          <h1 class="topbar__title" id="viewTitle">Overblik</h1>
+          <p class="topbar__date" id="topbarDate"></p>
+        </div>
+        <div class="topbar__actions">
+          <div class="bell-wrap">
+            <button class="bell" id="bellBtn" aria-label="Notifikationer">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>
+              <b class="bell__badge" id="bellBadge" hidden></b>
+            </button>
+            <div class="belldrop" id="bellDrop" hidden>
+              <div class="belldrop__head">
+                <strong>Notifikationer</strong>
+                <button id="markReadBtn" type="button">Markér alle som læst</button>
+              </div>
+              <p class="belldrop__delt">Klokken er fælles for alle på Spiis. Fjerner én en notifikation, ryger den ned under "Set for nylig" hos alle – den forsvinder ikke.</p>
+              <div class="belldrop__list" id="bellList"></div>
+              <div class="belldrop__foot">
+                <button type="button" id="bellAllOrders">📚 Alle bestillinger</button>
+                <button type="button" id="bellAllBookings">📅 Alle bookinger</button>
+                <button type="button" id="bellHistorik">🕓 Historik</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <main class="content" id="content">
+        <!-- bannere til "installér som app" og "slå notifikationer til" -->
+        <div id="pwaBanner" hidden></div>
+        <!-- views renderes af admin.js -->
+        <section class="view" id="view-overblik"></section>
+        <section class="view" id="view-uge" hidden></section>
+        <section class="view" id="view-salg" hidden></section>
+        <section class="view" id="view-bestillinger" hidden></section>
+        <section class="view" id="view-bookinger" hidden></section>
+        <section class="view" id="view-nyheder" hidden></section>
+        <section class="view" id="view-dagensret" hidden></section>
+        <section class="view" id="view-menukort" hidden></section>
+        <section class="view" id="view-tider" hidden></section>
+        <section class="view" id="view-indstillinger" hidden></section>
+      </main>
+    </div>
+  </div>
+
+  <!-- "Mere"-panel på telefon: de faner, der bruges sjældnere -->
+  <div class="moresheet" id="moreSheet">
+    <div class="moresheet__panel" role="dialog" aria-label="Mere">
+      <div class="moresheet__grab" aria-hidden="true"></div>
+      <div class="moresheet__head">Mere</div>
+      <div class="moresheet__grid">
+        <button class="moreitem" data-view="uge"><span>📆</span>Kalender</button>
+        <button class="moreitem" data-view="salg"><span>💰</span>Salg</button>
+        <button class="moreitem" data-view="menukort"><span>📖</span>Menukort</button>
+        <button class="moreitem" data-view="nyheder"><span>📣</span>Nyheder</button>
+        <button class="moreitem" data-view="tider"><span>🕐</span>Åbningstider &amp; ferie</button>
+        <button class="moreitem" data-view="indstillinger"><span>⚙️</span>Indstillinger</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast" hidden></div>
+
+  <!-- telefonen sidder med en gammel udgave af appen -->
+  <div class="updatebar" id="updateBar" hidden>
+    <span class="updatebar__txt">🔄 <strong>Der er en nyere udgave af appen</strong><em id="updateSub">Opdaterer om et øjeblik…</em></span>
+    <button type="button" id="updateNow">Opdatér nu</button>
+  </div>
+
+  <!-- realtime: nye bestillinger lander i appen med det samme -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <script src="../js/config.js?v=ny1"></script>
+  <script src="../js/store.js?v=ny1"></script>
+  <script src="../js/datepicker.js?v=ny1"></script>
+  <script src="../js/admin.js?v=ny1"></script>
+  <script src="admin-plus.js?v=2"></script>
+</body>
+</html>
