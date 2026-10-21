@@ -1,0 +1,89 @@
+/* Spiis /ny/, the light version: white and warm cream with a soft orange
+   light behind, frosted white glass, dark text, Spiis' orange to order.
+   Loaded after spiis-signatur.css; remove its link to go back to dark. */
+
+:root{
+  --t1:#1A1410; --t2:rgba(26,20,16,.68); --t3:rgba(26,20,16,.48);
+  --paper:#FBF7F2;
+  --ok-text:#1E7A3C; --bad-text:#B3372B; --warm-text:#C2561E;
+  --cream:#fff; --cream-2:#F6EFE7; --ink:var(--t1); --ink-soft:var(--t2);
+  --line:rgba(26,20,16,.1);
+  --glass:linear-gradient(165deg, rgba(255,255,255,.9) 0%, rgba(255,255,255,.62) 45%, rgba(255,243,233,.68) 100%);
+  --shadow:inset 0 1px 0 #fff, inset 0 0 0 1px rgba(255,255,255,.75), 0 0 0 1px rgba(26,20,16,.05), 0 26px 50px -28px rgba(120,60,20,.32);
+  --glass-in:linear-gradient(180deg, #fff, rgba(255,255,255,.78));
+  --rim-in:inset 0 0 0 1px rgba(26,20,16,.08), 0 1px 2px rgba(26,20,16,.04);
+  --blur:blur(28px) saturate(1.6);
+}
+html{ background:var(--paper); color-scheme:light; }
+body[data-ny]{ color:var(--t1); }
+
+/* the light behind: cream with warm orange light */
+.ny-bg{ background:linear-gradient(180deg, #FFFFFF, var(--paper) 40%, #F8F0E7); }
+.ny-bg i{ opacity:1; }
+.ny-bg .b1{ background:radial-gradient(closest-side, rgba(242,145,79,.26), transparent); }
+.ny-bg .b2{ background:radial-gradient(closest-side, rgba(255,190,120,.3), transparent); }
+.ny-bg .b3{ background:radial-gradient(closest-side, rgba(233,121,58,.16), transparent); }
+
+/* warm text that reads on white */
+body[data-ny] .eyebrow, body[data-ny] .eyebrow--light, body[data-ny] .dayplan__day, body[data-ny] .news__date, body[data-ny] .about__sign, body[data-ny] .hours__cutoff, body[data-ny] .menuline__badge--few{ color:var(--warm-text); }
+body[data-ny] .tone{ color:rgba(26,20,16,.42); }
+
+/* the bar: frosted white */
+body[data-ny] .nav, body[data-ny] .nav.is-solid{ color:var(--t1); }
+body[data-ny] .nav__inner{ background:linear-gradient(165deg, rgba(255,255,255,.82), rgba(255,255,255,.62)); box-shadow:inset 0 1px 0 #fff, inset 0 0 0 1px rgba(255,255,255,.7), 0 0 0 1px rgba(26,20,16,.06), 0 12px 32px -14px rgba(26,20,16,.3); }
+body[data-ny] .nav__links a:not(.btn):hover{ background:rgba(26,20,16,.06); }
+body[data-ny] .nav__burger{ color:var(--t1); }
+@media (max-width:900px){ body[data-ny] .nav__links{ background:rgba(251,247,242,.97); } }
+
+/* the opening keeps the film, with white words on it, fading into the paper */
+body[data-ny] .hero{ --t1:#fff; --t2:rgba(255,255,255,.82); --t3:rgba(255,255,255,.6); color:#fff; background:#1A1410; }
+body[data-ny] .hero__overlay{ background:linear-gradient(90deg, rgba(20,14,10,.72), rgba(20,14,10,.32) 55%, rgba(20,14,10,.4)), linear-gradient(180deg, rgba(20,14,10,.3), transparent 30%, transparent 72%, var(--paper)); }
+body[data-ny] .hero__title .tone{ color:rgba(255,255,255,.62); }
+body[data-ny] .hero .btn:not(.btn--accent){ color:#fff; background:linear-gradient(180deg, rgba(255,255,255,.24), rgba(255,255,255,.1)); }
+/* the live card: frosted white on the film */
+.ny-live{ --t1:#1A1410; --t2:rgba(26,20,16,.68); --t3:rgba(26,20,16,.48); color:var(--t1); background:linear-gradient(165deg, rgba(255,255,255,.9), rgba(255,255,255,.7) 50%, rgba(255,240,228,.78)); }
+.ny-open .nl-state, .ny-open .nd-state{ color:var(--ok-text); }
+.nl-price{ background:#fff; }
+.nl-stock, .nd-stock, body[data-ny] .today__stock{ color:var(--ok-text); background:rgba(52,199,89,.12); box-shadow:inset 0 0 0 1px rgba(52,199,89,.3); }
+.nl-cut{ border-top-color:rgba(26,20,16,.1); }
+
+/* the dock: frosted white */
+.ny-dock{ background:linear-gradient(165deg, rgba(255,255,255,.9), rgba(255,255,255,.72)); }
+
+/* buttons on white */
+body[data-ny] .btn:not(.btn--accent):not(.btn--ghost-dark){ color:var(--t1); background:linear-gradient(180deg, #fff, #F3EDE6); box-shadow:inset 0 1px 0 #fff, 0 0 0 1px rgba(26,20,16,.1), 0 10px 22px -14px rgba(26,20,16,.35); }
+body[data-ny] .hero .btn:not(.btn--accent){ color:#fff; background:linear-gradient(180deg, rgba(255,255,255,.24), rgba(255,255,255,.1)); box-shadow:inset 0 1px 0 rgba(255,255,255,.4), inset 0 0 0 1px rgba(255,255,255,.2); }
+body[data-ny] .btn--ghost-dark{ color:#fff; background:linear-gradient(180deg, #2A221C, #14100D); box-shadow:inset 0 1px 0 rgba(255,255,255,.16), 0 10px 22px -12px rgba(0,0,0,.4); }
+body[data-ny] .fbjoin__cta{ color:#fff; background:var(--t1); }
+
+/* fields on white */
+body[data-ny] .field input, body[data-ny] .field select, body[data-ny] .field textarea, body[data-ny] .nof input{ color:var(--t1); background:#fff; box-shadow:inset 0 0 0 1px rgba(26,20,16,.16); }
+body[data-ny] .field input:focus, body[data-ny] .field select:focus, body[data-ny] .field textarea:focus{ background:#fff; box-shadow:inset 0 0 0 1.5px var(--accent), 0 0 0 4px rgba(233,121,58,.18); }
+body[data-ny] .segmented span{ color:var(--t1); }
+body[data-ny] .bcat summary:hover{ background:rgba(26,20,16,.04); }
+body[data-ny] .today__price{ background:#fff; color:var(--t1); }
+
+/* today's dish: the day in warm light stays, with white words */
+body[data-ny] .today__badge{ color:#fff; background:radial-gradient(90% 80% at 30% 105%, rgba(255,200,140,.7), transparent 70%), linear-gradient(160deg, #F2914F, #CF5F24); }
+body[data-ny] .dayplan.ny-today{ background:linear-gradient(165deg, rgba(242,145,79,.18), rgba(255,255,255,.8) 60%); }
+body[data-ny] .dayplan--closed{ opacity:.6; }
+
+/* the hours, the about, the foot, the dialogs */
+body[data-ny] .hours td, body[data-ny] .hours th{ border-color:rgba(26,20,16,.08); color:var(--t2); }
+body[data-ny] .about__text p{ color:var(--t2); }
+body[data-ny] .confirm{ background:rgba(26,20,16,.35); }
+body[data-ny] .confirm__card{ background:linear-gradient(165deg, #fff, #FBF4EC); color:var(--t1); }
+body[data-ny] .footer{ color:var(--t2); border-top-color:rgba(26,20,16,.08); }
+body[data-ny] .footer .logo__word{ color:var(--t1); }
+body[data-ny] .marquee{ color:var(--t3); }
+
+/* phones: frosted white without blur */
+@media (max-width:767px){
+  body[data-ny] .card, body[data-ny] .news, body[data-ny] .today, body[data-ny] .dayplan, body[data-ny] .menuteaser, body[data-ny] .fbjoin, body[data-ny] .value,
+  body[data-ny] .selsk__cta, body[data-ny] .tapas__info{ background:linear-gradient(165deg, rgba(255,255,255,.92), rgba(255,255,255,.78)); }
+  .ny-live{ background:linear-gradient(165deg, rgba(255,255,255,.94), rgba(255,246,238,.88)); }
+}
+/* Om Spiis was a dark section: its words follow the light page */
+body[data-ny] .section--dark{ color:var(--t1); }
+body[data-ny] .section--dark .section__lead, body[data-ny] .value p{ color:var(--t2); }
+body[data-ny] .value h3{ color:var(--t1); }
