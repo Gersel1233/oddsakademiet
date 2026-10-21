@@ -195,3 +195,78 @@ body[data-ny] .section + .section{ padding-top:clamp(24px, 3vw, 40px); }
 /* on the menu page the bar sits over text, so a little more frost */
 body.menupage[data-ny] .nav__inner{ background:linear-gradient(180deg, rgba(255,255,255,.94), rgba(250,247,243,.88)); }
 body.menupage[data-ny] .nm-bar{ background:linear-gradient(180deg, rgba(255,255,255,.9), rgba(250,247,243,.8)); }
+
+/* ======================================================================
+   A deeper, warmer stone, a dark footer, and the live card as clear glass
+   ====================================================================== */
+
+/* ---------- the page: warm sand-stone instead of pale grey ----------
+   Deep enough that the white glass and the dark text both stand clear of it,
+   and warm enough to sit with Spiis' orange. */
+:root{
+  --paper:#D9D1C6;
+  --t2:rgba(26,20,16,.74); --t3:rgba(26,20,16,.56);
+  --glass:linear-gradient(165deg, rgba(255,255,255,.8) 0%, rgba(255,255,255,.56) 45%, rgba(255,247,240,.62) 100%);
+  --shadow:inset 0 1px 0 rgba(255,255,255,.95), inset 0 0 0 1px rgba(255,255,255,.5), 0 0 0 1px rgba(60,40,24,.07), 0 28px 54px -30px rgba(60,34,16,.45);
+  --warm-text:#B24E18;
+}
+.ny-bg{ background:linear-gradient(180deg, #E2DBD1, var(--paper) 38%, #CEC4B7); }
+.ny-bg .b1{ background:radial-gradient(closest-side, rgba(233,121,58,.24), transparent); }
+.ny-bg .b2{ background:radial-gradient(closest-side, rgba(236,160,96,.26), transparent); }
+.ny-bg .b3{ background:radial-gradient(closest-side, rgba(110,84,64,.2), transparent); }
+body[data-ny] .tone{ color:rgba(26,20,16,.5); }
+body[data-ny] .hero__overlay{ background:linear-gradient(90deg, rgba(20,14,10,.72), rgba(20,14,10,.32) 55%, rgba(20,14,10,.4)), linear-gradient(180deg, rgba(20,14,10,.3), transparent 30%, transparent 72%, var(--paper)); }
+@media (max-width:900px){ body[data-ny] .nav__links{ background:rgba(232,226,218,.97); } }
+
+/* the signature line: plain sans, no italics, a colour that reads on stone */
+body[data-ny] .about__sign{ font:500 17px/1.4 var(--sans) !important; font-style:normal !important; color:var(--warm-text) !important; }
+
+/* ---------- the footer: a dark espresso band that closes the page ----------
+   Same dark as the film at the top, so the page opens and ends in it. */
+body[data-ny] .footer{ position:relative; color:rgba(250,246,240,.66); border-top:0; margin-top:clamp(24px, 4vw, 48px);
+  background:radial-gradient(70% 120% at 15% 0%, rgba(233,121,58,.16), transparent 60%), linear-gradient(180deg, #221A14, #140F0B); }
+body[data-ny] .footer .logo, body[data-ny] .footer .logo__word{ color:#fff; }
+body[data-ny] .footer .logo__hat{ color:#F2914F; }
+body[data-ny] .footer__brand p{ color:rgba(250,246,240,.66); }
+body[data-ny] .footer__links a, body[data-ny] .footer__menulinks a{ color:rgba(250,246,240,.82); }
+body[data-ny] .footer__links a:hover, body[data-ny] .footer__menulinks a:hover{ color:#F2914F; }
+body[data-ny] .footer__meta, body[data-ny] .footer__nap{ color:rgba(250,246,240,.6); }
+body[data-ny] .footer__lesreg{ color:rgba(250,246,240,.45); }
+body[data-ny] .footer__admin{ color:rgba(250,246,240,.5); }
+body[data-ny] .smileybadge{ color:rgba(250,246,240,.9); background:rgba(255,255,255,.06); border-color:rgba(255,255,255,.14); }
+html:has(body[data-ny] .hero){ background:#140F0B; }
+
+/* ---------- the live card in the film: clear liquid glass ----------
+   The film shows through; white words on it. On a phone it is compact, so
+   the film stays the picture. */
+.ny-live{ --t1:#fff; --t2:rgba(255,255,255,.8); --t3:rgba(255,255,255,.6); color:#fff;
+  background:linear-gradient(160deg, rgba(255,255,255,.2), rgba(255,255,255,.06) 45%, rgba(255,255,255,.12));
+  -webkit-backdrop-filter:blur(18px) saturate(1.8); backdrop-filter:blur(18px) saturate(1.8);
+  box-shadow:inset 0 1.5px 0 rgba(255,255,255,.5), inset 0 0 0 1px rgba(255,255,255,.22), inset 0 -16px 30px -22px rgba(255,170,110,.5), 0 24px 50px -24px rgba(0,0,0,.55); }
+.ny-open .nl-state{ color:#7BE495; }
+.nl-price{ color:#fff; background:rgba(255,255,255,.16); box-shadow:inset 0 0 0 1px rgba(255,255,255,.22); }
+.nl-stock{ color:#9BEBAF; background:rgba(52,199,89,.18); box-shadow:inset 0 0 0 1px rgba(123,228,149,.35); }
+.ny-soldout .nl-stock{ color:#FFB1AA; background:rgba(255,69,58,.2); box-shadow:inset 0 0 0 1px rgba(255,120,110,.4); }
+.nl-cut{ border-top-color:rgba(255,255,255,.16); }
+@media (max-width:767px){
+  body[data-ny] .hero{ gap:18px; }
+  body[data-ny] .hero__cta{ width:100% !important; max-width:none !important; margin-left:0 !important; margin-right:0 !important; }
+  body[data-ny] .ny-live{ justify-self:stretch; width:auto; max-width:none; margin:0; }
+  /* compact on a phone: the dish, its price and what is left; the order
+     button right above already leads to it */
+  .ny-live{ padding:14px 16px 16px; border-radius:22px;
+    -webkit-backdrop-filter:blur(14px) saturate(1.7); backdrop-filter:blur(14px) saturate(1.7);
+    background:linear-gradient(160deg, rgba(255,255,255,.16), rgba(255,255,255,.05) 50%, rgba(255,255,255,.1)); }
+  .ny-live .nl-top{ font-size:12px; }
+  .ny-live .nl-k, .ny-live .nl-desc, .ny-live .nl-cut, body[data-ny] .ny-live .nl-go{ display:none; }
+  .ny-live .nl-dish{ margin-top:10px; font-size:22px; }
+  .ny-live .nl-row{ margin-top:10px; gap:6px; flex-wrap:nowrap; }
+  .ny-live .nl-price{ font-size:16px; padding:7px 11px; border-radius:14px; white-space:nowrap; }
+  .ny-live .nl-stock{ font-size:12px; padding:7px 10px; border-radius:13px; white-space:nowrap; }
+}
+/* the room kept for the bottom bar on a phone sits inside the footer, so the
+   page ends in the dark band instead of a strip of stone */
+@media (max-width:767px){
+  body[data-ny]:has(.hero){ padding-bottom:0 !important; }
+  body[data-ny]:has(.hero) .footer{ padding-bottom:calc(40px + 84px + env(safe-area-inset-bottom)); }
+}

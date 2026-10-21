@@ -59,4 +59,6 @@
   if (hero) new IntersectionObserver(([e]) => { pastHero = !e.isIntersecting; dock(); }).observe(hero);
   // it gives way at the two order forms
   ['#orderForm', '#tapasForm'].forEach((s) => { const f = $(s); if (f) new IntersectionObserver(([e]) => { e.isIntersecting ? atForm.add(s) : atForm.delete(s); dock(); }, { rootMargin: '-20% 0px -20% 0px' }).observe(f); });
+  // and at the footer, so it never sits over the links there
+  const foot = $('.footer'); if (foot) new IntersectionObserver(([e]) => { e.isIntersecting ? atForm.add('footer') : atForm.delete('footer'); dock(); }).observe(foot);
 })();
