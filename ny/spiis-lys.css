@@ -87,3 +87,24 @@ body[data-ny] .marquee{ color:var(--t3); }
 body[data-ny] .section--dark{ color:var(--t1); }
 body[data-ny] .section--dark .section__lead, body[data-ny] .value p{ color:var(--t2); }
 body[data-ny] .value h3{ color:var(--t1); }
+
+/* ---------- a little darker: warm light grey instead of bright white ----------
+   The page is a soft stone grey, so the white glass stands out from it
+   instead of melting into it. */
+:root{
+  --paper:#E6E2DC;
+  --glass:linear-gradient(165deg, rgba(255,255,255,.78) 0%, rgba(255,255,255,.5) 45%, rgba(255,246,238,.56) 100%);
+  --shadow:inset 0 1px 0 rgba(255,255,255,.95), inset 0 0 0 1px rgba(255,255,255,.55), 0 0 0 1px rgba(26,20,16,.06), 0 26px 50px -28px rgba(60,36,20,.38);
+  --t3:rgba(26,20,16,.52);
+}
+.ny-bg{ background:linear-gradient(180deg, #EEEBE7, var(--paper) 40%, #DFD9D2); }
+.ny-bg .b1{ background:radial-gradient(closest-side, rgba(233,121,58,.2), transparent); }
+.ny-bg .b2{ background:radial-gradient(closest-side, rgba(242,170,110,.22), transparent); }
+.ny-bg .b3{ background:radial-gradient(closest-side, rgba(120,100,85,.18), transparent); }
+body[data-ny] .nav__inner{ background:linear-gradient(165deg, rgba(255,255,255,.7), rgba(255,255,255,.5)); }
+.ny-dock{ background:linear-gradient(165deg, rgba(255,255,255,.82), rgba(245,241,236,.72)); }
+body[data-ny] .tone{ color:rgba(26,20,16,.46); }
+@media (max-width:767px){
+  body[data-ny] .card, body[data-ny] .news, body[data-ny] .today, body[data-ny] .dayplan, body[data-ny] .menuteaser, body[data-ny] .fbjoin, body[data-ny] .value,
+  body[data-ny] .selsk__cta, body[data-ny] .tapas__info{ background:linear-gradient(165deg, rgba(255,255,255,.82), rgba(255,255,255,.62)); }
+}
