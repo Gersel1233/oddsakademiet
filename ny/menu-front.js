@@ -19,10 +19,10 @@
       `<button type="button" role="tab" class="nm-tab" aria-selected="${i === cur}" data-i="${i}"><span aria-hidden="true">${icon(x)}</span>${esc(x.name)}<small>${x.items.length}</small></button>`).join('');
     box.querySelector('.nm-list').innerHTML =
       (c.availability === 'hverdage' ? '<p class="nm-note">Kun på hverdage</p>' : '') +
-      c.items.map((it) => `<div class="nm-item${it.soldout ? ' is-out' : ''}">
+      c.items.map((it) => `<${it.soldout ? 'div' : 'a href="#bestil"'} class="nm-item${it.soldout ? ' is-out' : ''}" data-ret="${esc(it.name)}" data-kat="${esc(c.name)}"${it.soldout ? '' : ` aria-label="Bestil ${esc(it.name)}"`}>
         <div class="nm-t"><b>${esc(it.name)}</b>${it.soldout ? '<span class="nm-badge out">Udsolgt i dag</span>' : (it.left ? `<span class="nm-badge few">Kun ${esc(it.left)} tilbage</span>` : '')}
           ${it.desc ? `<span class="nm-d">${esc(first(it.desc))}</span>` : ''}</div>
-        <span class="nm-p">${it.price ? `${esc(it.price)} kr.` : ''}</span></div>`).join('');
+        <span class="nm-p">${it.price ? `${esc(it.price)} kr.` : ''}</span>${it.soldout ? '' : '<span class="nm-go" aria-hidden="true"><svg viewBox="0 0 16 16"><path d="M3 8h9.4M9.1 4.4 12.6 8 9.1 11.6"/></svg></span>'}</${it.soldout ? 'div' : 'a'}>`).join('');
   }
   box.addEventListener('click', (e) => { const t = e.target.closest('.nm-tab'); if (!t) return; cur = +t.dataset.i; render(); });
   render();

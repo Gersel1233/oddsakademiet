@@ -1,0 +1,134 @@
+/* Spiis /ny/: the glass from Lesreg's Figma library (Liquid Atelier, LA3).
+   Loaded last. Every surface is one of the library's materials:
+     Film  white 14 %, shadow 2 4 12 / .10   cards on the page
+     Pane  white 10 %, shadow 6 12 32 / .16  big panels (forms, menu)
+     Lens  white 35 %, shadow 3 6 16 / .18   small things you touch
+   each with the 1 px specular edge (135deg, .85 → .12 → .40).
+   Lists are ledger rows: hairlines, no boxes; the chosen row gets a soft
+   field and a 6 px lens in Spiis' orange. */
+
+:root{
+  --film:rgba(255,255,255,.14); --film-sh:2px 4px 12px rgba(13,13,15,.10);
+  --pane:rgba(255,255,255,.10); --pane-sh:6px 12px 32px rgba(13,13,15,.16);
+  --lens:rgba(255,255,255,.35); --lens-sh:3px 6px 16px rgba(13,13,15,.18);
+  --block-sh:12px 24px 56px rgba(13,13,15,.24);
+  --edge:linear-gradient(135deg, rgba(255,255,255,.85), rgba(255,255,255,.12) 45%, rgba(255,255,255,.4));
+  --hair:rgba(26,20,16,.13);
+  --field:rgba(255,255,255,.28);
+  --glass-blur:blur(24px) saturate(1.6);
+}
+
+/* ---------- the page: one even stone, no bright band at the top ---------- */
+.ny-bg{ background:linear-gradient(180deg, #CDC4B8, var(--paper) 30%, #D3CABE 70%, #CBC1B4); }
+body[data-ny] .hero__overlay{ background:linear-gradient(90deg, rgba(20,14,10,.72), rgba(20,14,10,.32) 55%, rgba(20,14,10,.4)), linear-gradient(180deg, rgba(20,14,10,.3), transparent 30%, transparent 70%, #CDC4B8); }
+body[data-ny] .marquee{ background:none; border-color:var(--hair); }
+
+/* ---------- materials ---------- */
+body[data-ny] .card, body[data-ny] .news, body[data-ny] .today, body[data-ny] .dayplan, body[data-ny] .fbjoin, body[data-ny] .value,
+body[data-ny] .selsk__cta, body[data-ny] .tapas__info, body[data-ny] .nm, body[data-ny] .confirm__card, body[data-ny] .feriekort, body[data-ny] .award, body[data-ny] .closurebanner{
+  position:relative; background:var(--film) !important; box-shadow:var(--film-sh) !important;
+  -webkit-backdrop-filter:var(--glass-blur); backdrop-filter:var(--glass-blur); }
+/* the big panels: forms, the menu, the menu page cards */
+body[data-ny] .card.form, body[data-ny] .nm, body[data-ny] .menucat, body[data-ny] .daymenu, body[data-ny] .ugemenu, body[data-ny] .hourscard, body[data-ny] .infocard{
+  background:var(--pane) !important; box-shadow:var(--pane-sh) !important; }
+/* the one that matters most on the page: today's dish */
+body[data-ny] .today{ box-shadow:var(--block-sh) !important; }
+/* the specular edge */
+body[data-ny] .card::after, body[data-ny] .news::after, body[data-ny] .today::after, body[data-ny] .dayplan::after, body[data-ny] .fbjoin::after, body[data-ny] .value::after,
+body[data-ny] .selsk__cta::after, body[data-ny] .tapas__info::after, body[data-ny] .nm::after, body[data-ny] .confirm__card::after, .ny-dock::after, .nm-bar::after{
+  content:""; position:absolute; inset:0; border-radius:inherit; padding:1px; pointer-events:none; background:var(--edge);
+  -webkit-mask:linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite:xor; mask:linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0); }
+@media (max-width:767px){
+  body[data-ny] .card, body[data-ny] .news, body[data-ny] .today, body[data-ny] .dayplan, body[data-ny] .fbjoin, body[data-ny] .value,
+  body[data-ny] .selsk__cta, body[data-ny] .tapas__info, body[data-ny] .nm{ background:var(--film) !important; }
+  body[data-ny] .card.form, body[data-ny] .menucat, body[data-ny] .daymenu, body[data-ny] .ugemenu{ background:var(--pane) !important; }
+}
+
+/* ---------- the bar and the dock: lens, the material you touch ---------- */
+html.ny-dock-on body[data-ny] .nav__inner, body[data-ny] .nav.is-solid .nav__inner, body.menupage[data-ny] .nav__inner{
+  background:var(--lens) !important; box-shadow:var(--lens-sh), inset 0 1px 0 rgba(255,255,255,.7) !important; }
+.ny-dock{ background:var(--lens) !important; box-shadow:var(--lens-sh) !important; -webkit-backdrop-filter:blur(24px) saturate(1.8); backdrop-filter:blur(24px) saturate(1.8); }
+.nm-bar, body.menupage[data-ny] .nm-bar{ position:sticky; background:var(--lens) !important; box-shadow:var(--lens-sh) !important; }
+
+/* ---------- ledger rows: hairlines, no boxes ---------- */
+body[data-ny] .bitem, body[data-ny] .tapas__price, body[data-ny] .tapas__sum, body[data-ny] .tapasvilkaar, body[data-ny] .selsk__points li,
+body[data-ny] .contactcard__row, body[data-ny] .valgrow, body[data-ny] .tapas__cavacard, body[data-ny] .builder__dagens{
+  background:none !important; box-shadow:none !important; border:0; border-bottom:1px solid var(--hair) !important; border-radius:0 !important; }
+body[data-ny] .bcat{ background:none !important; box-shadow:none !important; border:0; border-top:1px solid var(--hair) !important; border-radius:0 !important; }
+body[data-ny] .bcat summary{ padding-left:4px; padding-right:4px; font:500 15px/1.3 var(--sans); }
+body[data-ny] .bcat[open] summary{ color:var(--t1); }
+body[data-ny] .bcat__hint{ font:500 12.5px/1 var(--sans); color:var(--warm-text); }
+body[data-ny] .bitem{ padding-left:4px; padding-right:4px; }
+body[data-ny] .bitem:last-child{ border-bottom:0 !important; }
+/* the chosen row: a soft field and a small orange lens */
+body[data-ny] .builder__dagens, body[data-ny] .tapas__cavacard.is-on{ position:relative; background:var(--field) !important; border-bottom:0 !important; border-radius:16px !important; padding-left:24px !important; }
+body[data-ny] .builder__dagens::before, body[data-ny] .tapas__cavacard.is-on::before{ content:""; position:absolute; left:10px; top:22px; width:6px; height:6px; border-radius:50%; background:var(--accent); box-shadow:0 0 0 3px rgba(233,121,58,.18); }
+
+/* the selskab points: a ledger with a check, not three white pills */
+body[data-ny] .selsk__points{ gap:0 !important; border-top:1px solid var(--hair); }
+body[data-ny] .selsk__points li{ padding:16px 4px !important; font:400 16px/1.5 var(--sans); color:var(--t2); }
+body[data-ny] .selsk__points li strong{ color:var(--t1); font-weight:600; }
+
+/* the tapas prices as figures in rows */
+body[data-ny] .tapas__price{ padding:16px 4px !important; }
+body[data-ny] .tapas__price strong, body[data-ny] .tapas__price b{ font:300 30px/1 var(--sans); letter-spacing:-.03em; font-variant-numeric:tabular-nums; }
+body[data-ny] .tapas__sum{ padding:16px 4px !important; font:500 15px/1.4 var(--sans); }
+body[data-ny] .tapasvilkaar{ padding:16px 4px !important; border-bottom:0 !important; }
+
+/* ---------- fields: lens, with a hairline and an orange focus ---------- */
+body[data-ny] .field input, body[data-ny] .field select, body[data-ny] .field textarea, body[data-ny] .nof input{
+  background:var(--field) !important; box-shadow:inset 0 0 0 1px rgba(255,255,255,.55), inset 0 1px 2px rgba(26,20,16,.06) !important; border:0 !important; color:var(--t1); }
+body[data-ny] .field input:focus, body[data-ny] .field select:focus, body[data-ny] .field textarea:focus{
+  outline:0; background:rgba(255,255,255,.5) !important; box-shadow:0 0 0 3px rgba(233,121,58,.28), inset 0 0 0 1px var(--accent) !important; }
+body[data-ny] .field input::placeholder, body[data-ny] .field textarea::placeholder{ color:var(--t3); }
+
+/* steppers and small round buttons: lens */
+body[data-ny] .stepper{ background:none !important; box-shadow:none !important; }
+body[data-ny] .stepper button, body[data-ny] .cavabtn{ background:var(--lens) !important; box-shadow:var(--lens-sh), inset 0 1px 0 rgba(255,255,255,.8) !important; border:0 !important; color:var(--t1); }
+body[data-ny] .stepper button:active, body[data-ny] .cavabtn:active{ transform:scale(.92); }
+
+/* the week plan days: film, today in a full lens with the orange edge */
+body[data-ny] .dayplan{ border-radius:22px; }
+body[data-ny] .dayplan.ny-today, body[data-ny] .dayplan.is-active{ background:var(--lens) !important; box-shadow:var(--lens-sh), inset 0 0 0 1.5px var(--accent) !important; }
+body[data-ny] .dayplan--closed{ opacity:.7; }
+
+/* the facebook strip: film, the button dark */
+body[data-ny] .fbjoin{ border-radius:24px; }
+
+/* the price on today's dish, and small tags: lens */
+body[data-ny] .today__price, .nl-price{ background:var(--lens) !important; box-shadow:inset 0 0 0 1px rgba(255,255,255,.6) !important; }
+.ny-live .nl-price{ background:rgba(255,255,255,.16) !important; box-shadow:inset 0 0 0 1px rgba(255,255,255,.22) !important; }
+
+/* ---------- the menu on the front page: rows you can tap to order ---------- */
+.nm-item{ position:relative; color:inherit; text-decoration:none; border-bottom-color:var(--hair) !important; padding-right:44px !important; cursor:pointer; -webkit-tap-highlight-color:transparent; transition:background .2s ease; }
+.nm-item:hover{ background:rgba(255,255,255,.18); }
+.nm-go{ position:absolute; right:4px; top:50%; width:30px; height:30px; margin-top:-15px; border-radius:50%; display:grid; place-items:center;
+  background:var(--lens); box-shadow:var(--lens-sh), inset 0 1px 0 rgba(255,255,255,.8); color:var(--warm-text); transition:transform .2s cubic-bezier(.2,.8,.2,1), background .2s; }
+.nm-go svg{ width:14px; height:14px; fill:none; stroke:currentColor; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; }
+.nm-item:hover .nm-go{ transform:translateX(2px); background:var(--accent); color:#fff; }
+.nm-item:active{ background:rgba(255,255,255,.28); }
+.nm-item.is-out{ cursor:default; }
+.nm-item.is-out .nm-go{ display:none; }
+.nm-tab{ background:var(--lens) !important; box-shadow:var(--lens-sh), inset 0 1px 0 rgba(255,255,255,.8) !important; }
+.nm-tab[aria-selected="true"]{ background:linear-gradient(180deg, #F2914F, #D9692E) !important; box-shadow:inset 0 1px 0 rgba(255,255,255,.35), 0 10px 22px -10px rgba(233,121,58,.7) !important; }
+
+/* the menu page: the same rows, each one leads to the order */
+body.menupage[data-ny] .menuline[data-ret]{ position:relative; cursor:pointer; padding-right:44px; margin:0 -8px; padding-left:8px; border-radius:12px; border-color:var(--hair); transition:background .2s ease; }
+body.menupage[data-ny] .menuline[data-ret]:hover{ background:rgba(255,255,255,.22); }
+body.menupage[data-ny] .menuline[data-ret]::after{ content:""; position:absolute; right:8px; top:50%; width:28px; height:28px; margin-top:-14px; border-radius:50%;
+  background:var(--lens) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M3 8h9.4M9.1 4.4 12.6 8 9.1 11.6' fill='none' stroke='%23B24E18' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/13px no-repeat;
+  box-shadow:var(--lens-sh), inset 0 1px 0 rgba(255,255,255,.8); }
+body.menupage[data-ny] .menuline--soldout[data-ret]{ cursor:default; }
+body.menupage[data-ny] .menuline--soldout[data-ret]::after{ display:none; }
+
+/* where you land in the order: the row lights up for a moment */
+body[data-ny] .bitem, body[data-ny] .bcat, body[data-ny] .builder__dagens{ transition:background-color .8s ease, outline-color .8s ease; outline:2px solid transparent; outline-offset:-2px; }
+body[data-ny] .ny-hit{ background:rgba(233,121,58,.14) !important; outline-color:var(--accent); border-radius:14px !important; transition:none; }
+.ny-goto-note{ margin:0 0 14px; padding:12px 14px; border-radius:14px; font:500 14px/1.4 var(--sans); color:var(--warm-text); background:rgba(233,121,58,.12); box-shadow:inset 0 0 0 1px rgba(233,121,58,.3); }
+
+/* choices (to-go or eat here): lens, the chosen one in Spiis' orange */
+body[data-ny] .segmented span, body[data-ny] .choice{ background:var(--lens) !important; box-shadow:var(--lens-sh), inset 0 1px 0 rgba(255,255,255,.8) !important; color:var(--t1); }
+body[data-ny] .segmented input:checked + span{ background:linear-gradient(180deg, #F2914F, #D9692E) !important; color:#fff; box-shadow:inset 0 1px 0 rgba(255,255,255,.35), 0 10px 22px -10px rgba(233,121,58,.7) !important; }
+/* the phone number to call: a lens with the number in dark, easy to tap */
+body[data-ny] .tapasvilkaar__tlf{ display:inline-flex; align-items:center; gap:8px; min-height:46px; padding:0 18px; border-radius:23px; font:600 17px/1 var(--sans); color:var(--t1) !important;
+  background:var(--lens) !important; box-shadow:var(--lens-sh), inset 0 1px 0 rgba(255,255,255,.8) !important; text-decoration:none; font-variant-numeric:tabular-nums; }
