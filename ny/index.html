@@ -91,6 +91,7 @@
   <link rel="stylesheet" href="spiis-lys.css?v=7" />
   <link rel="stylesheet" href="spiis-glas.css?v=6" />
   <link rel="stylesheet" href="spiis-cafe-ned.css?v=1" />
+  <link rel="stylesheet" href="spiis-live.css?v=2" />
 </head>
 <body data-ny="1">
   <div class="ny-bg" aria-hidden="true"><i class="b1"></i><i class="b2"></i><i class="b3"></i></div>
@@ -146,12 +147,14 @@
     </div>
 
     <!-- the day, live: read from the same system the kitchen uses -->
-    <aside class="ny-live" aria-label="I dag">
-      <div class="nl-top"><span class="nl-dot"></span><span class="nl-state">Indlæser…</span><span class="nl-time"></span></div>
-      <p class="nl-k">Dagens ret</p>
-      <p class="nl-dish">…</p>
-      <p class="nl-desc"></p>
+    <aside class="ny-live" aria-label="Dagens ret i dag">
+      <div class="nl-top"><span class="nl-k">Dagens ret · i dag</span><span class="nl-pill"><span class="nl-dot"></span><span class="nl-state">Indlæser…</span></span></div>
+      <div class="nl-main">
+        <figure class="nl-foto" hidden><img alt="" /></figure>
+        <div class="nl-txt"><p class="nl-dish">…</p><p class="nl-desc"></p></div>
+      </div>
       <div class="nl-row"><span class="nl-price"></span><span class="nl-stock"></span></div>
+      <div class="nl-bar" hidden><i></i></div>
       <p class="nl-cut"></p>
       <a href="#bestil" class="btn btn--accent nl-go">Bestil dagens ret</a>
     </aside>
@@ -668,7 +671,7 @@
   <script src="../js/store.js?v=ny1"></script>
   <script src="../js/datepicker.js?v=ny1"></script>
   <script src="../js/main.js?v=ny1"></script>
-  <script src="live.js?v=3"></script>
+  <script src="live.js?v=4"></script>
   <script src="menu-front.js?v=3"></script>
   <script src="til-bestil.js?v=3"></script>
   <script src="site-mode.js?v=1"></script>

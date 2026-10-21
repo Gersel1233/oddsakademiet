@@ -26,8 +26,31 @@
     set('.nl-state', s.on === null ? 'Indlæser…' : (s.on ? 'Åbent nu' : s.label));
     set('.nl-dish', dish && !/indlæser/i.test(dish) ? dish : 'Dagens ret følger snart');
     set('.nl-desc', txt('#todayDesc'));
-    set('.nl-price', txt('#todayPrice'));
-    set('.nl-stock', soldout ? 'Udsolgt i dag' : (left ? `${left} portioner tilbage` : stock));
+    // the price as a figure: the number large, "kr." small
+    const price = txt('#todayPrice'), pn = (price.match(/[\d.,]+/) || [])[0];
+    const pEl = $('.nl-price');
+    if (pEl) { const h = pn ? `<b>${pn}</b><small>kr.</small>` : ''; if (pEl.innerHTML !== h) pEl.innerHTML = h; }
+    // portions left, and how far the day has come: from the kitchen's own numbers
+    let total = null;
+    try {
+      const S = (typeof SpiisStore !== 'undefined') ? SpiisStore : null;
+      const d = S && S.getDagensRetList(S.todayISO()).find((x) => x.title === dish);
+      if (d && d.stock != null && d.stock !== '') total = Number(d.stock) || null;
+    } catch { /* no numbers, no bar */ }
+    set('.nl-stock', soldout ? 'Udsolgt i dag' : (left ? (total ? `${left} af ${total} tilbage` : `${left} portioner tilbage`) : stock));
+    const bar = $('.nl-bar');
+    if (bar) {
+      const show = !soldout && total && left != null;
+      bar.hidden = !show;
+      if (show) bar.firstElementChild.style.transform = `scaleX(${Math.max(0, Math.min(1, Number(left) / total)).toFixed(3)})`;
+    }
+    // the kitchen's own photo of the dish, when there is one
+    const fImg = $('#todayFotoImg'), fBox = $('#todayFoto'), nf = $('.nl-foto');
+    if (nf) {
+      const src = fBox && !fBox.hidden && fImg && fImg.getAttribute('src');
+      nf.hidden = !src;
+      if (src && nf.firstElementChild.getAttribute('src') !== src) { nf.firstElementChild.src = src; nf.firstElementChild.alt = dish; }
+    }
     const cut = txt('#orderCutoff') || s.rest || '';
     set('.nl-cut', cut.replace(/^[🕐🕑🕒⏰\s]+/u, ''));
     // the dock
@@ -47,7 +70,7 @@
 
   let raf = 0;
   const ask = () => { if (!raf) raf = requestAnimationFrame(() => { raf = 0; paint(); }); };
-  ['#todayDish', '#todayStock', '#todayPrice', '#openStatus', '#orderCutoff', '#weekPlan'].forEach((s) => {
+  ['#todayDish', '#todayStock', '#todayPrice', '#openStatus', '#orderCutoff', '#weekPlan', '#todayFoto'].forEach((s) => {
     const e = $(s); if (e) new MutationObserver(ask).observe(e, { childList: true, subtree: true, characterData: true, attributes: true });
   });
   paint(); clock(); setInterval(clock, 20000);

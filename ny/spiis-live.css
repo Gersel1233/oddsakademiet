@@ -1,0 +1,70 @@
+/* Spiis /ny/: today's dish over the film. Smoked glass dark enough that
+   every word stands clear of the film behind it; the dish large, the price
+   as a figure, a bar for the portions left, and the button to order.
+   Loaded last; it replaces the earlier looks of the card. */
+
+body[data-ny] .hero .ny-live{
+  --w:#fff; --w2:rgba(255,255,255,.82); --w3:rgba(255,255,255,.6);
+  display:grid !important; gap:0; width:100%; max-width:410px; justify-self:end;
+  padding:22px !important; border-radius:28px !important; color:var(--w) !important;
+  background:linear-gradient(170deg, rgba(34,24,17,.66), rgba(18,12,8,.74)) !important;
+  -webkit-backdrop-filter:blur(22px) saturate(1.4) !important; backdrop-filter:blur(22px) saturate(1.4) !important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.18), inset 0 0 0 1px rgba(255,255,255,.12), 0 30px 60px -28px rgba(0,0,0,.7) !important; }
+
+/* top line: what it is, and whether you can order now */
+body[data-ny] .hero .nl-top{ display:flex !important; align-items:center; justify-content:space-between; gap:12px; }
+body[data-ny] .hero .nl-k{ display:block !important; margin:0 !important; font:600 11.5px/14px var(--sans) !important; letter-spacing:.07em !important; text-transform:uppercase; color:#FFC499 !important; }
+body[data-ny] .hero .nl-pill{ display:inline-flex; align-items:center; gap:7px; height:26px; padding:0 10px 0 8px; border-radius:13px; background:rgba(255,255,255,.1); box-shadow:inset 0 0 0 1px rgba(255,255,255,.14); }
+body[data-ny] .hero .nl-state{ font:600 12.5px/1 var(--sans) !important; color:var(--w2) !important; }
+.ny-open body[data-ny] .hero .nl-state, html.ny-open .hero .nl-state{ color:#8FEBA8 !important; }
+body[data-ny] .hero .nl-dot{ width:7px; height:7px; }
+
+/* the dish, with the kitchen's photo beside it when there is one */
+body[data-ny] .hero .nl-main{ display:flex; align-items:center; gap:14px; margin-top:16px; }
+body[data-ny] .hero .nl-foto{ flex:none; width:68px; height:68px; margin:0; border-radius:16px; overflow:hidden; box-shadow:inset 0 0 0 1px rgba(255,255,255,.16); }
+body[data-ny] .hero .nl-foto[hidden]{ display:none; }
+body[data-ny] .hero .nl-foto img{ width:100%; height:100%; object-fit:cover; display:block; }
+body[data-ny] .hero .nl-txt{ min-width:0; }
+body[data-ny] .hero .nl-dish{ margin:0 !important; font:600 30px/1.08 var(--sans) !important; letter-spacing:-.03em !important; color:var(--w) !important; white-space:normal !important; text-wrap:balance; }
+body[data-ny] .hero .nl-desc{ display:block !important; margin-top:6px !important; font:400 15px/1.45 var(--sans) !important; color:var(--w2) !important; }
+body[data-ny] .hero .nl-desc:empty{ display:none !important; }
+
+/* the price as a figure; what is left beside it */
+body[data-ny] .hero .nl-row{ display:flex !important; align-items:flex-end; justify-content:space-between; gap:12px; margin-top:18px !important; flex-wrap:nowrap; }
+body[data-ny] .hero .nl-price{ display:inline-flex !important; align-items:baseline; gap:6px; padding:0 !important; background:none !important; box-shadow:none !important; color:var(--w) !important; }
+body[data-ny] .hero .nl-price b{ font:300 46px/.9 var(--sans); letter-spacing:-.045em; font-variant-numeric:tabular-nums; }
+body[data-ny] .hero .nl-price small{ font:500 16px/1 var(--sans); color:var(--w2); }
+body[data-ny] .hero .nl-stock{ padding:7px 11px !important; border-radius:13px !important; font:600 12.5px/1 var(--sans) !important; white-space:nowrap;
+  color:#8FEBA8 !important; background:rgba(52,199,89,.16) !important; box-shadow:inset 0 0 0 1px rgba(123,228,149,.32) !important; }
+html.ny-soldout body[data-ny] .hero .nl-stock{ color:#FFB1AA !important; background:rgba(255,69,58,.18) !important; box-shadow:inset 0 0 0 1px rgba(255,120,110,.38) !important; }
+body[data-ny] .hero .nl-stock:empty{ display:none !important; }
+
+/* how much of the day is left */
+body[data-ny] .hero .nl-bar{ height:5px; margin-top:12px; border-radius:3px; overflow:hidden; background:rgba(255,255,255,.14); }
+body[data-ny] .hero .nl-bar[hidden]{ display:none; }
+body[data-ny] .hero .nl-bar i{ display:block; height:100%; border-radius:inherit; background:linear-gradient(90deg, #5ED37E, #8FEBA8); transform-origin:left; transition:transform .8s cubic-bezier(.2,.8,.2,1); }
+
+/* until when, and the button */
+body[data-ny] .hero .nl-cut{ display:block !important; margin-top:16px !important; padding-top:14px !important; border-top:1px solid rgba(255,255,255,.12) !important; font:400 13.5px/1.45 var(--sans) !important; color:var(--w2) !important; }
+body[data-ny] .hero .nl-cut:empty{ display:none !important; }
+body[data-ny] .hero .ny-live .nl-go{ display:flex !important; width:100% !important; margin-top:16px !important; justify-content:space-between; }
+
+/* ---------- phone: the same card, tighter, so the film still shows ---------- */
+@media (max-width:767px){
+  body[data-ny] .hero .ny-live{ max-width:none; justify-self:stretch; padding:16px !important; border-radius:24px !important;
+    -webkit-backdrop-filter:blur(16px) saturate(1.4) !important; backdrop-filter:blur(16px) saturate(1.4) !important; }
+  body[data-ny] .hero .nl-main{ margin-top:12px; gap:12px; }
+  body[data-ny] .hero .nl-foto{ width:54px; height:54px; border-radius:13px; }
+  body[data-ny] .hero .nl-dish{ font-size:23px !important; }
+  body[data-ny] .hero .nl-desc{ font-size:14px !important; display:-webkit-box !important; -webkit-line-clamp:1; -webkit-box-orient:vertical; overflow:hidden; }
+  body[data-ny] .hero .nl-row{ margin-top:12px !important; }
+  body[data-ny] .hero .nl-price b{ font-size:36px; }
+  body[data-ny] .hero .nl-cut{ display:none !important; }
+  body[data-ny] .hero .ny-live .nl-go{ margin-top:14px !important; min-height:50px; }
+}
+/* on a phone the card already leads to the order, so the opening keeps one
+   button of its own (Selskab & catering) and the card comes up higher */
+@media (max-width:767px){
+  body[data-ny] .hero__cta .btn--accent{ display:none !important; }
+  body[data-ny] .hero{ padding-top:96px !important; gap:22px !important; }
+}
