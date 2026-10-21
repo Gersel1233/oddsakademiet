@@ -1,0 +1,188 @@
+/* Spiis in the Lesreg signature — a layer over css/style.css for /ny/.
+   The page, its scripts and its ordering are the same as on spiis.dk; only
+   the look changes. Rules (from the Lesreg design skill): Chivo all the
+   way, headings in two tones (never italic, never serif), stone colours on
+   paper, navy with glass over coloured light on the dark parts, one accent.
+   Spiis' own orange is the brand: its logo and its call to order. */
+
+@font-face{ font-family:'Chivo'; font-weight:300; font-display:swap; src:url(assets/fonts/chivo-300.woff2) format('woff2'); }
+@font-face{ font-family:'Chivo'; font-weight:400; font-display:swap; src:url(assets/fonts/chivo-400.woff2) format('woff2'); }
+@font-face{ font-family:'Chivo'; font-weight:500; font-display:swap; src:url(assets/fonts/chivo-500.woff2) format('woff2'); }
+@font-face{ font-family:'Chivo'; font-weight:600; font-display:swap; src:url(assets/fonts/chivo-600.woff2) format('woff2'); }
+@font-face{ font-family:'Fragment Mono'; font-weight:400; font-display:swap; src:url(assets/fonts/fragmentmono-400.woff2) format('woff2'); }
+
+:root{
+  /* the signature's stone and navy */
+  --obsidian:#0E0F10; --graphite:#46443F; --ash:#8C8880; --travertine:#D8D1C5; --limestone:#E9E5DD; --porcelain:#F6F4EF;
+  --navy-950:#05080F; --navy-900:#0A1020; --navy-800:#101A33; --navy-700:#18264A; --deep:#2B3F7C;
+  --ultra:#2436E8; --ok:#34C759; --ok-ink:#1E7A3C;
+  --sans:'Chivo', ui-sans-serif, system-ui, sans-serif; --mono:'Fragment Mono', ui-monospace, Menlo, monospace;
+  --ease:cubic-bezier(.2,.8,.2,1);
+  /* Spiis' own variables, mapped onto it */
+  --cream:var(--porcelain); --cream-2:var(--limestone);
+  --ink:var(--obsidian); --ink-soft:var(--graphite);
+  --accent:#D9692E; --accent-deep:#B8521C; --accent-soft:#F6E2D4;
+  --dark:var(--navy-950); --dark-2:var(--navy-800);
+  --line:rgba(14,15,16,.1);
+  --shadow:0 0 0 1px rgba(14,15,16,.05), 0 24px 48px -32px rgba(14,15,16,.4);
+  --radius:28px;
+  --font-display:var(--sans); --font-body:var(--sans);
+  --nav-h:88px;
+}
+html{ background:var(--navy-950); }
+body[data-ny]{ background:var(--porcelain); color:var(--obsidian); font-family:var(--sans); letter-spacing:-.005em; -webkit-font-smoothing:antialiased; }
+body[data-ny] ::selection{ background:var(--ultra); color:#fff; }
+
+/* ---------- type: one face, two tones ---------- */
+body[data-ny] h1, body[data-ny] h2, body[data-ny] h3, body[data-ny] h4{ font-family:var(--sans); font-style:normal; }
+body[data-ny] em{ font-style:normal; }
+body[data-ny] .section__head{ text-align:left; max-width:var(--max, 1240px); margin-left:0; }
+body[data-ny] .section__head h2{ font:500 clamp(40px, 4.4vw, 64px)/1 var(--sans); letter-spacing:-.035em; text-wrap:balance; }
+body[data-ny] .eyebrow{ font:600 11px/14px var(--sans); letter-spacing:.06em; text-transform:uppercase; color:var(--ash); margin-bottom:16px; }
+body[data-ny] .eyebrow--light{ color:rgba(246,244,239,.55); }
+body[data-ny] .dotline{ display:none; }             /* no decoration */
+body[data-ny] .section__lead{ font:400 clamp(17px, 1.4vw, 20px)/1.55 var(--sans); color:var(--graphite); max-width:36em; margin-left:0; margin-right:0; text-align:left; }
+body[data-ny] .section{ padding:clamp(88px, 12vw, 144px) 0; }
+body[data-ny] .section--tint{ background:var(--limestone); }
+
+/* ---------- the bar: a capsule of glass ---------- */
+body[data-ny] .nav{ color:var(--porcelain); }
+body[data-ny] .nav, body[data-ny] .nav.is-solid{ background:none; box-shadow:none; -webkit-backdrop-filter:none; backdrop-filter:none; color:var(--porcelain); }
+body[data-ny] .nav__inner{ width:min(1296px, calc(100vw - 48px)); height:60px; margin-top:16px; padding:0 8px 0 22px; border-radius:30px;
+  background:linear-gradient(165deg, rgba(36,40,52,.86), rgba(14,15,16,.8)); -webkit-backdrop-filter:blur(20px) saturate(1.7); backdrop-filter:blur(20px) saturate(1.7);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.24), inset 0 0 0 .5px rgba(255,255,255,.16), 0 12px 32px rgba(0,0,0,.28); }
+body[data-ny] .logo__word{ font-family:var(--sans); font-weight:600; font-size:20px; letter-spacing:-.02em; }
+body[data-ny] .logo__dots{ display:none; }
+body[data-ny] .logo__hat{ width:26px; height:26px; margin-top:-4px; color:var(--accent); }
+body[data-ny] .nav__links{ gap:2px; }
+body[data-ny] .nav__links a:not(.btn){ height:40px; padding:0 14px; display:flex; align-items:center; border-radius:20px; font:400 14px/1 var(--sans); opacity:.86; transition:background .25s var(--ease), opacity .25s; }
+body[data-ny] .nav__links a:not(.btn)::after{ display:none; }
+body[data-ny] .nav__links a:not(.btn):hover{ background:rgba(246,244,239,.12); opacity:1; }
+body[data-ny] .nav__links .btn{ margin-left:10px; }
+body[data-ny] .nav__burger{ color:var(--porcelain); }
+@media (max-width:760px){ body[data-ny] .nav__inner{ width:calc(100vw - 40px); height:56px; margin-top:12px; border-radius:28px; padding:0 8px 0 18px; } }
+
+/* ---------- buttons: a pill with a lens ---------- */
+body[data-ny] .btn{ position:relative; isolation:isolate; gap:14px; height:48px; padding:0 22px; border:0; border-radius:24px; font:500 15px/1 var(--sans); letter-spacing:-.005em;
+  color:var(--porcelain); background:linear-gradient(180deg, #24262C, #0E0F10); overflow:visible;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.16), inset 0 0 0 1px rgba(255,255,255,.07), 0 1px 2px rgba(0,0,0,.18), 0 14px 30px -16px rgba(13,13,15,.5);
+  transition:transform .35s var(--ease), box-shadow .35s var(--ease); will-change:auto; }
+/* the call to order: Spiis' orange, with the lens and its arrow */
+body[data-ny] .btn--accent{ padding:0 5px 0 22px; color:#fff; background:linear-gradient(180deg, #E9793A, #C85A22);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.3), inset 0 0 0 1px rgba(255,255,255,.08), 0 1px 2px rgba(0,0,0,.18), 0 14px 30px -14px rgba(200,90,34,.7); }
+body[data-ny] .btn--accent::after{ content:""; position:static; inset:auto; flex:none; width:38px; height:38px; border-radius:50%; opacity:1; transform:none; animation:none;
+  background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M3 8h9.4M9.1 4.4 12.6 8 9.1 11.6' fill='none' stroke='%23C85A22' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center / 16px no-repeat, linear-gradient(180deg, #fff, #F3E9E1);
+  box-shadow:inset 0 1px 0 #fff, 0 1px 2px rgba(0,0,0,.3); transition:transform .35s var(--ease); }
+body[data-ny] .btn--ghost{ color:var(--porcelain); background:linear-gradient(180deg, rgba(255,255,255,.15), rgba(255,255,255,.05)); -webkit-backdrop-filter:blur(16px); backdrop-filter:blur(16px);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.34), inset 0 0 0 1px rgba(255,255,255,.14); }
+body[data-ny] .btn--ghost-dark{ color:var(--obsidian); background:linear-gradient(180deg, #fff, #EFECE5); box-shadow:inset 0 1px 0 #fff, 0 0 0 1px rgba(14,15,16,.08), 0 10px 24px -14px rgba(0,0,0,.4); }
+body[data-ny] .btn--small{ height:40px; font-size:14px; padding:0 16px; }
+body[data-ny] .btn--small.btn--accent{ padding:0 4px 0 16px; }
+body[data-ny] .btn--small.btn--accent::after{ width:32px; height:32px; }
+body[data-ny] .btn--big{ height:56px; border-radius:28px; font-size:16px; }
+body[data-ny] .btn--big.btn--accent::after{ width:46px; height:46px; }
+@media (hover:hover){
+  body[data-ny] .btn:hover{ transform:translateY(-1px); }
+  body[data-ny] .btn--accent:hover::after{ transform:translateX(2px); }
+}
+body[data-ny] .btn:active{ transform:scale(.97); transition-duration:.12s; }
+body[data-ny] .btn:focus-visible{ box-shadow:0 0 0 2px var(--porcelain), 0 0 0 4px var(--ultra); }
+
+/* ---------- the opening: the film under navy ---------- */
+body[data-ny] .hero{ background:var(--navy-950); }
+body[data-ny] .hero__overlay{ background:linear-gradient(180deg, rgba(5,8,15,.55), rgba(5,8,15,.35) 40%, rgba(5,8,15,.85)), radial-gradient(70% 60% at 50% 40%, rgba(24,38,74,.25), transparent 70%); }
+body[data-ny] .hero__content{ text-align:left; justify-self:start; width:min(1296px, calc(100vw - 48px)); margin:0 auto; }
+body[data-ny] .hero__kicker{ font:600 11px/14px var(--sans); letter-spacing:.06em; text-transform:uppercase; color:rgba(246,244,239,.7); }
+body[data-ny] .hero__title{ font:500 clamp(48px, 7vw, 104px)/.96 var(--sans); letter-spacing:-.045em; max-width:12em; text-wrap:balance; }
+body[data-ny] .hero__title em{ color:rgba(246,244,239,.6); font-family:var(--sans); font-weight:500; background:none; -webkit-text-fill-color:currentColor; }
+body[data-ny] .hero__sub{ font:400 clamp(17px, 1.5vw, 21px)/1.5 var(--sans); color:rgba(246,244,239,.8); max-width:30em; margin-left:0; }
+body[data-ny] .hero__cta{ justify-content:flex-start; }
+body[data-ny] .hero__scroll{ display:none; }
+/* the band of words: quiet, in mono, on navy */
+body[data-ny] .marquee{ background:var(--navy-950); color:rgba(246,244,239,.6); border:0; }
+body[data-ny] .marquee__track span{ font:400 12px/1 var(--mono); font-style:normal; letter-spacing:.08em; text-transform:uppercase; }
+body[data-ny] .marquee__track i{ color:var(--accent); }
+
+/* ---------- cards on paper ---------- */
+body[data-ny] .card, body[data-ny] .news, body[data-ny] .contactcard, body[data-ny] .hourscard, body[data-ny] .menuteaser{ border:0; border-radius:28px; background:#fff; box-shadow:var(--shadow); }
+body[data-ny] .fbjoin{ border-radius:24px; color:var(--obsidian); background:#fff; box-shadow:var(--shadow); }
+body[data-ny] .fbjoin__badge{ background:#1877F2; color:#fff; }
+body[data-ny] .fbjoin__cta{ border-radius:20px; background:var(--obsidian); color:#fff; font-family:var(--sans); }
+
+/* today's dish: the badge is navy glass with Spiis' orange light in it */
+body[data-ny] .today{ border:0; border-radius:32px; background:#fff; box-shadow:0 0 0 1px rgba(14,15,16,.05), 0 30px 60px -36px rgba(14,15,16,.5); }
+body[data-ny] .today__badge{ position:relative; isolation:isolate; overflow:hidden; font:500 22px/1.1 var(--sans); font-style:normal; letter-spacing:-.02em; color:var(--porcelain);
+  background:radial-gradient(80% 70% at 30% 110%, rgba(233,121,58,.75), transparent 70%), radial-gradient(70% 60% at 80% 0%, rgba(36,54,232,.55), transparent 70%), var(--navy-950); }
+body[data-ny] .today__dish{ font:500 clamp(28px, 3vw, 40px)/1.05 var(--sans); letter-spacing:-.03em; }
+body[data-ny] .today__desc{ color:var(--graphite); }
+body[data-ny] .today__price{ font:500 22px/1 var(--sans); color:var(--obsidian); background:var(--porcelain); border-radius:20px; padding:10px 16px; font-variant-numeric:tabular-nums; }
+body[data-ny] .today__stock{ font:500 12.5px/1 var(--sans); color:var(--ok-ink); background:rgba(52,199,89,.12); box-shadow:inset 0 0 0 1px rgba(52,199,89,.28); border-radius:14px; padding:8px 12px; }
+body[data-ny] .weekplan__title{ font:600 11px/14px var(--sans); letter-spacing:.06em; text-transform:uppercase; color:var(--ash); }
+body[data-ny] .dayplan{ border:0; border-radius:20px; background:#fff; box-shadow:0 0 0 1px rgba(14,15,16,.05), 0 10px 24px -18px rgba(14,15,16,.4); }
+body[data-ny] .dayplan__day{ font:400 11px/1 var(--mono); letter-spacing:.06em; text-transform:uppercase; color:var(--accent-deep); }
+body[data-ny] .dayplan__date{ font:400 11.5px/1 var(--mono); color:var(--ash); }
+body[data-ny] .dayplan__dish{ font-family:var(--sans); font-weight:600; letter-spacing:-.01em; }
+
+/* ---------- the order form ---------- */
+body[data-ny] .form{ border-radius:32px; }
+body[data-ny] .field > span{ font:500 13px/1 var(--sans); color:var(--graphite); }
+body[data-ny] .field input, body[data-ny] .field select, body[data-ny] .field textarea{ height:48px; border:0; border-radius:14px; font:400 15px/1 var(--sans); background:#fff;
+  box-shadow:inset 0 0 0 1px rgba(14,15,16,.14); transition:box-shadow .2s ease; }
+body[data-ny] .field textarea{ height:auto; line-height:22px; }
+body[data-ny] .field input:focus, body[data-ny] .field select:focus, body[data-ny] .field textarea:focus{ box-shadow:inset 0 0 0 1.5px var(--ultra), 0 0 0 4px rgba(36,54,232,.12); }
+body[data-ny] .segmented span{ height:48px; border:0; border-radius:24px; font:500 14px/1 var(--sans); background:#fff; box-shadow:inset 0 0 0 1px rgba(14,15,16,.14); }
+body[data-ny] .segmented input:checked + span{ background:var(--obsidian); color:#fff; box-shadow:0 10px 24px -12px rgba(0,0,0,.5); transform:none; }
+body[data-ny] .bcat, body[data-ny] .bitem, body[data-ny] .builder__dagens{ border-radius:16px; }
+body[data-ny] .form__submit.btn, body[data-ny] .form .btn--accent{ width:100%; justify-content:space-between; }
+
+/* ---------- the dark part: navy with glass over light ---------- */
+body[data-ny] .section--dark{ position:relative; overflow:hidden; color:var(--porcelain);
+  background:radial-gradient(40% 50% at 85% 30%, rgba(36,54,232,.45), transparent 70%), radial-gradient(35% 45% at 70% 90%, rgba(233,121,58,.35), transparent 70%), radial-gradient(70% 60% at 50% 0%, var(--navy-700), var(--navy-950) 70%); background-color:var(--navy-950); }
+body[data-ny] .section--dark h2{ font:500 clamp(40px, 4.4vw, 64px)/1 var(--sans); letter-spacing:-.035em; }
+body[data-ny] .value{ border:0; border-radius:22px; background:linear-gradient(160deg, rgba(255,255,255,.1), rgba(255,255,255,.03)); -webkit-backdrop-filter:blur(20px) saturate(1.5); backdrop-filter:blur(20px) saturate(1.5);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.2), inset 0 0 0 1px rgba(255,255,255,.1), 0 14px 30px -18px rgba(0,0,0,.6); }
+body[data-ny] .about__sign{ font-family:var(--sans); font-style:normal; color:rgba(246,244,239,.6); }
+
+/* ---------- menu, tapas, parties, contact ---------- */
+body[data-ny] .menucat, body[data-ny] .tapas__info, body[data-ny] .selsk__cta{ border-radius:24px; }
+body[data-ny] .tapas__price{ border-radius:20px; background:var(--porcelain); }
+body[data-ny] .tapas__price strong{ font-family:var(--sans); font-weight:500; letter-spacing:-.02em; color:var(--obsidian); }
+body[data-ny] .selsk__points li, body[data-ny] .selsk__points > *{ border-radius:16px; }
+body[data-ny] .hours__status{ font-family:var(--sans); }
+
+/* ---------- the foot: navy ---------- */
+body[data-ny] .footer{ background:var(--navy-950); color:var(--porcelain); }
+body[data-ny] .footer .logo__word{ color:var(--porcelain); }
+
+/* phones: no blur under glass, so scrolling stays light */
+@media (max-width:767px){
+  body[data-ny] .value{ -webkit-backdrop-filter:none; backdrop-filter:none; background:rgba(255,255,255,.07); }
+  body[data-ny] .section__head h2{ font-size:40px; line-height:42px; }
+  body[data-ny] .hero__title{ font-size:clamp(44px, 12vw, 56px); }
+}
+
+/* ---------- fixes after the first look ---------- */
+/* the Facebook card: white, its line of text grey */
+body[data-ny] .fbjoin{ border:0; width:min(1296px, calc(100% - 48px)); margin-top:24px; padding:14px 14px 14px 16px; }
+body[data-ny] .fbjoin__text strong{ font:600 15px/20px var(--sans); }
+body[data-ny] .fbjoin__text span{ display:block; font:400 13.5px/19px var(--sans); color:var(--graphite); }
+body[data-ny] .fbjoin__badge{ width:44px; height:44px; }
+body[data-ny] .fbjoin__cta{ height:40px; padding:0 16px; display:inline-flex; align-items:center; font:500 14px/1 var(--sans); }
+/* the page measure: the same width as the bar */
+body[data-ny] .container{ width:min(1296px, calc(100vw - 48px)); }
+body[data-ny] .container--narrow{ width:min(760px, calc(100vw - 48px)); }
+/* everything reads from the left */
+body[data-ny] .menuteaser, body[data-ny] .selsk__cta{ margin:0; text-align:left; justify-items:start; max-width:640px; padding:28px; }
+body[data-ny] .menuteaser__icons{ justify-content:flex-start; }
+body[data-ny] .selsk__cta h3{ font:500 24px/30px var(--sans); letter-spacing:-.015em; }
+/* the dark section: room to breathe under the heading */
+body[data-ny] .section--dark h2 + *{ margin-top:22px; }
+body[data-ny] .about__text p{ color:rgba(246,244,239,.76); }
+@media (max-width:760px){
+  body[data-ny] .container, body[data-ny] .container--narrow{ width:calc(100vw - 40px); }
+  body[data-ny] .fbjoin{ width:calc(100% - 40px); }
+}
+/* headings in two tones: the second line the same face, quieter */
+body[data-ny] .tone{ display:block; color:color-mix(in srgb, currentColor 48%, transparent); }
+body[data-ny] .hero__line .tone{ display:inline; }
+@media (max-width:760px){ body[data-ny] .hero__title{ font-size:clamp(38px, 10.5vw, 46px); line-height:1; } }
