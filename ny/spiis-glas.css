@@ -132,3 +132,70 @@ body[data-ny] .segmented input:checked + span{ background:linear-gradient(180deg
 /* the phone number to call: a lens with the number in dark, easy to tap */
 body[data-ny] .tapasvilkaar__tlf{ display:inline-flex; align-items:center; gap:8px; min-height:46px; padding:0 18px; border-radius:23px; font:600 17px/1 var(--sans); color:var(--t1) !important;
   background:var(--lens) !important; box-shadow:var(--lens-sh), inset 0 1px 0 rgba(255,255,255,.8) !important; text-decoration:none; font-variant-numeric:tabular-nums; }
+
+/* ======================================================================
+   The week of dishes: one panel, one clear line per day
+   Day and date on the left, the dish large in the middle, the price on
+   the right. Today is marked; closed days step back.
+   ====================================================================== */
+body[data-ny] .weekplan{ margin-top:clamp(40px, 5vw, 64px); }
+body[data-ny] .weekplan__title .tone{ display:block; }
+body[data-ny] .weekplan__title{ margin:0 0 16px; font:500 clamp(24px, 2.4vw, 32px)/1.1 var(--sans) !important; letter-spacing:-.025em; text-transform:none !important; color:var(--t1) !important; }
+body[data-ny] .weekplan__grid{ position:relative; display:block !important; padding:6px clamp(6px, 1vw, 10px); border-radius:28px;
+  background:var(--pane); box-shadow:var(--pane-sh); -webkit-backdrop-filter:var(--glass-blur); backdrop-filter:var(--glass-blur); }
+body[data-ny] .weekplan__grid::after{ content:""; position:absolute; inset:0; border-radius:inherit; padding:1px; pointer-events:none; background:var(--edge);
+  -webkit-mask:linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite:xor; mask:linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0); }
+
+body[data-ny] .weekplan__grid .dayplan{ display:grid !important; grid-template-columns:150px minmax(0, 1fr) auto; column-gap:24px; row-gap:4px; align-items:baseline;
+  width:100%; margin:0; padding:20px 18px !important; border-radius:18px !important; opacity:1 !important; transform:none !important;
+  background:none !important; box-shadow:none !important; -webkit-backdrop-filter:none !important; backdrop-filter:none !important; border:0 !important; position:relative; }
+body[data-ny] .weekplan__grid .dayplan::after{ display:none; }
+body[data-ny] .weekplan__grid .dayplan + .dayplan::before{ content:""; position:absolute; left:18px; right:18px; top:0; height:1px; background:var(--hair); }
+@media (hover:hover){ body[data-ny] .weekplan__grid .dayplan:hover{ background:rgba(255,255,255,.22) !important; } }
+body[data-ny] .weekplan__grid .dayplan:active{ background:rgba(255,255,255,.3) !important; }
+
+/* the columns */
+body[data-ny] .dayplan > *{ grid-column:2; margin:0 !important; }
+body[data-ny] .dayplan__day{ grid-column:1 !important; grid-row:1; font:600 17px/1.2 var(--sans) !important; letter-spacing:-.01em !important; text-transform:none !important; color:var(--t1) !important; }
+body[data-ny] .dayplan__date{ grid-column:1 !important; grid-row:2; font:400 13.5px/1.3 var(--sans) !important; color:var(--t3) !important; }
+body[data-ny] .dayplan__price{ grid-column:3 !important; grid-row:1; justify-self:end; font:500 19px/1.2 var(--sans) !important; color:var(--t1) !important; font-variant-numeric:tabular-nums; }
+body[data-ny] .dayplan__mere{ grid-column:3 !important; grid-row:2; justify-self:end; opacity:1 !important; padding:0 !important; font:500 13px/1.3 var(--sans) !important; color:var(--warm-text) !important; white-space:nowrap; }
+
+/* the dish: large and dark */
+body[data-ny] .dayplan__dish{ font:600 19px/1.3 var(--sans) !important; letter-spacing:-.015em; color:var(--t1) !important; }
+body[data-ny] .dayplan__dish--multi{ font-size:17px !important; }
+body[data-ny] .dayplan__inlineprice{ font:500 15px/1 var(--sans); color:var(--t2); margin-left:6px; font-variant-numeric:tabular-nums; }
+body[data-ny] .dayplan__desc{ font:400 15px/1.45 var(--sans) !important; color:var(--t2) !important; -webkit-line-clamp:2; }
+body[data-ny] .dayplan__tag{ justify-self:start; margin-top:6px !important; padding:6px 10px; border-radius:10px; font:600 12.5px/1 var(--sans); color:var(--warm-text); background:rgba(233,121,58,.14); }
+body[data-ny] .dayplan__tag--soldout{ color:var(--bad-text); background:rgba(255,69,58,.12); }
+body[data-ny] .dayplan .dagsbesked{ margin-top:6px !important; font:500 14px/1.4 var(--sans); color:var(--t2); }
+body[data-ny] .dayplan__dish--kommer{ font:500 15px/1.45 var(--sans) !important; color:var(--t2) !important; }
+
+/* today: a soft field, an orange lens and the word in orange */
+body[data-ny] .weekplan__grid .dayplan.ny-today{ background:rgba(255,255,255,.34) !important; box-shadow:inset 0 0 0 1.5px rgba(233,121,58,.55), var(--film-sh) !important; }
+body[data-ny] .weekplan__grid .dayplan.ny-today + .dayplan::before, body[data-ny] .weekplan__grid .dayplan.ny-today::before{ display:none; }
+body[data-ny] .dayplan.ny-today .dayplan__day{ color:var(--warm-text) !important; }
+body[data-ny] .dayplan.ny-today .dayplan__day::before{ content:""; display:inline-block; width:7px; height:7px; margin:0 8px 2px 0; border-radius:50%; background:var(--accent); box-shadow:0 0 0 3px rgba(233,121,58,.2); vertical-align:middle; }
+
+/* closed days: one quiet line */
+body[data-ny] .weekplan__grid .dayplan--closed{ padding-top:14px !important; padding-bottom:14px !important; }
+body[data-ny] .dayplan--closed .dayplan__day{ color:var(--t2) !important; font-weight:500 !important; }
+body[data-ny] .dayplan--closed .dayplan__dish{ font:500 15px/1.3 var(--sans) !important; color:var(--t3) !important; }
+body[data-ny] .dayplan--closed .dayplan__desc{ display:none; }
+body[data-ny] .dayplan--closed .dayplan__date{ grid-row:1; grid-column:1; align-self:end; justify-self:end; display:none; }
+
+@media (max-width:767px){
+  body[data-ny] .weekplan__grid{ padding:4px; border-radius:24px; }
+  body[data-ny] .weekplan__grid .dayplan{ grid-template-columns:minmax(0, 1fr) auto; column-gap:14px; padding:16px 14px !important; }
+  body[data-ny] .weekplan__grid .dayplan + .dayplan::before{ left:14px; right:14px; }
+  body[data-ny] .dayplan > *{ grid-column:1; }
+  body[data-ny] .dayplan__day{ grid-column:1 !important; grid-row:1; font-size:15px !important; }
+  body[data-ny] .dayplan__date{ grid-column:2 !important; grid-row:1; justify-self:end; font-size:13px !important; }
+  body[data-ny] .dayplan__dish{ font-size:18px !important; margin-top:4px !important; }
+  body[data-ny] .dayplan__price{ grid-column:2 !important; grid-row:2; align-self:start; margin-top:6px !important; font-size:17px !important; }
+  body[data-ny] .dayplan__mere{ display:none; }
+  body[data-ny] .dayplan--closed .dayplan__dish{ grid-column:1; }
+  body[data-ny] .dayplan--closed .dayplan__date{ display:block; }
+  body[data-ny] .dayplan__dish--kommer{ font-size:15px !important; }
+  body[data-ny] .dayplan--closed .dayplan__dish{ font-size:15px !important; }
+}
