@@ -1,0 +1,220 @@
+/* Spiis /ny/: the café. Loaded last.
+   Clear and warm instead of misty: latte on the walls, cream paper for the
+   cards, espresso for the boards and the dark text, Spiis' orange for what
+   you order. No haze behind the content and no fade while you scroll;
+   glass only where it belongs, over the film. */
+
+:root{
+  --latte:#E9DFD0; --latte-2:#E2D6C4;
+  --paper:#E9DFD0;
+  --cream:#FBF7F0; --cream-in:#F4EDE2;
+  --espresso:#2B1E15; --espresso-2:#3B2A1E;
+  --t1:#24180F; --t2:rgba(36,24,15,.76); --t3:rgba(36,24,15,.58);
+  --accent:#E2702E; --warm-text:#A9481A;
+  --edge-line:rgba(43,30,21,.12);
+  --hair:rgba(43,30,21,.12);
+  --card-sh:0 1px 2px rgba(43,30,21,.06), 0 14px 30px -18px rgba(43,30,21,.32);
+  --card-sh-hi:0 1px 2px rgba(43,30,21,.08), 0 22px 44px -22px rgba(43,30,21,.42);
+  --field:#FFFFFF;
+}
+html{ background:var(--latte); }
+html:has(body[data-ny] .hero){ background:var(--latte); }
+body[data-ny]{ color:var(--t1); }
+
+/* ---------- no haze: the light behind the page goes, the colour stays ---------- */
+.ny-bg{ background:linear-gradient(180deg, #ECE3D5, var(--latte) 35%, var(--latte-2)) !important; }
+.ny-bg i{ display:none !important; }
+/* content is there when you arrive, not fading in as you scroll */
+body[data-ny] [data-reveal]{ opacity:1 !important; transform:none !important; transition:none !important; }
+
+/* ---------- cards: cream paper, crisp edge, real shadow ---------- */
+body[data-ny] .card, body[data-ny] .news, body[data-ny] .dayplan, body[data-ny] .fbjoin, body[data-ny] .value,
+body[data-ny] .selsk__cta, body[data-ny] .tapas__info, body[data-ny] .nm, body[data-ny] .confirm__card, body[data-ny] .feriekort, body[data-ny] .award, body[data-ny] .closurebanner,
+body[data-ny] .card.form, body[data-ny] .menucat, body[data-ny] .daymenu, body[data-ny] .ugemenu, body[data-ny] .hourscard, body[data-ny] .infocard, body[data-ny] .weekplan__grid{
+  background:var(--cream) !important; box-shadow:var(--card-sh), inset 0 0 0 1px var(--edge-line) !important;
+  -webkit-backdrop-filter:none !important; backdrop-filter:none !important; }
+body[data-ny] .card::after, body[data-ny] .news::after, body[data-ny] .today::after, body[data-ny] .dayplan::after, body[data-ny] .fbjoin::after, body[data-ny] .value::after,
+body[data-ny] .selsk__cta::after, body[data-ny] .tapas__info::after, body[data-ny] .nm::after, body[data-ny] .confirm__card::after, .nm-bar::after, body[data-ny] .weekplan__grid::after{ display:none !important; }
+@media (max-width:767px){
+  body[data-ny] .card, body[data-ny] .news, body[data-ny] .dayplan, body[data-ny] .fbjoin, body[data-ny] .value, body[data-ny] .selsk__cta, body[data-ny] .tapas__info, body[data-ny] .nm,
+  body[data-ny] .card.form, body[data-ny] .menucat, body[data-ny] .daymenu, body[data-ny] .ugemenu{ background:var(--cream) !important; }
+}
+body[data-ny] .tone{ color:rgba(36,24,15,.46); }
+body[data-ny] .eyebrow, body[data-ny] .eyebrow--light{ color:var(--warm-text); }
+body[data-ny] .section__lead, body[data-ny] .about__text p{ color:var(--t2); }
+
+/* ---------- the bar: clear over the film, solid and sharp once you scroll ---------- */
+body[data-ny] .nav__inner::before{ display:none; }
+body[data-ny] .nav:not(.is-solid) .nav__inner{ background:linear-gradient(180deg, rgba(20,14,10,.34), rgba(20,14,10,.18)) !important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.22), inset 0 0 0 1px rgba(255,255,255,.14) !important; -webkit-backdrop-filter:blur(14px) saturate(1.4); backdrop-filter:blur(14px) saturate(1.4); }
+body[data-ny] .nav:not(.is-solid) .logo, body[data-ny] .nav:not(.is-solid) .nav__links a:not(.btn), body[data-ny] .nav:not(.is-solid) .nav__burger{ color:#fff !important; }
+body[data-ny] .nav.is-solid .nav__inner, html.ny-dock-on body[data-ny] .nav__inner, body.menupage[data-ny] .nav__inner{
+  background:rgba(251,247,240,.97) !important; box-shadow:0 1px 2px rgba(43,30,21,.08), 0 14px 30px -14px rgba(43,30,21,.4), inset 0 0 0 1px var(--edge-line) !important;
+  -webkit-backdrop-filter:blur(12px); backdrop-filter:blur(12px); }
+body[data-ny] .nav.is-solid .logo, body[data-ny] .nav.is-solid .nav__links a:not(.btn), body[data-ny] .nav.is-solid .nav__burger,
+body.menupage[data-ny] .nav .logo, body.menupage[data-ny] .nav__links a:not(.btn){ color:var(--t1) !important; }
+body[data-ny] .nav .logo__hat{ color:var(--accent) !important; }
+body[data-ny] .nav__links a:not(.btn){ opacity:1 !important; font-weight:500 !important; }
+body[data-ny] .nav.is-solid .nav__links a:not(.btn):hover{ background:var(--cream-in) !important; }
+@media (max-width:900px){
+  body[data-ny] .nav__links{ background:var(--cream) !important; -webkit-backdrop-filter:none !important; backdrop-filter:none !important; box-shadow:var(--card-sh-hi), inset 0 0 0 1px var(--edge-line); }
+  body[data-ny] .nav__links a:not(.btn){ color:var(--t1) !important; }
+}
+
+/* ---------- the opening: the film, clear, with today's dish on smoked glass ---------- */
+body[data-ny] .hero{ background:#1A120C; }
+body[data-ny] .hero__overlay{ background:linear-gradient(90deg, rgba(20,13,8,.66), rgba(20,13,8,.18) 60%, rgba(20,13,8,.28)), linear-gradient(180deg, rgba(20,13,8,.35), transparent 26%, transparent 64%, rgba(20,13,8,.55)) !important; }
+.ny-live{ background:rgba(24,16,10,.46) !important; -webkit-backdrop-filter:blur(18px) saturate(1.5) !important; backdrop-filter:blur(18px) saturate(1.5) !important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.22), inset 0 0 0 1px rgba(255,255,255,.14), 0 24px 50px -24px rgba(0,0,0,.6) !important; }
+.ny-live .nl-dish{ color:#fff; }
+.ny-live .nl-desc, .ny-live .nl-cut{ color:rgba(255,255,255,.84) !important; }
+.ny-live .nl-k{ color:#FFC79E !important; }
+@media (max-width:767px){ .ny-live{ background:rgba(24,16,10,.5) !important; } }
+
+/* the marquee: a thin chalk line, not a pale band */
+body[data-ny] .marquee{ background:var(--espresso) !important; color:rgba(251,247,240,.78) !important; border:0 !important; }
+body[data-ny] .marquee i{ color:var(--accent); }
+
+/* ---------- today's dish: the café board ---------- */
+body[data-ny] .today{ background:var(--espresso) !important; color:#FBF7F0 !important; box-shadow:0 24px 50px -24px rgba(43,30,21,.6), inset 0 0 0 1px rgba(255,255,255,.06) !important;
+  -webkit-backdrop-filter:none !important; backdrop-filter:none !important; }
+body[data-ny] .today *{ --t1:#FBF7F0; --t2:rgba(251,247,240,.8); --t3:rgba(251,247,240,.6); }
+body[data-ny] .today h3, body[data-ny] .today .today__dish, body[data-ny] .today__title{ color:#FBF7F0 !important; }
+body[data-ny] .today p, body[data-ny] .today .today__desc{ color:rgba(251,247,240,.82) !important; }
+body[data-ny] .today__price{ background:#FBF7F0 !important; color:var(--espresso) !important; box-shadow:none !important; }
+body[data-ny] .today__stock{ color:#8FE3A5 !important; background:rgba(52,199,89,.16) !important; box-shadow:inset 0 0 0 1px rgba(123,228,149,.35) !important; }
+
+/* ---------- the week: cards you swipe to the right ---------- */
+body[data-ny] .weekplan__head{ display:flex; align-items:flex-end; justify-content:space-between; gap:16px; margin-bottom:16px; }
+body[data-ny] .weekplan__head .weekplan__title{ margin:0 !important; }
+.ny-wk-nav{ display:flex; gap:8px; }
+.ny-wk-nav button{ width:46px; height:46px; border-radius:50%; border:0; cursor:pointer; display:grid; place-items:center; color:var(--t1);
+  background:var(--cream); box-shadow:var(--card-sh), inset 0 0 0 1px var(--edge-line); transition:transform .15s ease, opacity .2s ease; }
+.ny-wk-nav button:active{ transform:scale(.94); }
+.ny-wk-nav button:disabled{ opacity:.35; cursor:default; }
+.ny-wk-nav svg{ width:18px; height:18px; fill:none; stroke:currentColor; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; }
+body[data-ny] .weekplan__grid{ display:flex !important; gap:12px; overflow-x:auto; overscroll-behavior-x:contain; scroll-snap-type:x mandatory; scroll-padding:0 2px;
+  padding:4px 2px 18px !important; margin:0 -2px; background:none !important; box-shadow:none !important; border-radius:0 !important; scrollbar-width:none; }
+body[data-ny] .weekplan__grid::-webkit-scrollbar{ display:none; }
+body[data-ny] .weekplan__grid .dayplan{ flex:0 0 clamp(230px, 22vw, 270px); display:flex !important; flex-direction:column; align-items:flex-start; gap:4px;
+  min-height:220px; padding:20px !important; border-radius:22px !important; scroll-snap-align:start; text-align:left;
+  background:var(--cream) !important; box-shadow:var(--card-sh), inset 0 0 0 1px var(--edge-line) !important; }
+body[data-ny] .weekplan__grid .dayplan::before{ display:none !important; }
+body[data-ny] .weekplan__grid .dayplan > *{ grid-column:auto !important; grid-row:auto !important; justify-self:auto !important; }
+body[data-ny] .weekplan__grid .dayplan__day{ font:600 13px/1.2 var(--sans) !important; letter-spacing:.04em !important; text-transform:uppercase !important; color:var(--warm-text) !important; }
+body[data-ny] .weekplan__grid .dayplan__date{ display:block !important; font:400 13px/1.3 var(--sans) !important; color:var(--t3) !important; margin-bottom:12px !important; }
+body[data-ny] .weekplan__grid .dayplan__dish{ font:600 19px/1.25 var(--sans) !important; color:var(--t1) !important; }
+body[data-ny] .weekplan__grid .dayplan__desc{ font:400 14px/1.45 var(--sans) !important; color:var(--t2) !important; display:-webkit-box !important; -webkit-line-clamp:3; }
+body[data-ny] .weekplan__grid .dayplan__price{ margin-top:auto !important; padding-top:12px; font:500 20px/1 var(--sans) !important; color:var(--t1) !important; }
+body[data-ny] .weekplan__grid .dayplan__mere{ display:block !important; margin-top:10px !important; font:600 13px/1 var(--sans) !important; color:var(--warm-text) !important; }
+body[data-ny] .weekplan__grid .dayplan__dish--kommer{ font:500 15px/1.45 var(--sans) !important; color:var(--t2) !important; }
+/* today is the board */
+body[data-ny] .weekplan__grid .dayplan.ny-today{ background:var(--espresso) !important; box-shadow:0 20px 40px -22px rgba(43,30,21,.7) !important; }
+body[data-ny] .weekplan__grid .dayplan.ny-today .dayplan__day{ color:#FFB27E !important; }
+body[data-ny] .weekplan__grid .dayplan.ny-today .dayplan__day::before{ background:#FFB27E; box-shadow:0 0 0 3px rgba(255,178,126,.25); }
+body[data-ny] .weekplan__grid .dayplan.ny-today .dayplan__dish, body[data-ny] .weekplan__grid .dayplan.ny-today .dayplan__price{ color:#FBF7F0 !important; }
+body[data-ny] .weekplan__grid .dayplan.ny-today .dayplan__date, body[data-ny] .weekplan__grid .dayplan.ny-today .dayplan__desc{ color:rgba(251,247,240,.75) !important; }
+body[data-ny] .weekplan__grid .dayplan.ny-today .dayplan__mere{ color:#FFB27E !important; }
+/* closed days: quieter, still a card */
+body[data-ny] .weekplan__grid .dayplan--closed{ background:var(--cream-in) !important; box-shadow:inset 0 0 0 1px var(--edge-line) !important; }
+body[data-ny] .weekplan__grid .dayplan--closed .dayplan__dish{ font:500 16px/1.3 var(--sans) !important; color:var(--t3) !important; }
+body[data-ny] .weekplan__grid .dayplan--closed .dayplan__day{ color:var(--t3) !important; }
+@media (max-width:767px){
+  body[data-ny] .weekplan__grid{ margin:0 -16px; padding:4px 16px 18px !important; scroll-padding:0 16px; }
+  body[data-ny] .weekplan__grid .dayplan{ flex-basis:76vw; min-height:200px; }
+  .ny-wk-nav{ display:none; }
+}
+
+/* ---------- the menu on the front page ---------- */
+.nm-tab{ background:var(--cream-in) !important; box-shadow:inset 0 0 0 1px var(--edge-line) !important; color:var(--t1) !important; }
+.nm-tab[aria-selected="true"]{ background:var(--espresso) !important; color:#FBF7F0 !important; box-shadow:0 10px 22px -12px rgba(43,30,21,.7) !important; }
+.nm-tab[aria-selected="true"] small{ color:#FBF7F0 !important; background:rgba(255,255,255,.16) !important; }
+.nm-item:hover{ background:var(--cream-in) !important; }
+.nm-go{ background:var(--cream-in) !important; box-shadow:inset 0 0 0 1px var(--edge-line) !important; }
+.nm-item:hover .nm-go{ background:var(--accent) !important; color:#fff !important; }
+.nm-bar, body.menupage[data-ny] .nm-bar{ background:rgba(251,247,240,.97) !important; box-shadow:var(--card-sh), inset 0 0 0 1px var(--edge-line) !important; }
+.nm-bar a.on{ background:var(--espresso) !important; color:#FBF7F0 !important; }
+
+/* ---------- forms: white fields with a clear line ---------- */
+body[data-ny] .field input, body[data-ny] .field select, body[data-ny] .field textarea, body[data-ny] .nof input{
+  background:#fff !important; box-shadow:inset 0 0 0 1px rgba(43,30,21,.2) !important; }
+body[data-ny] .field input:focus, body[data-ny] .field select:focus, body[data-ny] .field textarea:focus{ box-shadow:0 0 0 3px rgba(226,112,46,.25), inset 0 0 0 1.5px var(--accent) !important; }
+body[data-ny] .builder__dagens, body[data-ny] .tapas__cavacard.is-on{ background:var(--cream-in) !important; }
+body[data-ny] .stepper button, body[data-ny] .cavabtn, body[data-ny] .segmented span, body[data-ny] .choice, body[data-ny] .tapasvilkaar__tlf{
+  background:#fff !important; box-shadow:0 1px 2px rgba(43,30,21,.08), inset 0 0 0 1px rgba(43,30,21,.16) !important; }
+body[data-ny] .segmented input:checked + span{ background:var(--espresso) !important; color:#FBF7F0 !important; box-shadow:none !important; }
+body[data-ny] .bcat__hint{ color:var(--warm-text) !important; }
+body[data-ny] .ny-hit{ background:rgba(226,112,46,.14) !important; }
+
+/* ---------- buttons: solid and sharp ---------- */
+body[data-ny] .btn:not(.btn--accent):not(.btn--ghost-dark){ background:#fff !important; color:var(--t1) !important; box-shadow:0 1px 2px rgba(43,30,21,.08), inset 0 0 0 1px rgba(43,30,21,.16) !important; }
+body[data-ny] .hero .btn:not(.btn--accent){ background:rgba(255,255,255,.16) !important; color:#fff !important; box-shadow:inset 0 0 0 1px rgba(255,255,255,.5) !important; -webkit-backdrop-filter:blur(10px); backdrop-filter:blur(10px); }
+body[data-ny] .btn--ghost-dark, body[data-ny] .fbjoin__cta{ background:var(--espresso) !important; color:#FBF7F0 !important; }
+
+/* ---------- the bottom bar while you scroll ---------- */
+.ny-dock{ background:rgba(251,247,240,.97) !important; -webkit-backdrop-filter:blur(12px) !important; backdrop-filter:blur(12px) !important;
+  box-shadow:0 1px 2px rgba(43,30,21,.08), 0 18px 40px -16px rgba(43,30,21,.45), inset 0 0 0 1px var(--edge-line) !important; }
+.ny-dock::after{ display:none !important; }
+
+/* ---------- photos, values, the rest ---------- */
+body[data-ny] .news__media, body[data-ny] .selsk__foto{ box-shadow:none !important; }
+body[data-ny] .value{ border-radius:20px; }
+body[data-ny] .selsk__points li{ color:var(--t2) !important; }
+body[data-ny] .footer{ background:var(--espresso) !important; }
+
+/* ---------- edge to edge on a phone ---------- */
+body[data-ny] .footer{ padding-bottom:calc(40px + env(safe-area-inset-bottom)); }
+
+/* ======================================================================
+   The opening: a café window. The film sits in a frame at close to its
+   own size, so it stays sharp; today's dish lies over it as the board.
+   The page is cream from the very top, so the phone shows no dark bands.
+   ====================================================================== */
+body[data-ny] .hero{ --t1:#24180F; --t2:rgba(36,24,15,.76); --t3:rgba(36,24,15,.58); color:var(--t1) !important; background:none !important;
+  min-height:0 !important; display:grid !important; grid-template-columns:minmax(0, .95fr) minmax(0, 1.05fr) !important; grid-template-areas:"content media";
+  align-items:center; gap:clamp(32px, 5vw, 72px) !important; width:min(1296px, calc(100vw - 48px)); margin:0 auto; padding:clamp(112px, 12vw, 150px) 0 clamp(72px, 8vw, 110px) !important; }
+body[data-ny] .hero__content{ grid-area:content; }
+body[data-ny] .hero__media{ grid-area:media; position:relative !important; inset:auto !important; align-self:stretch; aspect-ratio:4 / 3.4; min-height:0; border-radius:32px; overflow:hidden;
+  background:#2B1E15; box-shadow:0 30px 60px -30px rgba(43,30,21,.55), 0 0 0 1px rgba(43,30,21,.08); }
+body[data-ny] .hero__media::before{ transform:none !important; }
+body[data-ny] .hero__media video, body[data-ny] .hero__media video.is-playing{ transform:none !important; animation:none !important; }
+body[data-ny] .hero__overlay{ background:linear-gradient(180deg, transparent 55%, rgba(20,13,8,.35)) !important; }
+body[data-ny] .hero__kicker{ color:var(--warm-text) !important; }
+body[data-ny] .hero__title{ color:var(--t1) !important; font-size:clamp(46px, 5.6vw, 88px) !important; }
+body[data-ny] .hero__title .tone{ color:rgba(36,24,15,.44) !important; }
+body[data-ny] .hero__sub{ color:var(--t2) !important; }
+body[data-ny] .hero .btn:not(.btn--accent){ background:#fff !important; color:var(--t1) !important; box-shadow:0 1px 2px rgba(43,30,21,.08), inset 0 0 0 1px rgba(43,30,21,.16) !important; -webkit-backdrop-filter:none; backdrop-filter:none; }
+
+/* the board: today's dish, over the bottom of the frame */
+body[data-ny] .hero > .ny-live{ grid-area:media; align-self:end; justify-self:start; position:relative; z-index:3; width:min(380px, 88%); margin:0 0 -36px -36px !important;
+  background:var(--espresso) !important; -webkit-backdrop-filter:none !important; backdrop-filter:none !important; border-radius:26px !important;
+  box-shadow:0 30px 60px -24px rgba(43,30,21,.7), inset 0 0 0 1px rgba(255,255,255,.06) !important; }
+.ny-live .nl-price{ background:#FBF7F0 !important; color:var(--espresso) !important; box-shadow:none !important; }
+
+/* the bar: cream from the start, firmer once you scroll */
+body[data-ny] .nav:not(.is-solid) .nav__inner{ background:rgba(251,247,240,.86) !important; box-shadow:inset 0 0 0 1px var(--edge-line) !important; -webkit-backdrop-filter:blur(12px); backdrop-filter:blur(12px); }
+body[data-ny] .nav:not(.is-solid) .logo, body[data-ny] .nav:not(.is-solid) .nav__links a:not(.btn), body[data-ny] .nav:not(.is-solid) .nav__burger{ color:var(--t1) !important; }
+html.ny-dock-on body[data-ny] .nav:not(.is-solid) .nav__inner{ background:rgba(251,247,240,.97) !important; }
+
+@media (max-width:900px){
+  body[data-ny] .hero{ grid-template-columns:minmax(0, 1fr) !important; grid-template-areas:"content" "media"; width:auto; margin:0 16px; padding:96px 0 64px !important; gap:28px !important; align-content:start; }
+  body[data-ny] .hero__media{ aspect-ratio:1 / 1; border-radius:26px; }
+  body[data-ny] .hero > .ny-live{ justify-self:stretch; width:auto; margin:0 12px -44px !important; }
+}
+@media (max-width:767px){
+  body[data-ny] .hero__title{ font-size:clamp(38px, 10.5vw, 46px) !important; }
+  /* the board on a phone: the dish, its price, what is left and the button */
+  body[data-ny] .hero > .ny-live{ padding:16px !important; display:block !important; }
+  .ny-live .nl-k, .ny-live .nl-desc{ display:none !important; }
+  .ny-live .nl-cut{ display:none !important; }
+  body[data-ny] .ny-live .nl-go{ display:flex !important; width:100% !important; margin-top:14px !important; justify-content:space-between; }
+  .ny-live .nl-dish{ white-space:normal !important; }
+}
+body[data-ny] .hero__title, body[data-ny] .hero__title *, body[data-ny] .hero__sub, body[data-ny] .hero__kicker{ text-shadow:none !important; filter:none !important; }
+body[data-ny] .hero__title{ font-size:clamp(44px, 4.7vw, 76px) !important; max-width:none !important; }
+@media (max-width:900px){
+  /* on a phone the window comes first: the food and today's dish, then the words */
+  body[data-ny] .hero{ grid-template-areas:"media" "content"; padding-top:92px !important; gap:64px !important; }
+  body[data-ny] .hero__media{ aspect-ratio:4 / 3.3; }
+}
+@media (max-width:767px){ body[data-ny] .hero__title{ font-size:clamp(36px, 10vw, 44px) !important; } }
