@@ -1,9 +1,8 @@
-/* Spiis in the Lesreg signature — a layer over css/style.css for /ny/.
-   The page, its scripts and its ordering are the same as on spiis.dk; only
-   the look changes. Rules (from the Lesreg design skill): Chivo all the
-   way, headings in two tones (never italic, never serif), stone colours on
-   paper, navy with glass over coloured light on the dark parts, one accent.
-   Spiis' own orange is the brand: its logo and its call to order. */
+/* Spiis in the Lesreg signature, dark and in liquid glass — a layer over
+   css/style.css for /ny/. Same page, same scripts, same ordering; only the
+   look changes. Navy with coloured light behind everything, every surface
+   a pane of glass, Chivo in two tones, one accent (Spiis' orange) for the
+   call to order, green for what is open and ready. */
 
 @font-face{ font-family:'Chivo'; font-weight:300; font-display:swap; src:url(assets/fonts/chivo-300.woff2) format('woff2'); }
 @font-face{ font-family:'Chivo'; font-weight:400; font-display:swap; src:url(assets/fonts/chivo-400.woff2) format('woff2'); }
@@ -12,44 +11,81 @@
 @font-face{ font-family:'Fragment Mono'; font-weight:400; font-display:swap; src:url(assets/fonts/fragmentmono-400.woff2) format('woff2'); }
 
 :root{
-  /* the signature's stone and navy */
-  --obsidian:#0E0F10; --graphite:#46443F; --ash:#8C8880; --travertine:#D8D1C5; --limestone:#E9E5DD; --porcelain:#F6F4EF;
-  --navy-950:#05080F; --navy-900:#0A1020; --navy-800:#101A33; --navy-700:#18264A; --deep:#2B3F7C;
-  --ultra:#2436E8; --ok:#34C759; --ok-ink:#1E7A3C;
+  --porcelain:#F6F4EF; --obsidian:#0E0F10;
+  --navy-950:#05080F; --navy-900:#0A1020; --navy-800:#101A33; --navy-700:#18264A;
+  --ultra:#2436E8; --sky:#9DB2FF; --ok:#34C759; --ok-text:#7BE495; --bad-text:#FF9F94;
   --sans:'Chivo', ui-sans-serif, system-ui, sans-serif; --mono:'Fragment Mono', ui-monospace, Menlo, monospace;
   --ease:cubic-bezier(.2,.8,.2,1);
-  /* Spiis' own variables, mapped onto it */
-  --cream:var(--porcelain); --cream-2:var(--limestone);
-  --ink:var(--obsidian); --ink-soft:var(--graphite);
-  --accent:#D9692E; --accent-deep:#B8521C; --accent-soft:#F6E2D4;
-  --dark:var(--navy-950); --dark-2:var(--navy-800);
-  --line:rgba(14,15,16,.1);
-  --shadow:0 0 0 1px rgba(14,15,16,.05), 0 24px 48px -32px rgba(14,15,16,.4);
+  --t1:#F6F4EF; --t2:rgba(246,244,239,.72); --t3:rgba(246,244,239,.5);
+  /* the legacy variables, turned dark: everything that used them follows */
+  --cream:rgba(255,255,255,.06); --cream-2:rgba(255,255,255,.1);
+  --ink:var(--t1); --ink-soft:var(--t2);
+  --accent:#E9793A; --accent-deep:#F28A3E; --accent-soft:rgba(233,121,58,.16);
+  --dark:transparent; --dark-2:rgba(255,255,255,.06);
+  --line:rgba(255,255,255,.12);
+  --shadow:inset 0 1px 0 rgba(255,255,255,.18), inset 0 0 0 1px rgba(255,255,255,.1), 0 30px 60px -30px rgba(0,0,0,.7);
   --radius:28px;
   --font-display:var(--sans); --font-body:var(--sans);
   --nav-h:88px;
+  --glass:linear-gradient(160deg, rgba(255,255,255,.1), rgba(255,255,255,.035));
+  --glass-in:rgba(255,255,255,.055);
+  --rim-in:inset 0 0 0 1px rgba(255,255,255,.1);
+  --blur:blur(24px) saturate(1.6);
 }
-html{ background:var(--navy-950); }
-body[data-ny]{ background:var(--porcelain); color:var(--obsidian); font-family:var(--sans); letter-spacing:-.005em; -webkit-font-smoothing:antialiased; }
+html{ background:var(--navy-950); color-scheme:dark; }
+body[data-ny]{ background:transparent; color:var(--t1); font-family:var(--sans); letter-spacing:-.005em; -webkit-font-smoothing:antialiased; }
 body[data-ny] ::selection{ background:var(--ultra); color:#fff; }
 
-/* ---------- type: one face, two tones ---------- */
-body[data-ny] h1, body[data-ny] h2, body[data-ny] h3, body[data-ny] h4{ font-family:var(--sans); font-style:normal; }
-body[data-ny] em{ font-style:normal; }
-body[data-ny] .section__head{ text-align:left; max-width:var(--max, 1240px); margin-left:0; }
-body[data-ny] .section__head h2{ font:500 clamp(40px, 4.4vw, 64px)/1 var(--sans); letter-spacing:-.035em; text-wrap:balance; }
-body[data-ny] .eyebrow{ font:600 11px/14px var(--sans); letter-spacing:.06em; text-transform:uppercase; color:var(--ash); margin-bottom:16px; }
-body[data-ny] .eyebrow--light{ color:rgba(246,244,239,.55); }
-body[data-ny] .dotline{ display:none; }             /* no decoration */
-body[data-ny] .section__lead{ font:400 clamp(17px, 1.4vw, 20px)/1.55 var(--sans); color:var(--graphite); max-width:36em; margin-left:0; margin-right:0; text-align:left; }
-body[data-ny] .section{ padding:clamp(88px, 12vw, 144px) 0; }
-body[data-ny] .section--tint{ background:var(--limestone); }
+/* the light behind it all: fixed, so the glass always has something to bend */
+.ny-bg{ position:fixed; inset:0; z-index:-1; pointer-events:none; background:radial-gradient(80% 60% at 50% -10%, var(--navy-700), var(--navy-950) 70%); }
+.ny-bg i{ position:absolute; border-radius:50%; filter:blur(60px); opacity:.85; }
+.ny-bg .b1{ left:-10%; top:20%; width:55vw; height:55vw; background:radial-gradient(closest-side, rgba(36,54,232,.55), transparent); }
+.ny-bg .b2{ right:-15%; top:45%; width:60vw; height:60vw; background:radial-gradient(closest-side, rgba(233,121,58,.38), transparent); }
+.ny-bg .b3{ left:30%; top:-20%; width:45vw; height:45vw; background:radial-gradient(closest-side, rgba(110,170,255,.3), transparent); }
+@media (prefers-reduced-motion: no-preference){
+  .ny-bg .b1{ animation:ny-drift 26s ease-in-out infinite alternate; }
+  .ny-bg .b2{ animation:ny-drift 32s ease-in-out -8s infinite alternate-reverse; }
+}
+@keyframes ny-drift{ to{ transform:translate3d(6vw, -4vh, 0) scale(1.08); } }
 
-/* ---------- the bar: a capsule of glass ---------- */
-body[data-ny] .nav{ color:var(--porcelain); }
-body[data-ny] .nav, body[data-ny] .nav.is-solid{ background:none; box-shadow:none; -webkit-backdrop-filter:none; backdrop-filter:none; color:var(--porcelain); }
+/* ---------- type: one face, two tones ---------- */
+body[data-ny] h1, body[data-ny] h2, body[data-ny] h3, body[data-ny] h4{ font-family:var(--sans); font-style:normal; color:var(--t1); }
+body[data-ny] em{ font-style:normal; }
+body[data-ny] .tone{ display:block; color:var(--t3); }
+body[data-ny] .hero__line .tone{ display:inline; }
+body[data-ny] .section__head{ text-align:left; max-width:none; margin:0 0 clamp(32px, 4vw, 52px); }
+body[data-ny] .section__head h2, body[data-ny] .section--dark h2{ font:500 clamp(40px, 4.4vw, 64px)/1 var(--sans); letter-spacing:-.035em; text-wrap:balance; }
+body[data-ny] .eyebrow, body[data-ny] .eyebrow--light{ font:600 11px/14px var(--sans); letter-spacing:.06em; text-transform:uppercase; color:var(--t3); margin-bottom:16px; }
+body[data-ny] .dotline{ display:none; }
+body[data-ny] .section__lead{ font:400 clamp(17px, 1.4vw, 20px)/1.55 var(--sans); color:var(--t2); max-width:36em; margin:20px 0 0; text-align:left; }
+body[data-ny] .section, body[data-ny] .section--tint, body[data-ny] .section--dark, body[data-ny] .section--news{ background:none; padding:clamp(80px, 11vw, 136px) 0; }
+body[data-ny] .container{ width:min(1296px, calc(100vw - 48px)); }
+body[data-ny] .container--narrow{ width:min(760px, calc(100vw - 48px)); }
+body[data-ny] small, body[data-ny] .field__hint{ color:var(--t3); }
+
+/* ---------- glass: the one material ---------- */
+body[data-ny] .card, body[data-ny] .news, body[data-ny] .today, body[data-ny] .dayplan, body[data-ny] .menuteaser, body[data-ny] .fbjoin, body[data-ny] .value,
+body[data-ny] .selsk__cta, body[data-ny] .confirm__card, body[data-ny] .feriekort, body[data-ny] .tapas__info, body[data-ny] .award, body[data-ny] .closurebanner, .ny-live, .ny-dock{
+  border:0; border-radius:28px; color:var(--t1); background:var(--glass); -webkit-backdrop-filter:var(--blur); backdrop-filter:var(--blur); box-shadow:var(--shadow); }
+/* glass inside glass: rows, fields, chips */
+body[data-ny] .bcat, body[data-ny] .bitem, body[data-ny] .builder__dagens, body[data-ny] .segmented span, body[data-ny] .choice, body[data-ny] .stepper,
+body[data-ny] .tapas__cavacard, body[data-ny] .tapas__price, body[data-ny] .tapas__sum, body[data-ny] .tapasvilkaar, body[data-ny] .selsk__points li, body[data-ny] .contactcard__row,
+body[data-ny] .valgrow, body[data-ny] .today__rettag, body[data-ny] .nof input, body[data-ny] .menuteaser__icons span, body[data-ny] .cavabtn, body[data-ny] .news__media, body[data-ny] .selsk__foto{
+  background:var(--glass-in); border:0; box-shadow:var(--rim-in); color:var(--t1); }
+body[data-ny] .bcat summary{ background:none; color:var(--t1); }
+body[data-ny] .bcat summary:hover{ background:rgba(255,255,255,.05); }
+body[data-ny] .builder__dagens, body[data-ny] .tapas__cavacard.is-on{ box-shadow:inset 0 0 0 1.5px var(--accent), 0 0 24px -6px rgba(233,121,58,.5); }
+body[data-ny] .today__stock{ background:rgba(52,199,89,.14); color:var(--ok-text); box-shadow:inset 0 0 0 1px rgba(52,199,89,.3); border-radius:14px; padding:8px 12px; font:500 12.5px/1 var(--sans); }
+body[data-ny] .today__stock.is-soldout, body[data-ny] .today__rettag.is-soldout, body[data-ny] .dayplan__tag--soldout, body[data-ny] .menuline__badge--out, body[data-ny] .form__error, body[data-ny] .field__hint--lukket{
+  background:rgba(255,69,58,.14); color:var(--bad-text); box-shadow:inset 0 0 0 1px rgba(255,69,58,.3); }
+body[data-ny] .menuline__badge--few{ background:rgba(233,121,58,.16); color:#FFB27E; }
+body[data-ny] .ugerow--idag{ background:rgba(233,121,58,.1); }
+body[data-ny] .field__hint.is-ok{ color:var(--ok-text); }
+
+/* ---------- the bar ---------- */
+body[data-ny] .nav, body[data-ny] .nav.is-solid{ background:none; box-shadow:none; -webkit-backdrop-filter:none; backdrop-filter:none; color:var(--t1); }
 body[data-ny] .nav__inner{ width:min(1296px, calc(100vw - 48px)); height:60px; margin-top:16px; padding:0 8px 0 22px; border-radius:30px;
-  background:linear-gradient(165deg, rgba(36,40,52,.86), rgba(14,15,16,.8)); -webkit-backdrop-filter:blur(20px) saturate(1.7); backdrop-filter:blur(20px) saturate(1.7);
+  background:linear-gradient(165deg, rgba(36,40,52,.72), rgba(14,15,16,.6)); -webkit-backdrop-filter:blur(20px) saturate(1.7); backdrop-filter:blur(20px) saturate(1.7);
   box-shadow:inset 0 1px 0 rgba(255,255,255,.24), inset 0 0 0 .5px rgba(255,255,255,.16), 0 12px 32px rgba(0,0,0,.28); }
 body[data-ny] .logo__word{ font-family:var(--sans); font-weight:600; font-size:20px; letter-spacing:-.02em; }
 body[data-ny] .logo__dots{ display:none; }
@@ -59,23 +95,24 @@ body[data-ny] .nav__links a:not(.btn){ height:40px; padding:0 14px; display:flex
 body[data-ny] .nav__links a:not(.btn)::after{ display:none; }
 body[data-ny] .nav__links a:not(.btn):hover{ background:rgba(246,244,239,.12); opacity:1; }
 body[data-ny] .nav__links .btn{ margin-left:10px; }
-body[data-ny] .nav__burger{ color:var(--porcelain); }
-@media (max-width:760px){ body[data-ny] .nav__inner{ width:calc(100vw - 40px); height:56px; margin-top:12px; border-radius:28px; padding:0 8px 0 18px; } }
+body[data-ny] .nav__burger{ color:var(--t1); }
+@media (max-width:900px){
+  body[data-ny] .nav__links{ background:rgba(5,8,15,.94); -webkit-backdrop-filter:blur(24px); backdrop-filter:blur(24px); }
+  body[data-ny] .nav__links a:not(.btn){ font-size:20px; height:52px; }
+}
+@media (max-width:760px){ body[data-ny] .nav__inner{ width:calc(100vw - 32px); height:56px; margin-top:12px; border-radius:28px; padding:0 8px 0 18px; } }
 
 /* ---------- buttons: a pill with a lens ---------- */
-body[data-ny] .btn{ position:relative; isolation:isolate; gap:14px; height:48px; padding:0 22px; border:0; border-radius:24px; font:500 15px/1 var(--sans); letter-spacing:-.005em;
-  color:var(--porcelain); background:linear-gradient(180deg, #24262C, #0E0F10); overflow:visible;
-  box-shadow:inset 0 1px 0 rgba(255,255,255,.16), inset 0 0 0 1px rgba(255,255,255,.07), 0 1px 2px rgba(0,0,0,.18), 0 14px 30px -16px rgba(13,13,15,.5);
-  transition:transform .35s var(--ease), box-shadow .35s var(--ease); will-change:auto; }
-/* the call to order: Spiis' orange, with the lens and its arrow */
-body[data-ny] .btn--accent{ padding:0 5px 0 22px; color:#fff; background:linear-gradient(180deg, #E9793A, #C85A22);
-  box-shadow:inset 0 1px 0 rgba(255,255,255,.3), inset 0 0 0 1px rgba(255,255,255,.08), 0 1px 2px rgba(0,0,0,.18), 0 14px 30px -14px rgba(200,90,34,.7); }
+body[data-ny] .btn{ position:relative; isolation:isolate; gap:14px; height:48px; padding:0 22px; border:0; border-radius:24px; font:500 15px/1 var(--sans); letter-spacing:-.005em; overflow:visible; will-change:auto;
+  color:var(--t1); background:linear-gradient(180deg, rgba(255,255,255,.15), rgba(255,255,255,.05)); -webkit-backdrop-filter:blur(16px); backdrop-filter:blur(16px);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.34), inset 0 0 0 1px rgba(255,255,255,.14), 0 14px 30px -16px rgba(0,0,0,.6);
+  transition:transform .35s var(--ease), box-shadow .35s var(--ease); }
+body[data-ny] .btn--accent{ padding:0 5px 0 22px; color:#fff; background:linear-gradient(180deg, #F08A4A, #D4612A);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.35), inset 0 0 0 1px rgba(255,255,255,.08), 0 1px 2px rgba(0,0,0,.25), 0 16px 34px -14px rgba(233,121,58,.75); }
 body[data-ny] .btn--accent::after{ content:""; position:static; inset:auto; flex:none; width:38px; height:38px; border-radius:50%; opacity:1; transform:none; animation:none;
   background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M3 8h9.4M9.1 4.4 12.6 8 9.1 11.6' fill='none' stroke='%23C85A22' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center / 16px no-repeat, linear-gradient(180deg, #fff, #F3E9E1);
   box-shadow:inset 0 1px 0 #fff, 0 1px 2px rgba(0,0,0,.3); transition:transform .35s var(--ease); }
-body[data-ny] .btn--ghost{ color:var(--porcelain); background:linear-gradient(180deg, rgba(255,255,255,.15), rgba(255,255,255,.05)); -webkit-backdrop-filter:blur(16px); backdrop-filter:blur(16px);
-  box-shadow:inset 0 1px 0 rgba(255,255,255,.34), inset 0 0 0 1px rgba(255,255,255,.14); }
-body[data-ny] .btn--ghost-dark{ color:var(--obsidian); background:linear-gradient(180deg, #fff, #EFECE5); box-shadow:inset 0 1px 0 #fff, 0 0 0 1px rgba(14,15,16,.08), 0 10px 24px -14px rgba(0,0,0,.4); }
+body[data-ny] .btn--ghost-dark{ color:var(--obsidian); background:linear-gradient(180deg, #fff, #EFECE5); box-shadow:inset 0 1px 0 #fff, 0 10px 24px -14px rgba(0,0,0,.6); }
 body[data-ny] .btn--small{ height:40px; font-size:14px; padding:0 16px; }
 body[data-ny] .btn--small.btn--accent{ padding:0 4px 0 16px; }
 body[data-ny] .btn--small.btn--accent::after{ width:32px; height:32px; }
@@ -86,103 +123,138 @@ body[data-ny] .btn--big.btn--accent::after{ width:46px; height:46px; }
   body[data-ny] .btn--accent:hover::after{ transform:translateX(2px); }
 }
 body[data-ny] .btn:active{ transform:scale(.97); transition-duration:.12s; }
-body[data-ny] .btn:focus-visible{ box-shadow:0 0 0 2px var(--porcelain), 0 0 0 4px var(--ultra); }
+body[data-ny] .btn:focus-visible{ box-shadow:0 0 0 2px var(--navy-950), 0 0 0 4px var(--ultra); }
+body[data-ny] .form__submit.btn, body[data-ny] .form .btn--accent, body[data-ny] .tapas__form .btn--accent{ width:100%; justify-content:space-between; }
 
-/* ---------- the opening: the film under navy ---------- */
-body[data-ny] .hero{ background:var(--navy-950); }
-body[data-ny] .hero__overlay{ background:linear-gradient(180deg, rgba(5,8,15,.55), rgba(5,8,15,.35) 40%, rgba(5,8,15,.85)), radial-gradient(70% 60% at 50% 40%, rgba(24,38,74,.25), transparent 70%); }
-body[data-ny] .hero__content{ text-align:left; justify-self:start; width:min(1296px, calc(100vw - 48px)); margin:0 auto; }
-body[data-ny] .hero__kicker{ font:600 11px/14px var(--sans); letter-spacing:.06em; text-transform:uppercase; color:rgba(246,244,239,.7); }
-body[data-ny] .hero__title{ font:500 clamp(48px, 7vw, 104px)/.96 var(--sans); letter-spacing:-.045em; max-width:12em; text-wrap:balance; }
-body[data-ny] .hero__title em{ color:rgba(246,244,239,.6); font-family:var(--sans); font-weight:500; background:none; -webkit-text-fill-color:currentColor; }
-body[data-ny] .hero__sub{ font:400 clamp(17px, 1.5vw, 21px)/1.5 var(--sans); color:rgba(246,244,239,.8); max-width:30em; margin-left:0; }
+/* ---------- fields: dark glass ---------- */
+body[data-ny] .field > span{ font:500 13px/1 var(--sans); color:var(--t2); }
+body[data-ny] .field input, body[data-ny] .field select, body[data-ny] .field textarea, body[data-ny] .nof input{ height:48px; border:0; border-radius:14px; font:400 15px/1 var(--sans);
+  color:var(--t1); background:rgba(255,255,255,.06); box-shadow:inset 0 0 0 1px rgba(255,255,255,.14); transition:box-shadow .2s ease, background .2s ease; }
+body[data-ny] .field textarea{ height:auto; line-height:22px; }
+body[data-ny] .field input::placeholder, body[data-ny] .field textarea::placeholder{ color:var(--t3); }
+body[data-ny] .field select option{ color:#000; background:#fff; }
+body[data-ny] .field input:focus, body[data-ny] .field select:focus, body[data-ny] .field textarea:focus{ background:rgba(255,255,255,.09); box-shadow:inset 0 0 0 1.5px var(--sky), 0 0 0 4px rgba(36,54,232,.25); }
+body[data-ny] .segmented span{ height:48px; border-radius:24px; font:500 14px/1 var(--sans); }
+body[data-ny] .segmented input:checked + span{ background:var(--porcelain); color:var(--obsidian); box-shadow:0 10px 24px -12px rgba(0,0,0,.6); transform:none; }
+body[data-ny] .form{ padding:clamp(24px, 3.4vw, 40px); border-radius:32px; }
+
+/* ---------- the opening: the film in the light, the day beside it ---------- */
+body[data-ny] .hero{ background:var(--navy-950); min-height:100svh; display:grid; grid-template-columns:minmax(0, 1fr) minmax(320px, 400px); align-items:center; gap:48px;
+  padding:120px max(24px, calc((100vw - 1296px) / 2)) 64px; }
+body[data-ny] .hero__overlay{ background:linear-gradient(90deg, rgba(5,8,15,.82), rgba(5,8,15,.45) 55%, rgba(5,8,15,.6)), linear-gradient(180deg, rgba(5,8,15,.4), transparent 30%, transparent 70%, var(--navy-950)); }
+body[data-ny] .hero__content{ position:relative; z-index:2; text-align:left; width:auto; margin:0; padding:0; max-width:none; justify-self:stretch; }
+body[data-ny] .hero__kicker{ font:600 11px/14px var(--sans); letter-spacing:.06em; text-transform:uppercase; color:var(--t2); }
+body[data-ny] .hero__title{ font:500 clamp(48px, 6.4vw, 100px)/.96 var(--sans); letter-spacing:-.045em; max-width:11em; text-wrap:balance; }
+body[data-ny] .hero__title .tone{ color:rgba(246,244,239,.55); }
+body[data-ny] .hero__sub{ font:400 clamp(17px, 1.4vw, 20px)/1.5 var(--sans); color:var(--t2); max-width:30em; margin-left:0; }
 body[data-ny] .hero__cta{ justify-content:flex-start; }
 body[data-ny] .hero__scroll{ display:none; }
-/* the band of words: quiet, in mono, on navy */
-body[data-ny] .marquee{ background:var(--navy-950); color:rgba(246,244,239,.6); border:0; }
+
+/* the day, live */
+.ny-live{ position:relative; z-index:2; padding:22px; border-radius:30px; }
+.nl-top{ display:flex; align-items:center; gap:8px; font:500 13px/1 var(--sans); color:var(--t2); }
+.nl-dot, .nd-dot{ width:8px; height:8px; flex:none; border-radius:50%; background:var(--t3); }
+.ny-open .nl-dot, .ny-open .nd-dot{ background:var(--ok); box-shadow:0 0 0 4px rgba(52,199,89,.2); animation:ny-pulse 2.4s ease-in-out infinite; }
+@keyframes ny-pulse{ 50%{ box-shadow:0 0 0 7px rgba(52,199,89,.05); } }
+.ny-open .nl-state{ color:var(--ok-text); }
+.nl-time{ margin-left:auto; font:400 12px/1 var(--mono); color:var(--t3); font-variant-numeric:tabular-nums; }
+.nl-k{ margin-top:22px; font:600 11px/14px var(--sans); letter-spacing:.06em; text-transform:uppercase; color:var(--t3); }
+.nl-dish{ margin-top:8px; font:500 30px/1.05 var(--sans); letter-spacing:-.03em; }
+.nl-desc{ margin-top:6px; font:400 14.5px/21px var(--sans); color:var(--t2); }
+.nl-desc:empty{ display:none; }
+.nl-row{ display:flex; align-items:center; gap:8px; margin-top:16px; flex-wrap:wrap; }
+.nl-price{ font:500 22px/1 var(--sans); font-variant-numeric:tabular-nums; padding:9px 14px; border-radius:18px; background:rgba(255,255,255,.08); box-shadow:var(--rim-in); }
+.nl-price:empty, .nl-stock:empty{ display:none; }
+.nl-stock{ font:500 12.5px/1 var(--sans); padding:9px 12px; border-radius:16px; color:var(--ok-text); background:rgba(52,199,89,.14); box-shadow:inset 0 0 0 1px rgba(52,199,89,.3); }
+.ny-soldout .nl-stock{ color:var(--bad-text); background:rgba(255,69,58,.14); box-shadow:inset 0 0 0 1px rgba(255,69,58,.3); }
+.nl-cut{ margin-top:14px; padding-top:14px; border-top:1px solid rgba(255,255,255,.1); font:400 13px/19px var(--sans); color:var(--t2); }
+.nl-cut:empty{ display:none; }
+body[data-ny] .nl-go{ margin-top:18px; width:100%; justify-content:space-between; }
+
+/* the dock: today at a glance, at the bottom of the screen */
+.ny-dock{ position:fixed; z-index:90; left:50%; bottom:calc(16px + env(safe-area-inset-bottom)); display:flex; align-items:center; gap:12px; height:56px; padding:0 6px 0 18px; border-radius:28px;
+  max-width:calc(100vw - 32px); transform:translate(-50%, 140%); opacity:0; transition:transform .55s cubic-bezier(.2,1.2,.3,1), opacity .3s ease;
+  background:linear-gradient(165deg, rgba(36,40,52,.78), rgba(14,15,16,.7)); }
+.ny-dock-on .ny-dock{ transform:translate(-50%, 0); opacity:1; }
+.nd-t{ display:flex; flex-direction:column; gap:2px; min-width:0; }
+.nd-state{ font:500 12px/1 var(--sans); color:var(--t2); }
+.ny-open .nd-state{ color:var(--ok-text); }
+.nd-dish{ font:500 15px/1.15 var(--sans); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:36vw; }
+.nd-stock{ font:500 12px/1 var(--sans); white-space:nowrap; padding:7px 10px; border-radius:14px; color:var(--ok-text); background:rgba(52,199,89,.14); }
+.nd-stock:empty{ display:none; }
+.nd-go{ display:inline-flex; align-items:center; gap:8px; height:44px; padding:0 8px 0 16px; border-radius:22px; font:500 14px/1 var(--sans); color:#fff; text-decoration:none; white-space:nowrap;
+  background:linear-gradient(180deg, #F08A4A, #D4612A); box-shadow:inset 0 1px 0 rgba(255,255,255,.35), 0 10px 24px -10px rgba(233,121,58,.8); }
+.nd-go svg{ width:28px; height:28px; padding:6px; border-radius:50%; background:#fff; fill:none; stroke:#C85A22; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; }
+body[data-ny] .mobilecta{ display:none !important; }
+
+/* the band of words, and the Facebook card */
+body[data-ny] .marquee{ position:relative; z-index:2; background:none; color:var(--t3); border:0; }
 body[data-ny] .marquee__track span{ font:400 12px/1 var(--mono); font-style:normal; letter-spacing:.08em; text-transform:uppercase; }
 body[data-ny] .marquee__track i{ color:var(--accent); }
-
-/* ---------- cards on paper ---------- */
-body[data-ny] .card, body[data-ny] .news, body[data-ny] .contactcard, body[data-ny] .hourscard, body[data-ny] .menuteaser{ border:0; border-radius:28px; background:#fff; box-shadow:var(--shadow); }
-body[data-ny] .fbjoin{ border-radius:24px; color:var(--obsidian); background:#fff; box-shadow:var(--shadow); }
-body[data-ny] .fbjoin__badge{ background:#1877F2; color:#fff; }
-body[data-ny] .fbjoin__cta{ border-radius:20px; background:var(--obsidian); color:#fff; font-family:var(--sans); }
-
-/* today's dish: the badge is navy glass with Spiis' orange light in it */
-body[data-ny] .today{ border:0; border-radius:32px; background:#fff; box-shadow:0 0 0 1px rgba(14,15,16,.05), 0 30px 60px -36px rgba(14,15,16,.5); }
-body[data-ny] .today__badge{ position:relative; isolation:isolate; overflow:hidden; font:500 22px/1.1 var(--sans); font-style:normal; letter-spacing:-.02em; color:var(--porcelain);
-  background:radial-gradient(80% 70% at 30% 110%, rgba(233,121,58,.75), transparent 70%), radial-gradient(70% 60% at 80% 0%, rgba(36,54,232,.55), transparent 70%), var(--navy-950); }
-body[data-ny] .today__dish{ font:500 clamp(28px, 3vw, 40px)/1.05 var(--sans); letter-spacing:-.03em; }
-body[data-ny] .today__desc{ color:var(--graphite); }
-body[data-ny] .today__price{ font:500 22px/1 var(--sans); color:var(--obsidian); background:var(--porcelain); border-radius:20px; padding:10px 16px; font-variant-numeric:tabular-nums; }
-body[data-ny] .today__stock{ font:500 12.5px/1 var(--sans); color:var(--ok-ink); background:rgba(52,199,89,.12); box-shadow:inset 0 0 0 1px rgba(52,199,89,.28); border-radius:14px; padding:8px 12px; }
-body[data-ny] .weekplan__title{ font:600 11px/14px var(--sans); letter-spacing:.06em; text-transform:uppercase; color:var(--ash); }
-body[data-ny] .dayplan{ border:0; border-radius:20px; background:#fff; box-shadow:0 0 0 1px rgba(14,15,16,.05), 0 10px 24px -18px rgba(14,15,16,.4); }
-body[data-ny] .dayplan__day{ font:400 11px/1 var(--mono); letter-spacing:.06em; text-transform:uppercase; color:var(--accent-deep); }
-body[data-ny] .dayplan__date{ font:400 11.5px/1 var(--mono); color:var(--ash); }
-body[data-ny] .dayplan__dish{ font-family:var(--sans); font-weight:600; letter-spacing:-.01em; }
-
-/* ---------- the order form ---------- */
-body[data-ny] .form{ border-radius:32px; }
-body[data-ny] .field > span{ font:500 13px/1 var(--sans); color:var(--graphite); }
-body[data-ny] .field input, body[data-ny] .field select, body[data-ny] .field textarea{ height:48px; border:0; border-radius:14px; font:400 15px/1 var(--sans); background:#fff;
-  box-shadow:inset 0 0 0 1px rgba(14,15,16,.14); transition:box-shadow .2s ease; }
-body[data-ny] .field textarea{ height:auto; line-height:22px; }
-body[data-ny] .field input:focus, body[data-ny] .field select:focus, body[data-ny] .field textarea:focus{ box-shadow:inset 0 0 0 1.5px var(--ultra), 0 0 0 4px rgba(36,54,232,.12); }
-body[data-ny] .segmented span{ height:48px; border:0; border-radius:24px; font:500 14px/1 var(--sans); background:#fff; box-shadow:inset 0 0 0 1px rgba(14,15,16,.14); }
-body[data-ny] .segmented input:checked + span{ background:var(--obsidian); color:#fff; box-shadow:0 10px 24px -12px rgba(0,0,0,.5); transform:none; }
-body[data-ny] .bcat, body[data-ny] .bitem, body[data-ny] .builder__dagens{ border-radius:16px; }
-body[data-ny] .form__submit.btn, body[data-ny] .form .btn--accent{ width:100%; justify-content:space-between; }
-
-/* ---------- the dark part: navy with glass over light ---------- */
-body[data-ny] .section--dark{ position:relative; overflow:hidden; color:var(--porcelain);
-  background:radial-gradient(40% 50% at 85% 30%, rgba(36,54,232,.45), transparent 70%), radial-gradient(35% 45% at 70% 90%, rgba(233,121,58,.35), transparent 70%), radial-gradient(70% 60% at 50% 0%, var(--navy-700), var(--navy-950) 70%); background-color:var(--navy-950); }
-body[data-ny] .section--dark h2{ font:500 clamp(40px, 4.4vw, 64px)/1 var(--sans); letter-spacing:-.035em; }
-body[data-ny] .value{ border:0; border-radius:22px; background:linear-gradient(160deg, rgba(255,255,255,.1), rgba(255,255,255,.03)); -webkit-backdrop-filter:blur(20px) saturate(1.5); backdrop-filter:blur(20px) saturate(1.5);
-  box-shadow:inset 0 1px 0 rgba(255,255,255,.2), inset 0 0 0 1px rgba(255,255,255,.1), 0 14px 30px -18px rgba(0,0,0,.6); }
-body[data-ny] .about__sign{ font-family:var(--sans); font-style:normal; color:rgba(246,244,239,.6); }
-
-/* ---------- menu, tapas, parties, contact ---------- */
-body[data-ny] .menucat, body[data-ny] .tapas__info, body[data-ny] .selsk__cta{ border-radius:24px; }
-body[data-ny] .tapas__price{ border-radius:20px; background:var(--porcelain); }
-body[data-ny] .tapas__price strong{ font-family:var(--sans); font-weight:500; letter-spacing:-.02em; color:var(--obsidian); }
-body[data-ny] .selsk__points li, body[data-ny] .selsk__points > *{ border-radius:16px; }
-body[data-ny] .hours__status{ font-family:var(--sans); }
-
-/* ---------- the foot: navy ---------- */
-body[data-ny] .footer{ background:var(--navy-950); color:var(--porcelain); }
-body[data-ny] .footer .logo__word{ color:var(--porcelain); }
-
-/* phones: no blur under glass, so scrolling stays light */
-@media (max-width:767px){
-  body[data-ny] .value{ -webkit-backdrop-filter:none; backdrop-filter:none; background:rgba(255,255,255,.07); }
-  body[data-ny] .section__head h2{ font-size:40px; line-height:42px; }
-  body[data-ny] .hero__title{ font-size:clamp(44px, 12vw, 56px); }
-}
-
-/* ---------- fixes after the first look ---------- */
-/* the Facebook card: white, its line of text grey */
-body[data-ny] .fbjoin{ border:0; width:min(1296px, calc(100% - 48px)); margin-top:24px; padding:14px 14px 14px 16px; }
+body[data-ny] .fbjoin{ width:min(1296px, calc(100% - 48px)); margin-top:24px; padding:14px 14px 14px 16px; }
+body[data-ny] .fbjoin__badge{ width:44px; height:44px; background:#1877F2; color:#fff; }
 body[data-ny] .fbjoin__text strong{ font:600 15px/20px var(--sans); }
-body[data-ny] .fbjoin__text span{ display:block; font:400 13.5px/19px var(--sans); color:var(--graphite); }
-body[data-ny] .fbjoin__badge{ width:44px; height:44px; }
-body[data-ny] .fbjoin__cta{ height:40px; padding:0 16px; display:inline-flex; align-items:center; font:500 14px/1 var(--sans); }
-/* the page measure: the same width as the bar */
-body[data-ny] .container{ width:min(1296px, calc(100vw - 48px)); }
-body[data-ny] .container--narrow{ width:min(760px, calc(100vw - 48px)); }
-/* everything reads from the left */
+body[data-ny] .fbjoin__text span{ display:block; font:400 13.5px/19px var(--sans); color:var(--t2); }
+body[data-ny] .fbjoin__cta{ height:40px; padding:0 16px; display:inline-flex; align-items:center; border-radius:20px; font:500 14px/1 var(--sans); color:var(--obsidian); background:var(--porcelain); }
+
+/* ---------- today and the week ahead ---------- */
+body[data-ny] .today{ border-radius:32px; overflow:hidden; }
+body[data-ny] .today__badge{ position:relative; isolation:isolate; font:500 22px/1.1 var(--sans); font-style:normal; letter-spacing:-.02em; color:var(--t1);
+  background:radial-gradient(80% 70% at 30% 110%, rgba(233,121,58,.7), transparent 70%), radial-gradient(70% 60% at 80% 0%, rgba(36,54,232,.55), transparent 70%), rgba(5,8,15,.6); }
+body[data-ny] .today__dish{ font:500 clamp(28px, 3vw, 40px)/1.05 var(--sans); letter-spacing:-.03em; }
+body[data-ny] .today__desc{ color:var(--t2); }
+body[data-ny] .today__price{ font:500 22px/1 var(--sans); color:var(--t1); background:rgba(255,255,255,.08); box-shadow:var(--rim-in); border-radius:18px; padding:10px 16px; font-variant-numeric:tabular-nums; }
+body[data-ny] .weekplan__title{ font:600 11px/14px var(--sans); letter-spacing:.06em; text-transform:uppercase; color:var(--t3); }
+body[data-ny] .dayplan{ border-radius:20px; text-align:left; transition:transform .3s var(--ease), box-shadow .3s ease; }
+@media (hover:hover){ body[data-ny] .dayplan:hover{ transform:translateY(-2px); } }
+body[data-ny] .dayplan.ny-today{ box-shadow:inset 0 0 0 1.5px var(--accent), 0 0 34px -8px rgba(233,121,58,.6), 0 30px 60px -30px rgba(0,0,0,.7); }
+body[data-ny] .dayplan--closed{ opacity:.55; }
+body[data-ny] .dayplan__day{ font:400 11px/1 var(--mono); letter-spacing:.06em; text-transform:uppercase; color:#FFB27E; }
+body[data-ny] .dayplan__date{ font:400 11.5px/1 var(--mono); color:var(--t3); }
+body[data-ny] .dayplan__dish{ font-family:var(--sans); font-weight:600; letter-spacing:-.01em; color:var(--t1); }
+body[data-ny] .dayplan__desc, body[data-ny] .dayplan__price{ color:var(--t2); }
+
+/* ---------- news, menu, tapas, about, parties, contact ---------- */
+body[data-ny] .news__title{ color:var(--t1); }
+body[data-ny] .news__date{ font:400 11.5px/1 var(--mono); color:#FFB27E; }
 body[data-ny] .menuteaser, body[data-ny] .selsk__cta{ margin:0; text-align:left; justify-items:start; max-width:640px; padding:28px; }
 body[data-ny] .menuteaser__icons{ justify-content:flex-start; }
+body[data-ny] .tapas__price strong{ font-family:var(--sans); font-weight:500; letter-spacing:-.02em; color:var(--t1); }
+body[data-ny] .tapasfoto img, body[data-ny] .selsk__foto img{ border-radius:24px; }
+body[data-ny] .value{ border-radius:22px; }
+body[data-ny] .about__text p{ color:var(--t2); }
+body[data-ny] .about__sign{ font-family:var(--sans); font-style:normal; color:#FFB27E; }
 body[data-ny] .selsk__cta h3{ font:500 24px/30px var(--sans); letter-spacing:-.015em; }
-/* the dark section: room to breathe under the heading */
-body[data-ny] .section--dark h2 + *{ margin-top:22px; }
-body[data-ny] .about__text p{ color:rgba(246,244,239,.76); }
-@media (max-width:760px){
-  body[data-ny] .container, body[data-ny] .container--narrow{ width:calc(100vw - 40px); }
-  body[data-ny] .fbjoin{ width:calc(100% - 40px); }
+body[data-ny] .selsk__stars, body[data-ny] .selsk__starstxt{ color:var(--t2); }
+body[data-ny] .hours td, body[data-ny] .hours th{ border-color:rgba(255,255,255,.08); color:var(--t2); }
+body[data-ny] .hours__status{ font-family:var(--sans); color:var(--ok-text); }
+body[data-ny] .hours__cutoff{ color:#FFB27E; }
+body[data-ny] .confirm{ background:rgba(5,8,15,.7); -webkit-backdrop-filter:blur(8px); backdrop-filter:blur(8px); }
+body[data-ny] .confirm__card{ background:linear-gradient(160deg, rgba(40,46,66,.92), rgba(14,18,30,.94)); }
+
+/* ---------- the foot ---------- */
+body[data-ny] .footer{ background:none; color:var(--t2); border-top:1px solid rgba(255,255,255,.08); padding-bottom:120px; }
+body[data-ny] .footer .logo__word{ color:var(--t1); }
+
+/* ---------- phones ---------- */
+@media (max-width:900px){
+  body[data-ny] .hero{ grid-template-columns:minmax(0, 1fr); gap:28px; padding:104px 16px 40px; align-content:end; }
+  .ny-live{ padding:18px; border-radius:24px; }
+  .nl-dish{ font-size:24px; }
 }
-/* headings in two tones: the second line the same face, quieter */
-body[data-ny] .tone{ display:block; color:color-mix(in srgb, currentColor 48%, transparent); }
-body[data-ny] .hero__line .tone{ display:inline; }
-@media (max-width:760px){ body[data-ny] .hero__title{ font-size:clamp(38px, 10.5vw, 46px); line-height:1; } }
+@media (max-width:767px){
+  /* glass without blur: the light behind is soft already, and scrolling stays light */
+  body[data-ny] .card, body[data-ny] .news, body[data-ny] .today, body[data-ny] .dayplan, body[data-ny] .menuteaser, body[data-ny] .fbjoin, body[data-ny] .value,
+  body[data-ny] .selsk__cta, body[data-ny] .tapas__info, .ny-live{ -webkit-backdrop-filter:none; backdrop-filter:none; background:linear-gradient(160deg, rgba(40,48,72,.62), rgba(18,22,36,.6)); }
+  .ny-bg i{ filter:blur(40px); }
+  body[data-ny] .container, body[data-ny] .container--narrow{ width:calc(100vw - 32px); }
+  body[data-ny] .fbjoin{ width:calc(100% - 32px); }
+  body[data-ny] .section__head h2, body[data-ny] .section--dark h2{ font-size:38px; line-height:40px; }
+  body[data-ny] .hero__title{ font-size:clamp(38px, 10.5vw, 46px); line-height:1; }
+  .nd-dish{ max-width:30vw; }
+  .ny-dock{ left:16px; right:16px; transform:translate(0, 140%); max-width:none; }
+  .ny-dock-on .ny-dock{ transform:none; }
+  .nd-go{ margin-left:auto; }
+}
+body[data-ny] .selsk__text, body[data-ny] .selsk__points li, body[data-ny] .selsk__stars, body[data-ny] .selsk__starstxt{ text-align:left; justify-content:flex-start; }
+body[data-ny] .section{ padding:clamp(72px, 9vw, 120px) 0; }

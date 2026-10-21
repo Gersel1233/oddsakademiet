@@ -87,9 +87,10 @@
   <link rel="stylesheet" href="../css/style.css?v=ny1" />
   <link rel="stylesheet" href="../css/datepicker.css?v=ny1" />
   <!-- the new look: Lesreg signatur over the same page -->
-  <link rel="stylesheet" href="spiis-signatur.css?v=1" />
+  <link rel="stylesheet" href="spiis-signatur.css?v=3" />
 </head>
 <body data-ny="1">
+  <div class="ny-bg" aria-hidden="true"><i class="b1"></i><i class="b2"></i><i class="b3"></i></div>
 
   <!-- ====== NAVIGATION ====== -->
   <header class="nav" id="nav">
@@ -140,6 +141,17 @@
         <a href="#selskaber" class="btn btn--ghost">Selskab &amp; catering</a>
       </div>
     </div>
+
+    <!-- the day, live: read from the same system the kitchen uses -->
+    <aside class="ny-live" aria-label="I dag">
+      <div class="nl-top"><span class="nl-dot"></span><span class="nl-state">Indlæser…</span><span class="nl-time"></span></div>
+      <p class="nl-k">Dagens ret</p>
+      <p class="nl-dish">…</p>
+      <p class="nl-desc"></p>
+      <div class="nl-row"><span class="nl-price"></span><span class="nl-stock"></span></div>
+      <p class="nl-cut"></p>
+      <a href="#bestil" class="btn btn--accent nl-go">Bestil dagens ret</a>
+    </aside>
     <a href="#dagensret" class="hero__scroll" aria-label="Scroll ned">
       <span class="hero__scroll-dot"></span>
     </a>
@@ -537,6 +549,14 @@
     </section>
   </main>
 
+  <!-- the dock: today at a glance, always within reach -->
+  <div class="ny-dock" aria-live="polite">
+    <span class="nd-dot"></span>
+    <span class="nd-t"><b class="nd-state">Spiis</b><span class="nd-dish"></span></span>
+    <span class="nd-stock"></span>
+    <a href="#bestil" class="nd-go">Bestil<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8h9.4M9.1 4.4 12.6 8 9.1 11.6"/></svg></a>
+  </div>
+
   <!-- fast bestil-knap i bunden på mobil -->
   <a href="#bestil" class="mobilecta" id="mobileCta">🍲 Bestil dagens ret</a>
 
@@ -642,5 +662,6 @@
   <script src="../js/store.js?v=ny1"></script>
   <script src="../js/datepicker.js?v=ny1"></script>
   <script src="../js/main.js?v=ny1"></script>
+  <script src="live.js?v=2"></script>
 </body>
 </html>
