@@ -88,7 +88,7 @@
   <link rel="stylesheet" href="../css/datepicker.css?v=ny1" />
   <!-- the new look: Lesreg signatur over the same page -->
   <link rel="stylesheet" href="spiis-signatur.css?v=5" />
-  <link rel="stylesheet" href="spiis-lys.css?v=3" />
+  <link rel="stylesheet" href="spiis-lys.css?v=6" />
 </head>
 <body data-ny="1">
   <div class="ny-bg" aria-hidden="true"><i class="b1"></i><i class="b2"></i><i class="b3"></i></div>
@@ -106,7 +106,7 @@
       </a>
       <nav class="nav__links" id="navLinks" aria-label="Hovedmenu">
         <a href="#dagensret">Dagens ret</a>
-        <a href="../menu.html">Menukort</a>
+        <a href="menu.html">Menukort</a>
         <a href="#tapas">Tapas</a>
         <a href="#om">Om Spiis</a>
         <a href="#selskaber">Selskab &amp; catering</a>
@@ -345,10 +345,13 @@
           <span class="dotline" aria-hidden="true"></span>
           <p class="section__lead">Dagens retter for hele ugen og vores faste sortiment – burgere, salater, panini og sandwich, nachos og friturens klassikere. Samlet ét sted, nemt at bladre i.</p>
         </div>
-        <div class="menuteaser card" data-reveal>
-          <div class="menuteaser__icons" aria-hidden="true"><span>🍲</span><span>🍔</span><span>🥗</span><span>🥤</span></div>
-          <a href="../menu.html" class="btn btn--accent btn--big">📖 Se hele menukortet</a>
-          <p class="menuteaser__note">🥜 Allergi? Spørg personalet ift. allergener – vi hjælper gerne.</p>
+        <div class="nm" id="nyMenu" data-reveal>
+          <div class="nm-tabs" role="tablist" aria-label="Kategorier"></div>
+          <div class="nm-list"></div>
+          <div class="nm-foot">
+            <a href="menu.html" class="btn btn--accent">Se hele menukortet</a>
+            <p>Allergi? Spørg personalet om allergener – vi hjælper gerne.</p>
+          </div>
         </div>
       </div>
     </section>
@@ -639,7 +642,7 @@
       </div>
       <nav class="footer__links" aria-label="Sidefod">
         <a href="#dagensret">Dagens ret</a>
-        <a href="../menu.html">Menukort</a>
+        <a href="menu.html">Menukort</a>
         <a href="#tapas">Tapas</a>
         <a href="#selskaber">Selskab &amp; catering</a>
         <a href="#kontakt">Kontakt</a>
@@ -664,5 +667,6 @@
   <script src="../js/datepicker.js?v=ny1"></script>
   <script src="../js/main.js?v=ny1"></script>
   <script src="live.js?v=2"></script>
+  <script src="menu-front.js?v=2"></script>
 </body>
 </html>

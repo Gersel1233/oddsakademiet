@@ -108,3 +108,90 @@ body[data-ny] .tone{ color:rgba(26,20,16,.46); }
   body[data-ny] .card, body[data-ny] .news, body[data-ny] .today, body[data-ny] .dayplan, body[data-ny] .menuteaser, body[data-ny] .fbjoin, body[data-ny] .value,
   body[data-ny] .selsk__cta, body[data-ny] .tapas__info{ background:linear-gradient(165deg, rgba(255,255,255,.82), rgba(255,255,255,.62)); }
 }
+
+/* ======================================================================
+   The bar in real liquid glass, the menu as the menu, and tighter rhythm
+   ====================================================================== */
+
+/* ---------- the bar: a capsule of liquid glass ----------
+   Strong blur and saturation so what passes under it bends into colour,
+   a bright rim on top, a soft inner glow at the bottom, a sheen across. */
+body[data-ny] .nav__inner{ position:relative; isolation:isolate; overflow:hidden;
+  background:linear-gradient(180deg, rgba(255,255,255,.55), rgba(255,255,255,.28) 55%, rgba(255,255,255,.38));
+  -webkit-backdrop-filter:blur(30px) saturate(2.1) brightness(1.06); backdrop-filter:blur(30px) saturate(2.1) brightness(1.06);
+  box-shadow:inset 0 1.5px 0 rgba(255,255,255,.95), inset 0 -1px 0 rgba(255,255,255,.35), inset 0 0 0 1px rgba(255,255,255,.45),
+    inset 0 -14px 22px -16px rgba(255,180,120,.45), 0 0 0 .5px rgba(26,20,16,.08), 0 16px 40px -18px rgba(26,20,16,.35); }
+body[data-ny] .nav__inner::before{ content:""; position:absolute; inset:0; z-index:-1; pointer-events:none;
+  background:linear-gradient(105deg, transparent 20%, rgba(255,255,255,.45) 38%, transparent 52%); opacity:.6; }
+body[data-ny] .nav__links a:not(.btn){ color:var(--t1); }
+/* over the film the bar is a touch clearer, and its words white */
+html:not(.ny-dock-on) body[data-ny] .nav:not(.is-solid) .nav__inner{ background:linear-gradient(180deg, rgba(255,255,255,.26), rgba(255,255,255,.1) 60%, rgba(255,255,255,.18)); }
+html:not(.ny-dock-on) body[data-ny] .nav:not(.is-solid) .logo, html:not(.ny-dock-on) body[data-ny] .nav:not(.is-solid) .nav__links a:not(.btn), html:not(.ny-dock-on) body[data-ny] .nav:not(.is-solid) .nav__burger{ color:#fff; }
+
+/* ---------- the menu on the front page ---------- */
+.nm{ border-radius:32px; padding:clamp(18px, 2.4vw, 28px); background:var(--glass); -webkit-backdrop-filter:var(--blur); backdrop-filter:var(--blur); box-shadow:var(--shadow); }
+.nm-tabs{ display:flex; gap:8px; overflow-x:auto; scrollbar-width:none; padding:2px; margin:-2px; }
+.nm-tabs::-webkit-scrollbar{ display:none; }
+.nm-tab{ flex:none; display:inline-flex; align-items:center; gap:8px; height:46px; padding:0 16px 0 12px; border:0; border-radius:23px; cursor:pointer; font:500 14.5px/1 var(--sans); color:var(--t1);
+  background:linear-gradient(180deg, #fff, rgba(255,255,255,.7)); box-shadow:inset 0 0 0 1px rgba(26,20,16,.08), 0 1px 2px rgba(26,20,16,.05); touch-action:manipulation; -webkit-tap-highlight-color:transparent; transition:transform .15s ease; }
+.nm-tab span{ font-size:18px; }
+.nm-tab small{ font:500 11.5px/1 var(--sans); color:var(--t3); padding:4px 7px; border-radius:10px; background:rgba(26,20,16,.06); }
+.nm-tab[aria-selected="true"]{ color:#fff; background:linear-gradient(180deg, #F2914F, #D9692E); box-shadow:inset 0 1px 0 rgba(255,255,255,.35), 0 10px 22px -10px rgba(233,121,58,.7); }
+.nm-tab[aria-selected="true"] small{ color:#fff; background:rgba(255,255,255,.22); }
+.nm-tab:active{ transform:scale(.96); }
+.nm-list{ display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); column-gap:40px; margin-top:18px; padding:4px 8px; }
+.nm-note{ grid-column:1 / -1; font:500 12.5px/1 var(--sans); color:var(--warm-text); padding:8px 0 4px; }
+.nm-item{ display:flex; align-items:baseline; gap:16px; padding:16px 0; border-bottom:1px solid rgba(26,20,16,.08); }
+.nm-t{ flex:1; min-width:0; display:flex; flex-wrap:wrap; align-items:baseline; gap:4px 8px; }
+.nm-t b{ font:600 16.5px/22px var(--sans); letter-spacing:-.01em; }
+.nm-d{ flex-basis:100%; font:400 14px/20px var(--sans); color:var(--t2); }
+.nm-p{ flex:none; font:600 16px/22px var(--sans); font-variant-numeric:tabular-nums; }
+.nm-item.is-out{ opacity:.5; }
+.nm-badge{ font:600 11.5px/1 var(--sans); padding:5px 8px; border-radius:9px; }
+.nm-badge.out{ color:var(--bad-text); background:rgba(255,69,58,.12); }
+.nm-badge.few{ color:var(--warm-text); background:rgba(233,121,58,.14); }
+.nm-foot{ display:flex; align-items:center; gap:16px 24px; flex-wrap:wrap; margin-top:20px; padding:4px 8px 4px; }
+.nm-foot p{ font:400 13.5px/20px var(--sans); color:var(--t2); }
+@media (max-width:767px){
+  .nm{ border-radius:24px; padding:14px; margin:0 -4px; }
+  .nm-list{ grid-template-columns:1fr; padding:0 4px; }
+  .nm-item{ padding:14px 0; }
+  .nm-foot .btn{ width:100%; }
+}
+
+/* ---------- the menu page ---------- */
+body.menupage[data-ny] .nav{ position:sticky; top:0; }
+body.menupage[data-ny] .section__head h1{ font:500 clamp(48px, 6vw, 84px)/.98 var(--sans); letter-spacing:-.04em; }
+body.menupage[data-ny] .allerginote{ margin-top:16px; font:400 14px/20px var(--sans); color:var(--t2); }
+body.menupage[data-ny] .daymenu, body.menupage[data-ny] .ugemenu{ max-width:none; border-radius:28px; }
+body.menupage[data-ny] .daymenu__title{ font:600 22px/1 var(--sans); }
+body.menupage[data-ny] .menucats__title{ margin:56px 0 16px; font:500 clamp(28px, 3vw, 40px)/1.05 var(--sans); letter-spacing:-.03em; text-align:left; }
+body.menupage[data-ny] .menucats{ grid-template-columns:repeat(2, minmax(0, 1fr)); gap:16px; }
+body.menupage[data-ny] .menucat{ border-radius:28px; scroll-margin-top:150px; }
+body.menupage[data-ny] .menucat:hover{ transform:none; }
+body.menupage[data-ny] .menucat h4{ font:600 20px/1.2 var(--sans); letter-spacing:-.015em; }
+body.menupage[data-ny] .menuline{ border-color:rgba(26,20,16,.08); }
+body.menupage[data-ny] .menuline__name{ font:600 16px/22px var(--sans); }
+body.menupage[data-ny] .menuline__price{ font:600 16px/22px var(--sans); color:var(--t1); font-variant-numeric:tabular-nums; }
+body.menupage[data-ny] .menuline__badge{ font:600 11px/1 var(--sans); border-radius:8px; }
+body.menupage[data-ny] .ugerow__dag strong{ font:600 15px/1.2 var(--sans); }
+body.menupage[data-ny] .ugerow__navn{ font-weight:600; }
+body.menupage[data-ny] .menupage__foot{ display:flex; gap:12px; flex-wrap:wrap; margin-top:40px; }
+/* the bar of categories: glass that stays at the top */
+.nm-bar{ position:sticky; top:84px; z-index:40; display:flex; gap:6px; overflow-x:auto; scrollbar-width:none; margin:0 0 20px; padding:6px; border-radius:26px;
+  background:linear-gradient(180deg, rgba(255,255,255,.6), rgba(255,255,255,.34)); -webkit-backdrop-filter:blur(24px) saturate(2); backdrop-filter:blur(24px) saturate(2);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.95), inset 0 0 0 1px rgba(255,255,255,.4), 0 12px 30px -18px rgba(26,20,16,.35); }
+.nm-bar::-webkit-scrollbar{ display:none; }
+.nm-bar:empty{ display:none; }
+.nm-bar a{ flex:none; display:inline-flex; align-items:center; gap:7px; height:40px; padding:0 14px 0 10px; border-radius:20px; font:500 14px/1 var(--sans); color:var(--t1); text-decoration:none; white-space:nowrap; transition:background .2s ease, color .2s ease; }
+.nm-bar a span{ font-size:17px; }
+.nm-bar a.on{ color:#fff; background:linear-gradient(180deg, #F2914F, #D9692E); box-shadow:inset 0 1px 0 rgba(255,255,255,.35); }
+@media (max-width:900px){ body.menupage[data-ny] .menucats{ grid-template-columns:1fr; } }
+@media (max-width:767px){ .nm-bar{ top:76px; margin:0 -8px 16px; } body.menupage[data-ny] .menupage__foot .btn{ width:100%; } }
+
+/* ---------- rhythm: less empty space between the parts ---------- */
+body[data-ny] .section, body[data-ny] .section--tint, body[data-ny] .section--dark, body[data-ny] .section--news{ padding:clamp(64px, 8vw, 104px) 0; }
+body[data-ny] .section + .section{ padding-top:clamp(24px, 3vw, 40px); }
+/* on the menu page the bar sits over text, so a little more frost */
+body.menupage[data-ny] .nav__inner{ background:linear-gradient(180deg, rgba(255,255,255,.94), rgba(250,247,243,.88)); }
+body.menupage[data-ny] .nm-bar{ background:linear-gradient(180deg, rgba(255,255,255,.9), rgba(250,247,243,.8)); }
