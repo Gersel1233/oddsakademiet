@@ -12,8 +12,8 @@
 
 :root{
   --porcelain:#F6F4EF; --obsidian:#0E0F10;
-  --navy-950:#05080F; --navy-900:#0A1020; --navy-800:#101A33; --navy-700:#18264A;
-  --ultra:#2436E8; --sky:#9DB2FF; --ok:#34C759; --ok-text:#7BE495; --bad-text:#FF9F94;
+  --navy-950:#100C09; --navy-900:#17110D; --navy-800:#211812; --navy-700:#2E2118;
+  --ultra:#E9793A; --sky:#FFB27E; --ok:#34C759; --ok-text:#7BE495; --bad-text:#FF9F94;
   --sans:'Chivo', ui-sans-serif, system-ui, sans-serif; --mono:'Fragment Mono', ui-monospace, Menlo, monospace;
   --ease:cubic-bezier(.2,.8,.2,1);
   --t1:#F6F4EF; --t2:rgba(246,244,239,.72); --t3:rgba(246,244,239,.5);
@@ -39,9 +39,9 @@ body[data-ny] ::selection{ background:var(--ultra); color:#fff; }
 /* the light behind it all: fixed, so the glass always has something to bend */
 .ny-bg{ position:fixed; inset:0; z-index:-1; pointer-events:none; background:radial-gradient(80% 60% at 50% -10%, var(--navy-700), var(--navy-950) 70%); }
 .ny-bg i{ position:absolute; border-radius:50%; filter:blur(60px); opacity:.85; }
-.ny-bg .b1{ left:-10%; top:20%; width:55vw; height:55vw; background:radial-gradient(closest-side, rgba(36,54,232,.55), transparent); }
-.ny-bg .b2{ right:-15%; top:45%; width:60vw; height:60vw; background:radial-gradient(closest-side, rgba(233,121,58,.38), transparent); }
-.ny-bg .b3{ left:30%; top:-20%; width:45vw; height:45vw; background:radial-gradient(closest-side, rgba(110,170,255,.3), transparent); }
+.ny-bg .b1{ left:-10%; top:20%; width:55vw; height:55vw; background:radial-gradient(closest-side, rgba(233,121,58,.42), transparent); }
+.ny-bg .b2{ right:-15%; top:45%; width:60vw; height:60vw; background:radial-gradient(closest-side, rgba(255,176,96,.24), transparent); }
+.ny-bg .b3{ left:30%; top:-20%; width:45vw; height:45vw; background:radial-gradient(closest-side, rgba(170,70,30,.4), transparent); }
 @media (prefers-reduced-motion: no-preference){
   .ny-bg .b1{ animation:ny-drift 26s ease-in-out infinite alternate; }
   .ny-bg .b2{ animation:ny-drift 32s ease-in-out -8s infinite alternate-reverse; }
@@ -85,7 +85,7 @@ body[data-ny] .field__hint.is-ok{ color:var(--ok-text); }
 /* ---------- the bar ---------- */
 body[data-ny] .nav, body[data-ny] .nav.is-solid{ background:none; box-shadow:none; -webkit-backdrop-filter:none; backdrop-filter:none; color:var(--t1); }
 body[data-ny] .nav__inner{ width:min(1296px, calc(100vw - 48px)); height:60px; margin-top:16px; padding:0 8px 0 22px; border-radius:30px;
-  background:linear-gradient(165deg, rgba(36,40,52,.72), rgba(14,15,16,.6)); -webkit-backdrop-filter:blur(20px) saturate(1.7); backdrop-filter:blur(20px) saturate(1.7);
+  background:linear-gradient(165deg, rgba(46,38,32,.7), rgba(16,12,9,.6)); -webkit-backdrop-filter:blur(20px) saturate(1.7); backdrop-filter:blur(20px) saturate(1.7);
   box-shadow:inset 0 1px 0 rgba(255,255,255,.24), inset 0 0 0 .5px rgba(255,255,255,.16), 0 12px 32px rgba(0,0,0,.28); }
 body[data-ny] .logo__word{ font-family:var(--sans); font-weight:600; font-size:20px; letter-spacing:-.02em; }
 body[data-ny] .logo__dots{ display:none; }
@@ -97,7 +97,7 @@ body[data-ny] .nav__links a:not(.btn):hover{ background:rgba(246,244,239,.12); o
 body[data-ny] .nav__links .btn{ margin-left:10px; }
 body[data-ny] .nav__burger{ color:var(--t1); }
 @media (max-width:900px){
-  body[data-ny] .nav__links{ background:rgba(5,8,15,.94); -webkit-backdrop-filter:blur(24px); backdrop-filter:blur(24px); }
+  body[data-ny] .nav__links{ background:rgba(16,12,9,.95); -webkit-backdrop-filter:blur(24px); backdrop-filter:blur(24px); }
   body[data-ny] .nav__links a:not(.btn){ font-size:20px; height:52px; }
 }
 @media (max-width:760px){ body[data-ny] .nav__inner{ width:calc(100vw - 32px); height:56px; margin-top:12px; border-radius:28px; padding:0 8px 0 18px; } }
@@ -133,7 +133,7 @@ body[data-ny] .field input, body[data-ny] .field select, body[data-ny] .field te
 body[data-ny] .field textarea{ height:auto; line-height:22px; }
 body[data-ny] .field input::placeholder, body[data-ny] .field textarea::placeholder{ color:var(--t3); }
 body[data-ny] .field select option{ color:#000; background:#fff; }
-body[data-ny] .field input:focus, body[data-ny] .field select:focus, body[data-ny] .field textarea:focus{ background:rgba(255,255,255,.09); box-shadow:inset 0 0 0 1.5px var(--sky), 0 0 0 4px rgba(36,54,232,.25); }
+body[data-ny] .field input:focus, body[data-ny] .field select:focus, body[data-ny] .field textarea:focus{ background:rgba(255,255,255,.09); box-shadow:inset 0 0 0 1.5px var(--sky), 0 0 0 4px rgba(233,121,58,.25); }
 body[data-ny] .segmented span{ height:48px; border-radius:24px; font:500 14px/1 var(--sans); }
 body[data-ny] .segmented input:checked + span{ background:var(--porcelain); color:var(--obsidian); box-shadow:0 10px 24px -12px rgba(0,0,0,.6); transform:none; }
 body[data-ny] .form{ padding:clamp(24px, 3.4vw, 40px); border-radius:32px; }
@@ -141,7 +141,7 @@ body[data-ny] .form{ padding:clamp(24px, 3.4vw, 40px); border-radius:32px; }
 /* ---------- the opening: the film in the light, the day beside it ---------- */
 body[data-ny] .hero{ background:var(--navy-950); min-height:100svh; display:grid; grid-template-columns:minmax(0, 1fr) minmax(320px, 400px); align-items:center; gap:48px;
   padding:120px max(24px, calc((100vw - 1296px) / 2)) 64px; }
-body[data-ny] .hero__overlay{ background:linear-gradient(90deg, rgba(5,8,15,.82), rgba(5,8,15,.45) 55%, rgba(5,8,15,.6)), linear-gradient(180deg, rgba(5,8,15,.4), transparent 30%, transparent 70%, var(--navy-950)); }
+body[data-ny] .hero__overlay{ background:linear-gradient(90deg, rgba(16,12,9,.82), rgba(16,12,9,.4) 55%, rgba(16,12,9,.55)), linear-gradient(180deg, rgba(16,12,9,.4), transparent 30%, transparent 70%, var(--navy-950)); }
 body[data-ny] .hero__content{ position:relative; z-index:2; text-align:left; width:auto; margin:0; padding:0; max-width:none; justify-self:stretch; }
 body[data-ny] .hero__kicker{ font:600 11px/14px var(--sans); letter-spacing:.06em; text-transform:uppercase; color:var(--t2); }
 body[data-ny] .hero__title{ font:500 clamp(48px, 6.4vw, 100px)/.96 var(--sans); letter-spacing:-.045em; max-width:11em; text-wrap:balance; }
@@ -174,7 +174,7 @@ body[data-ny] .nl-go{ margin-top:18px; width:100%; justify-content:space-between
 /* the dock: today at a glance, at the bottom of the screen */
 .ny-dock{ position:fixed; z-index:90; left:50%; bottom:calc(16px + env(safe-area-inset-bottom)); display:flex; align-items:center; gap:12px; height:56px; padding:0 6px 0 18px; border-radius:28px;
   max-width:calc(100vw - 32px); transform:translate(-50%, 140%); opacity:0; transition:transform .55s cubic-bezier(.2,1.2,.3,1), opacity .3s ease;
-  background:linear-gradient(165deg, rgba(36,40,52,.78), rgba(14,15,16,.7)); }
+  background:linear-gradient(165deg, rgba(46,38,32,.82), rgba(16,12,9,.76)); }
 .ny-dock-on .ny-dock{ transform:translate(-50%, 0); opacity:1; }
 .nd-t{ display:flex; flex-direction:column; gap:2px; min-width:0; }
 .nd-state{ font:500 12px/1 var(--sans); color:var(--t2); }
@@ -200,7 +200,7 @@ body[data-ny] .fbjoin__cta{ height:40px; padding:0 16px; display:inline-flex; al
 /* ---------- today and the week ahead ---------- */
 body[data-ny] .today{ border-radius:32px; overflow:hidden; }
 body[data-ny] .today__badge{ position:relative; isolation:isolate; font:500 22px/1.1 var(--sans); font-style:normal; letter-spacing:-.02em; color:var(--t1);
-  background:radial-gradient(80% 70% at 30% 110%, rgba(233,121,58,.7), transparent 70%), radial-gradient(70% 60% at 80% 0%, rgba(36,54,232,.55), transparent 70%), rgba(5,8,15,.6); }
+  background:radial-gradient(80% 70% at 30% 110%, rgba(233,121,58,.7), transparent 70%), radial-gradient(70% 60% at 80% 0%, rgba(255,190,120,.35), transparent 70%), rgba(16,12,9,.55); }
 body[data-ny] .today__dish{ font:500 clamp(28px, 3vw, 40px)/1.05 var(--sans); letter-spacing:-.03em; }
 body[data-ny] .today__desc{ color:var(--t2); }
 body[data-ny] .today__price{ font:500 22px/1 var(--sans); color:var(--t1); background:rgba(255,255,255,.08); box-shadow:var(--rim-in); border-radius:18px; padding:10px 16px; font-variant-numeric:tabular-nums; }
@@ -229,8 +229,8 @@ body[data-ny] .selsk__stars, body[data-ny] .selsk__starstxt{ color:var(--t2); }
 body[data-ny] .hours td, body[data-ny] .hours th{ border-color:rgba(255,255,255,.08); color:var(--t2); }
 body[data-ny] .hours__status{ font-family:var(--sans); color:var(--ok-text); }
 body[data-ny] .hours__cutoff{ color:#FFB27E; }
-body[data-ny] .confirm{ background:rgba(5,8,15,.7); -webkit-backdrop-filter:blur(8px); backdrop-filter:blur(8px); }
-body[data-ny] .confirm__card{ background:linear-gradient(160deg, rgba(40,46,66,.92), rgba(14,18,30,.94)); }
+body[data-ny] .confirm{ background:rgba(16,12,9,.72); -webkit-backdrop-filter:blur(8px); backdrop-filter:blur(8px); }
+body[data-ny] .confirm__card{ background:linear-gradient(160deg, rgba(58,44,34,.94), rgba(24,18,14,.96)); }
 
 /* ---------- the foot ---------- */
 body[data-ny] .footer{ background:none; color:var(--t2); border-top:1px solid rgba(255,255,255,.08); padding-bottom:120px; }
@@ -245,7 +245,7 @@ body[data-ny] .footer .logo__word{ color:var(--t1); }
 @media (max-width:767px){
   /* glass without blur: the light behind is soft already, and scrolling stays light */
   body[data-ny] .card, body[data-ny] .news, body[data-ny] .today, body[data-ny] .dayplan, body[data-ny] .menuteaser, body[data-ny] .fbjoin, body[data-ny] .value,
-  body[data-ny] .selsk__cta, body[data-ny] .tapas__info, .ny-live{ -webkit-backdrop-filter:none; backdrop-filter:none; background:linear-gradient(160deg, rgba(40,48,72,.62), rgba(18,22,36,.6)); }
+  body[data-ny] .selsk__cta, body[data-ny] .tapas__info, .ny-live{ -webkit-backdrop-filter:none; backdrop-filter:none; background:linear-gradient(160deg, rgba(64,50,40,.6), rgba(30,23,18,.6)); }
   .ny-bg i{ filter:blur(40px); }
   body[data-ny] .container, body[data-ny] .container--narrow{ width:calc(100vw - 32px); }
   body[data-ny] .fbjoin{ width:calc(100% - 32px); }
@@ -258,3 +258,92 @@ body[data-ny] .footer .logo__word{ color:var(--t1); }
 }
 body[data-ny] .selsk__text, body[data-ny] .selsk__points li, body[data-ny] .selsk__stars, body[data-ny] .selsk__starstxt{ text-align:left; justify-content:flex-start; }
 body[data-ny] .section{ padding:clamp(72px, 9vw, 120px) 0; }
+
+/* ======================================================================
+   Spiis' own colours: black, white and their orange — no blue. More
+   liquid glass, buttons that feel right under a thumb, plainer labels so
+   nobody has to guess where to go, and today's dish as the star.
+   ====================================================================== */
+
+/* ---------- more liquid glass: a lit rim, a sheen on top, light inside ---------- */
+:root{
+  --glass:linear-gradient(165deg, rgba(255,255,255,.16) 0%, rgba(255,255,255,.05) 38%, rgba(255,255,255,.03) 62%, rgba(255,200,150,.07) 100%);
+  --shadow:inset 0 1px 0 rgba(255,255,255,.42), inset 0 -1px 0 rgba(255,255,255,.06), inset 0 0 0 1px rgba(255,255,255,.12),
+    inset 0 24px 40px -30px rgba(255,255,255,.3), 0 30px 60px -28px rgba(0,0,0,.75);
+  --glass-in:linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.04));
+  --rim-in:inset 0 1px 0 rgba(255,255,255,.14), inset 0 0 0 1px rgba(255,255,255,.08);
+  --blur:blur(28px) saturate(1.8);
+}
+
+/* ---------- plain words, so everyone finds their way ---------- */
+body[data-ny] .marquee__track span{ font:500 13px/1 var(--sans); letter-spacing:.02em; text-transform:none; }
+body[data-ny] .dayplan__day{ font:600 12px/1 var(--sans); letter-spacing:.02em; text-transform:none; color:#FFB27E; }
+body[data-ny] .dayplan__date{ font:400 12px/1 var(--sans); color:var(--t3); }
+body[data-ny] .news__date{ font:600 12px/1 var(--sans); }
+.nl-time{ font:500 12px/1 var(--sans); }
+body[data-ny] .eyebrow, body[data-ny] .eyebrow--light{ color:#FFB27E; }
+body[data-ny] .nav__links a:not(.btn){ opacity:1; font-weight:500; }
+
+/* ---------- buttons that feel right under a thumb ----------
+   No blur in the button (it made the press feel soft), an instant press
+   (darker and a touch smaller), and on phones taller, full width, the text
+   to the left and the arrow to the right. */
+body[data-ny] .btn{ -webkit-backdrop-filter:none; backdrop-filter:none; touch-action:manipulation; -webkit-tap-highlight-color:transparent; user-select:none; -webkit-user-select:none;
+  background:linear-gradient(180deg, rgba(255,255,255,.18), rgba(255,255,255,.08)); transition:transform .18s var(--ease), filter .18s ease, box-shadow .25s ease; }
+body[data-ny] .btn--accent{ background:linear-gradient(180deg, #F2914F 0%, #E06E30 55%, #CF5F24 100%); }
+body[data-ny] .btn:active{ transform:scale(.965); filter:brightness(.9); transition-duration:.06s; }
+body[data-ny] .btn--accent::after{ width:36px; height:36px; }
+@media (max-width:767px){
+  body[data-ny] .btn{ height:54px; border-radius:27px; font-size:16px; }
+  body[data-ny] .btn--accent{ padding:0 7px 0 22px; justify-content:space-between; }
+  body[data-ny] .btn--accent::after{ width:40px; height:40px; }
+  body[data-ny] .hero__cta{ display:grid; gap:10px; }
+  body[data-ny] .hero__cta .btn{ width:100%; }
+  body[data-ny] .today__meta .btn, body[data-ny] .menuteaser .btn, body[data-ny] .selsk__cta .btn{ width:100%; }
+  .nd-go{ height:46px; padding:0 8px 0 18px; font-size:15px; }
+  .nd-go:active{ transform:scale(.96); filter:brightness(.9); }
+}
+/* the plus and minus on a dish: round, big enough for a thumb */
+body[data-ny] .stepper button, body[data-ny] .cavabtn{ min-width:40px; min-height:40px; border-radius:50%; touch-action:manipulation; }
+body[data-ny] .stepper button:active, body[data-ny] .cavabtn:active{ transform:scale(.9); }
+
+/* ---------- today's dish: the star of the page ----------
+   A wide pane of glass: on the left the day in warm light, then the dish
+   large, what it comes with, the price and how many are left as one row,
+   and the button to order. */
+body[data-ny] .today{ grid-template-columns:200px minmax(0, 1fr); align-items:stretch; }
+body[data-ny] .today--foto{ grid-template-columns:200px minmax(0, 1fr) minmax(220px, 320px); }
+body[data-ny] .today__badge{ gap:10px; font:600 20px/1.1 var(--sans);
+  background:radial-gradient(90% 80% at 30% 105%, rgba(242,145,79,.9), transparent 70%), radial-gradient(80% 60% at 80% 0%, rgba(255,200,140,.4), transparent 70%), linear-gradient(180deg, #3A2A1F, #1E1610);
+  box-shadow:inset -1px 0 0 rgba(255,255,255,.1); }
+body[data-ny] .today__badge .steam__line{ stroke:rgba(255,255,255,.9); }
+body[data-ny] .today__body{ display:flex; flex-direction:column; justify-content:center; padding:clamp(24px, 3.4vw, 40px); }
+body[data-ny] .today__dish{ font:600 clamp(30px, 3.4vw, 46px)/1.02 var(--sans); letter-spacing:-.035em; }
+body[data-ny] .today__desc{ margin-top:8px; font:400 17px/26px var(--sans); }
+body[data-ny] .today__meta{ display:flex; flex-wrap:wrap; align-items:center; gap:10px; margin-top:22px; }
+body[data-ny] .today__meta .btn{ margin-left:auto; }
+body[data-ny] .today__foto img{ border-radius:0; }
+@media (max-width:767px){
+  body[data-ny] .today, body[data-ny] .today--foto{ grid-template-columns:1fr; }
+  body[data-ny] .today__badge{ flex-direction:row; justify-content:flex-start; padding:14px 20px; font-size:16px; box-shadow:inset 0 -1px 0 rgba(255,255,255,.1); }
+  body[data-ny] .today__badge .steam{ width:34px; height:22px; }
+  body[data-ny] .today__meta .btn{ margin-left:0; }
+  body[data-ny] .today__foto{ order:-1; aspect-ratio:16/10; }
+}
+/* the week: today stands out, the rest are easy to scan */
+body[data-ny] .dayplan{ padding:16px; }
+body[data-ny] .dayplan__dish{ margin-top:8px; font-size:15px; line-height:20px; }
+body[data-ny] .dayplan.ny-today{ background:linear-gradient(165deg, rgba(242,145,79,.28), rgba(255,255,255,.04) 60%); }
+
+/* the live card and the dock in the same warm glass */
+.ny-live{ background:linear-gradient(165deg, rgba(255,255,255,.18), rgba(255,255,255,.05) 40%, rgba(242,145,79,.12)); }
+.nl-dish{ font-weight:600; }
+
+/* the orange sheen on the selected chips and the chosen dish */
+body[data-ny] .segmented input:checked + span{ background:linear-gradient(180deg, #F2914F, #D9692E); color:#fff; box-shadow:inset 0 1px 0 rgba(255,255,255,.35), 0 10px 22px -10px rgba(233,121,58,.7); }
+@media (max-width:767px){
+  body[data-ny] .hero__cta{ display:grid !important; grid-template-columns:1fr; gap:10px; width:100%; }
+  body[data-ny] .hero__cta .btn{ width:100% !important; }
+  body[data-ny] .hero__cta .btn--accent{ justify-content:space-between; }
+  body[data-ny] .hero__cta .btn:not(.btn--accent){ justify-content:center; }
+}
