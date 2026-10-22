@@ -63,7 +63,14 @@
     // the board: the date only belongs under "I dag", and "Dagens ret" is not said twice
     const lab = ($('#todayLabel') || {}).textContent || '';
     const board = $('.tboard');
-    if (board) { board.classList.toggle('is-today', lab.trim() === 'I dag'); board.classList.toggle('no-k', /^dagens ret$/i.test(lab.trim())); }
+    if (board) {
+      board.classList.toggle('is-today', lab.trim() === 'I dag'); board.classList.toggle('no-k', /^dagens ret$/i.test(lab.trim()));
+      // the picture on the board: the kitchen's own photo of today's dish when there is one,
+      // otherwise Spiis' own bread from the oven – a picture of the kitchen, not of another dish
+      const kImg = $('#todayFoto') && !$('#todayFoto').hidden && $('#todayFotoImg') && $('#todayFotoImg').getAttribute('src');
+      const src = kImg || 'assets/foto/brod-1200.webp';
+      if (board.dataset.img !== src) { board.dataset.img = src; board.style.setProperty('--tb-img', `url("${src}")`); }
+    }
     // today in the week ahead
     $$('.dayplan').forEach((d) => d.classList.toggle('ny-today', /i dag/i.test(d.querySelector('.dayplan__day')?.textContent || '')));
   }
