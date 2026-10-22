@@ -60,6 +60,10 @@
     set('.nd-stock', soldout ? 'Udsolgt' : (left ? `${left} tilbage` : ''));
     document.documentElement.classList.toggle('ny-open', s.on === true);
     document.documentElement.classList.toggle('ny-soldout', soldout);
+    // the board: the date only belongs under "I dag", and "Dagens ret" is not said twice
+    const lab = ($('#todayLabel') || {}).textContent || '';
+    const board = $('.tboard');
+    if (board) { board.classList.toggle('is-today', lab.trim() === 'I dag'); board.classList.toggle('no-k', /^dagens ret$/i.test(lab.trim())); }
     // today in the week ahead
     $$('.dayplan').forEach((d) => d.classList.toggle('ny-today', /i dag/i.test(d.querySelector('.dayplan__day')?.textContent || '')));
   }
@@ -70,6 +74,8 @@
   function week() {
     const d = new Date();
     set('.nh-date', d.toLocaleDateString('da-DK', { weekday: 'long' }) + ' ' + d.toLocaleDateString('da-DK', { day: 'numeric', month: 'long' }));
+    const wd = d.toLocaleDateString('da-DK', { weekday: 'long' });
+    set('.tboard__date', wd.charAt(0).toUpperCase() + wd.slice(1) + ' ' + d.toLocaleDateString('da-DK', { day: 'numeric', month: 'short' }).replace('.', '').replace(/\.$/, ''));
     const ol = $('#nhWeek'); if (!ol || !S) return;
     let rows = [];
     try {
@@ -96,7 +102,7 @@
 
   let raf = 0;
   const ask = () => { if (!raf) raf = requestAnimationFrame(() => { raf = 0; paint(); }); };
-  ['#todayDish', '#todayStock', '#todayPrice', '#openStatus', '#orderCutoff', '#weekPlan', '#todayFoto'].forEach((s) => {
+  ['#todayDish', '#todayStock', '#todayPrice', '#openStatus', '#orderCutoff', '#weekPlan', '#todayFoto', '#todayLabel'].forEach((s) => {
     const e = $(s); if (e) new MutationObserver(ask).observe(e, { childList: true, subtree: true, characterData: true, attributes: true });
   });
   paint(); clock(); setInterval(clock, 20000);
