@@ -24,3 +24,15 @@
   new MutationObserver(build).observe(wrap, { childList: true });
   build();
 })();
+
+/* the week on the menu page: the words without the small emoji in front
+   (🚫 Lukket, 🗓️ Menuen …), so every row reads the same */
+(() => {
+  const el = document.getElementById('ugeMenu');
+  if (!el) return;
+  const clean = () => el.querySelectorAll('.ugerow__lukket, .ugerow__tom').forEach((s) => {
+    const t = s.textContent.replace(/^[\p{Extended_Pictographic}️‍\s]+/u, '');
+    if (t !== s.textContent) s.textContent = t;
+  });
+  new MutationObserver(clean).observe(el, { childList: true, subtree: true }); clean();
+})();
