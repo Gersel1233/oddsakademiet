@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <meta name="ny-version" content="20261022090145" />
+  <meta name="ny-version" content="20261022090711" />
   <!-- a browser that kept an older copy of this page fetches the new one once -->
   <script>(function(){try{var m=document.querySelector('meta[name="ny-version"]').content;fetch('ny-version.txt?t='+Date.now(),{cache:'no-store'}).then(function(r){return r.ok?r.text():''}).then(function(v){v=(v||'').trim();if(!v||v===m||sessionStorage.getItem('nyv'+v))return;sessionStorage.setItem('nyv'+v,'1');fetch(location.pathname,{cache:'reload'}).then(function(){location.reload()});}).catch(function(){});}catch(e){}})();</script>
   <title>Spiis Admin – Dashboard</title>
@@ -18,7 +18,7 @@
   <link rel="preload" href="assets/fonts/chivo-500.woff2" as="font" type="font/woff2" crossorigin />
   <link rel="stylesheet" href="../css/admin.css?v=ny1" />
   <link rel="stylesheet" href="../css/datepicker.css?v=ny1" />
-  <link rel="stylesheet" href="admin-glas.css?v=2" />
+  <link rel="stylesheet" href="admin-glas.css?v=5" />
 </head>
 <body data-ny="admin">
   <div class="ny-bg" aria-hidden="true"><i class="b1"></i><i class="b2"></i><i class="b3"></i></div>
@@ -149,7 +149,10 @@
   <script src="../js/config.js?v=ny1"></script>
   <script src="../js/store.js?v=ny1"></script>
   <script src="../js/datepicker.js?v=ny1"></script>
-  <script src="../js/admin.js?v=ny1"></script>
-  <script src="admin-plus.js?v=2"></script>
+  <script src="admin-load.js?v=1" data-src="../js/admin.js?v=ny2"></script>
+  <script>
+    /* the extras need the admin in place first */
+    document.addEventListener('spiis-admin-ready', () => ['admin-plus.js?v=2', 'admin-idag.js?v=1'].forEach((f) => { const s = document.createElement('script'); s.src = f; document.body.append(s); }), { once: true });
+  </script>
 </body>
 </html>

@@ -61,3 +61,20 @@
   grid.addEventListener('keydown', (e) => { if (e.key === 'Enter' && e.target.classList?.contains('news')) open(e.target); });
   new MutationObserver(mark).observe(grid, { childList: true }); mark();
 })();
+
+/* each news picture gives its card its own shape – a tall phone poster up
+   to 9:16, a wide picture as it is – so nothing is cut away */
+(() => {
+  const grid = document.getElementById('newsGrid');
+  if (!grid) return;
+  const fit = (img) => {
+    const go = () => {
+      if (!img.naturalWidth) return;
+      const r = Math.max(9 / 16, Math.min(16 / 9, img.naturalWidth / img.naturalHeight));
+      img.closest('.news__media')?.style.setProperty('--ar', String(r));
+    };
+    if (img.complete) go(); else img.addEventListener('load', go, { once: true });
+  };
+  const all = () => grid.querySelectorAll('.news__media img').forEach(fit);
+  new MutationObserver(all).observe(grid, { childList: true, subtree: true }); all();
+})();

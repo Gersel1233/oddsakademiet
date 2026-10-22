@@ -54,3 +54,10 @@ body[data-ny] .tboard #todayLabel, .tboard__k{
   -webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='1.6' numOctaves='1' seed='3'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 -1.6 1.9'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
   mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='1.6' numOctaves='1' seed='3'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 -1.6 1.9'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
 @media (max-width:767px){ .tboard.is-today .tboard__chalkline{ display:none; } }
+
+/* "Dagens ret" written on the board: not spaced-out capitals but a word in
+   chalk, slightly on the slant, with a chalk stroke under it */
+body[data-ny] .tboard__k{ display:inline-block; position:relative; font:600 21px/1.1 var(--sans) !important; letter-spacing:-.01em !important; text-transform:none !important;
+  color:#F4BE90 !important; transform:rotate(-3deg); padding-bottom:8px; }
+body[data-ny] .tboard__k::after{ content:""; position:absolute; left:4%; right:-2%; bottom:0; height:5px;
+  background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 8' preserveAspectRatio='none'%3E%3Cpath d='M2 5c20-2.6 46-2.2 66-1.4 18 .7 34-.6 50-2' fill='none' stroke='%23F4BE90' stroke-width='2.6' stroke-linecap='round' opacity='.75'/%3E%3C/svg%3E") center/100% 100% no-repeat; }
