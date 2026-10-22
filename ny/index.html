@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <meta name="ny-version" content="20261022070657" />
+  <meta name="ny-version" content="20261022080526" />
   <!-- a browser that kept an older copy of this page fetches the new one once -->
   <script>(function(){try{var m=document.querySelector('meta[name="ny-version"]').content;fetch('ny-version.txt?t='+Date.now(),{cache:'no-store'}).then(function(r){return r.ok?r.text():''}).then(function(v){v=(v||'').trim();if(!v||v===m||sessionStorage.getItem('nyv'+v))return;sessionStorage.setItem('nyv'+v,'1');fetch(location.pathname,{cache:'reload'}).then(function(){location.reload()});}).catch(function(){});}catch(e){}})();</script>
   <meta name="robots" content="noindex, nofollow" />
@@ -95,6 +95,7 @@
   <link rel="stylesheet" href="spiis-glas.css?v=6" />
   <link rel="stylesheet" href="spiis-cafe-ned.css?v=2" />
   <link rel="stylesheet" href="spiis-live.css?v=5" />
+  <link rel="stylesheet" href="spiis-ribbon.css?v=2" />
 </head>
 <body data-ny="1">
   <div class="ny-bg" aria-hidden="true"><i class="b1"></i><i class="b2"></i><i class="b3"></i></div>
@@ -166,12 +167,12 @@
     </a>
   </section>
 
-  <!-- ====== MARQUEE ====== -->
-  <div class="marquee" aria-hidden="true">
-    <div class="marquee__track">
-      <span>Hjemmelavet mad</span><i>✦</i><span>Frisk hver dag</span><i>✦</i><span>Ingen stress</span><i>✦</i><span>Ingen opvask</span><i>✦</i><span>Bare god mad</span><i>✦</i><span>Perfekt til børnefamilien</span><i>✦</i>
-      <span>Hjemmelavet mad</span><i>✦</i><span>Frisk hver dag</span><i>✦</i><span>Ingen stress</span><i>✦</i><span>Ingen opvask</span><i>✦</i><span>Bare god mad</span><i>✦</i><span>Perfekt til børnefamilien</span><i>✦</i>
-    </div>
+  <!-- the old text band stays for the page script; it is not shown -->
+  <div class="marquee" aria-hidden="true" style="display:none"><div class="marquee__track"></div></div>
+
+  <!-- ====== FROM THE KITCHEN: a slow ribbon of real photos ====== -->
+  <div class="ribbon" aria-label="Fra køkkenet hos Spiis">
+    <div class="ribbon__track"><figure class="rb-ph"><img src="assets/foto/bowls-640.webp" alt="" loading="lazy" decoding="async" /></figure><span class="rb-w">Hjemmelavet fra bunden</span><figure class="rb-ph"><img src="assets/foto/brod-640.webp" alt="" loading="lazy" decoding="async" /></figure><span class="rb-w">Bagt her i huset</span><figure class="rb-ph"><img src="assets/foto/vitrine-640.webp" alt="" loading="lazy" decoding="async" /></figure><span class="rb-w">Spis her eller tag med</span><figure class="rb-ph"><img src="assets/foto/tapas-640.webp" alt="" loading="lazy" decoding="async" /></figure><span class="rb-w">Tapas til hyggen</span><figure class="rb-ph"><img src="assets/foto/buffet-640.webp" alt="" loading="lazy" decoding="async" /></figure><span class="rb-w">Selskaber og catering</span><span class="ribbon__copy" aria-hidden="true"><figure class="rb-ph"><img src="assets/foto/bowls-640.webp" alt="" loading="lazy" decoding="async" /></figure><span class="rb-w">Hjemmelavet fra bunden</span><figure class="rb-ph"><img src="assets/foto/brod-640.webp" alt="" loading="lazy" decoding="async" /></figure><span class="rb-w">Bagt her i huset</span><figure class="rb-ph"><img src="assets/foto/vitrine-640.webp" alt="" loading="lazy" decoding="async" /></figure><span class="rb-w">Spis her eller tag med</span><figure class="rb-ph"><img src="assets/foto/tapas-640.webp" alt="" loading="lazy" decoding="async" /></figure><span class="rb-w">Tapas til hyggen</span><figure class="rb-ph"><img src="assets/foto/buffet-640.webp" alt="" loading="lazy" decoding="async" /></figure><span class="rb-w">Selskaber og catering</span></span></div>
   </div>
 
   <main>
@@ -678,5 +679,6 @@
   <script src="menu-front.js?v=3"></script>
   <script src="til-bestil.js?v=3"></script>
   <script src="site-mode.js?v=1"></script>
+  <script src="news-sheet.js?v=1"></script>
 </body>
 </html>
