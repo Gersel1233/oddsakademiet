@@ -9,3 +9,35 @@ body[data-ny] .menuline__badge:not(.menuline__badge--out):not(.menuline__badge--
 body[data-ny] .ugerow__pris, body[data-ny] .tapas__cavatxt b, body[data-ny] .selsk__starstxt em{ color:#8E3A0F !important; font-weight:600; }
 body[data-ny] .menuline__badge--out{ color:#9A2A1F !important; background:rgba(255,69,58,.12) !important; }
 body[data-ny] .eyebrow{ font-weight:700 !important; }
+
+/* the bar: once you scroll it is solid cream, so its words are dark on light
+   whatever passes underneath (the film, a photo or the page) */
+body[data-ny] .nav.is-solid .nav__inner{ background:rgba(251,247,240,.94) !important; -webkit-backdrop-filter:blur(18px) saturate(1.4) !important; backdrop-filter:blur(18px) saturate(1.4) !important;
+  box-shadow:0 1px 2px rgba(43,30,21,.08), 0 14px 30px -16px rgba(43,30,21,.45), inset 0 0 0 1px rgba(43,30,21,.1) !important; }
+body[data-ny] .nav.is-solid .nav__inner::before{ display:none !important; }
+body[data-ny] .nav.is-solid :is(.logo, .logo__word, .nav__links a:not(.btn), .nav__burger){ color:#24180F !important; opacity:1 !important; }
+@media (max-width:900px){ body[data-ny] .nav__links{ background:rgba(251,247,240,.98) !important; } body[data-ny] .nav__links a:not(.btn){ color:#24180F !important; } }
+
+/* quieter text that still reads: secondary text, small notes and the
+   second tone of the headings are all a step darker */
+body[data-ny], body[data-ny] :is(#menukort, #tapas, #om, #selskaber, #kontakt, #bestil, #dagensret, #nyheder, main, section){
+  --t2:rgba(30,20,13,.8); --t3:rgba(30,20,13,.68); }
+body[data-ny] .hero, body[data-ny] .footer{ --t2:rgba(255,255,255,.84); --t3:rgba(255,255,255,.7); }
+body[data-ny] :not(.hero *):is(.tone){ color:rgba(30,20,13,.6) !important; }
+body[data-ny] :is(small, .field__hint, .dayplan__date, .bitem__info small, .menuline__desc, .ugerow__dag small):not(.hero *):not(.footer *):not(.btn *):not(.nm-tab[aria-selected="true"] *){ color:rgba(30,20,13,.7) !important; }
+body[data-ny] .dayplan--closed .dayplan__dish{ color:rgba(30,20,13,.68) !important; }
+body[data-ny] .dayplan.ny-today :is(.dayplan__date, small){ color:inherit !important; }
+
+/* news: two posts stand side by side as equals, the picture on top –
+   no big card next to an empty space */
+body[data-ny] .newsgrid:has(> .news:nth-child(2):last-child){ grid-template-columns:repeat(2, minmax(0, 1fr)) !important; align-items:stretch; }
+body[data-ny] .newsgrid:has(> .news:nth-child(2):last-child) .news--big{ grid-column:auto !important; flex-direction:column !important; align-items:stretch !important; }
+body[data-ny] .newsgrid:has(> .news:nth-child(2):last-child) .news__media{ flex:0 0 auto !important; aspect-ratio:4 / 3; }
+body[data-ny] .newsgrid:has(> .news:nth-child(2):last-child) .news__body{ padding:20px 22px 22px !important; }
+@media (max-width:767px){ body[data-ny] .newsgrid:has(> .news:nth-child(2):last-child){ grid-template-columns:1fr !important; } }
+/* the news cards: solid cream so the words stand clear; posters from the top */
+body[data-ny] #newsGrid .news{ background:#FBF7F0 !important; -webkit-backdrop-filter:none !important; backdrop-filter:none !important;
+  box-shadow:0 1px 2px rgba(43,30,21,.08), 0 18px 34px -20px rgba(43,30,21,.4), inset 0 0 0 1px rgba(43,30,21,.1) !important; }
+body[data-ny] #newsGrid .news::after{ display:none !important; }
+body[data-ny] #newsGrid .news__media img{ object-position:center top; }
+body[data-ny] #newsGrid .news__title{ color:#24180F !important; }

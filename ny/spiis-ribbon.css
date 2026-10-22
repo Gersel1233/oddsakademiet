@@ -1,17 +1,17 @@
 /* Spiis /ny/: the ribbon under the opening – real photos from the kitchen
    with a few words between them, sliding slowly; and the news sheet. */
 body[data-ny] .marquee{ display:none !important; }
-.ribbon{ position:relative; overflow:hidden; padding:clamp(20px, 3vw, 32px) 0; -webkit-mask:linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent); mask:linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent); }
-.ribbon__track{ display:flex; align-items:center; gap:clamp(18px, 2.4vw, 32px); width:max-content; animation:ny-ribbon 70s linear infinite; }
+.ribbon{ position:relative; overflow:hidden; padding:clamp(18px, 2.6vw, 28px) 0; -webkit-mask:linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent); mask:linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent); }
+.ribbon__track{ display:flex; align-items:stretch; gap:clamp(12px, 1.4vw, 18px); width:max-content; animation:ny-ribbon 80s linear infinite; }
 .ribbon__copy{ display:contents; }
 .ribbon:hover .ribbon__track{ animation-play-state:paused; }
-@keyframes ny-ribbon{ to{ transform:translate3d(-50%, 0, 0); } }
-.rb-ph{ flex:none; margin:0; width:clamp(150px, 15vw, 210px); aspect-ratio:4 / 5; border-radius:22px; overflow:hidden;
-  box-shadow:0 1px 2px rgba(43,30,21,.1), 0 16px 30px -16px rgba(43,30,21,.45); }
-.rb-ph:nth-of-type(even){ aspect-ratio:1 / 1; }
-.rb-ph img{ width:100%; height:100%; object-fit:cover; display:block; }
-.rb-w{ flex:none; font:500 clamp(22px, 2.4vw, 34px)/1.1 var(--sans); letter-spacing:-.03em; color:var(--t1); white-space:nowrap; }
-.rb-w::after{ content:""; display:inline-block; width:8px; height:8px; margin-left:clamp(18px, 2.4vw, 32px); border-radius:50%; background:#E2702E; vertical-align:middle; }
+@keyframes ny-ribbon{ to{ transform:translate3d(calc(-50% - clamp(6px, .7vw, 9px)), 0, 0); } }
+/* every photo the same card: same size, same corners, the words on the photo */
+.rb-card{ position:relative; flex:none; margin:0; width:clamp(168px, 17vw, 236px); aspect-ratio:4 / 5; border-radius:20px; overflow:hidden; background:#2B1E15;
+  box-shadow:0 1px 2px rgba(43,30,21,.12), 0 18px 32px -18px rgba(43,30,21,.5); }
+.rb-card img{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; display:block; }
+.rb-card::after{ content:""; position:absolute; inset:45% 0 0; background:linear-gradient(180deg, transparent, rgba(16,10,6,.82)); }
+.rb-card figcaption{ position:absolute; z-index:1; left:14px; right:14px; bottom:13px; font:600 clamp(15px, 1.2vw, 17px)/1.2 var(--sans); letter-spacing:-.01em; color:#fff; text-wrap:balance; }
 @media (prefers-reduced-motion:reduce){ .ribbon__track{ animation:none; } .ribbon{ overflow-x:auto; } }
 
 /* news: the whole card can be tapped */
