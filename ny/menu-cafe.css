@@ -45,8 +45,16 @@ body.menupage[data-ny] .ugerow--lukket .ugerow__dag strong{ color:rgba(30,20,13,
 body.menupage[data-ny] .ugerow__lukket::before{ content:""; display:inline-block; width:7px; height:7px; margin:0 9px 2px 0; border-radius:50%; background:rgba(30,20,13,.3); vertical-align:middle; }
 
 /* categories: the bar solid, cards with a clear header, a wide card in columns */
-body.menupage[data-ny] .nm-bar{ background:rgba(251,247,240,.97) !important; box-shadow:var(--card-sh), inset 0 0 0 1px var(--edge) !important; }
-body.menupage[data-ny] .nm-bar a.on{ background:#2B1E15 !important; color:#FBF7F0 !important; box-shadow:none !important; }
+/* the category bar: clear liquid glass – the menu shows through, blurred,
+   with a bright rim and a sheen; only the chosen category is solid */
+body.menupage[data-ny] .nm-bar{ isolation:isolate;
+  background:linear-gradient(180deg, rgba(255,255,255,.5), rgba(255,255,255,.3) 60%, rgba(255,255,255,.4)) !important;
+  -webkit-backdrop-filter:blur(34px) saturate(1.9) brightness(1.05) !important; backdrop-filter:blur(34px) saturate(1.9) brightness(1.05) !important;
+  box-shadow:inset 0 1.5px 0 rgba(255,255,255,.85), inset 0 -1px 0 rgba(255,255,255,.3), inset 0 0 0 1px rgba(255,255,255,.45),
+    0 0 0 .5px rgba(43,30,21,.1), 0 14px 32px -16px rgba(43,30,21,.38) !important; }
+body.menupage[data-ny] .nm-bar a{ color:#24180F !important; font-weight:600 !important; text-shadow:0 1px 0 rgba(255,255,255,.55); transition:background-color .35s ease, color .35s ease, box-shadow .35s ease !important; }
+body.menupage[data-ny] .nm-bar a:not(.on):hover{ background:rgba(255,255,255,.35) !important; }
+body.menupage[data-ny] .nm-bar a.on{ background:#2B1E15 !important; color:#FBF7F0 !important; text-shadow:none; box-shadow:0 6px 14px -6px rgba(43,30,21,.6) !important; }
 body.menupage[data-ny] .menucat h4{ padding-bottom:14px; margin-bottom:4px; border-bottom:1px solid var(--edge); }
 body.menupage[data-ny] .menucat--wide .menucat__items{ display:grid !important; grid-template-columns:repeat(auto-fill, minmax(300px, 1fr)); column-gap:40px; }
 body.menupage[data-ny] .menuline{ border-color:var(--edge) !important; }
@@ -74,3 +82,14 @@ body.menupage[data-ny] .menupage__back::after{ display:none !important; }
 body.menupage[data-ny] .menupage__back svg{ width:16px; height:16px; fill:none; stroke:currentColor; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; transition:transform .2s ease; }
 body.menupage[data-ny] .menupage__back:hover svg{ transform:translateX(-2px); }
 @media (max-width:767px){ body.menupage[data-ny] .menupage__foot{ display:grid; grid-template-columns:1fr; } body.menupage[data-ny] .menupage__foot .btn{ width:100% !important; justify-content:center; } body.menupage[data-ny] .menupage__foot .btn--accent{ justify-content:space-between; } }
+
+/* the rows: hairlines inside the card's padding, the arrow on the line of the
+   name and price, the same in every row */
+body.menupage[data-ny] .menuline[data-ret]{ margin:0 !important; padding:14px 46px 14px 0 !important; border-radius:0 !important; }
+body.menupage[data-ny] .menuline[data-ret]:hover{ background:none !important; }
+body.menupage[data-ny] .menuline[data-ret]:hover::after{ background-color:#E2702E !important; }
+body.menupage[data-ny] .menuline[data-ret]::after{ top:13px !important; margin-top:0 !important; right:0 !important; }
+body.menupage[data-ny] .menuline{ align-items:baseline !important; }
+body.menupage[data-ny] .menuline__price{ white-space:nowrap; }
+/* the weekend note: under the bar, on the left like everything else */
+body.menupage[data-ny] #menucatsNote, body.menupage[data-ny] .menucats__note{ text-align:left !important; margin:0 0 16px !important; font:500 14.5px/1.4 var(--sans); color:rgba(30,20,13,.72); }
