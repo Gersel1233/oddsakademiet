@@ -1,0 +1,11 @@
+/* Spiis /ny/: orange words that read. On the light stone the warm orange
+   is deepened to a burnt orange and set a little heavier, so labels, links
+   and small notes pass a clear contrast. Loaded last. */
+:root{ --warm-text:#8E3A0F; }
+body[data-ny] :is(#menukort, #tapas, #om, #selskaber, #kontakt, #bestil, #dagensret, #nyheder){ --warm-text:#8E3A0F; }
+/* the light orange (#F28A3E) on stone or cream: deepened */
+body[data-ny] .menuline__badge:not(.menuline__badge--out):not(.menuline__badge--few), body[data-ny] .menucat__badge{
+  color:#8E3A0F !important; background:rgba(226,112,46,.14) !important; box-shadow:inset 0 0 0 1px rgba(226,112,46,.28) !important; font-weight:600 !important; }
+body[data-ny] .ugerow__pris, body[data-ny] .tapas__cavatxt b, body[data-ny] .selsk__starstxt em{ color:#8E3A0F !important; font-weight:600; }
+body[data-ny] .menuline__badge--out{ color:#9A2A1F !important; background:rgba(255,69,58,.12) !important; }
+body[data-ny] .eyebrow{ font-weight:700 !important; }
