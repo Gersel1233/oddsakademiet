@@ -63,6 +63,31 @@
     $$('.dayplan').forEach((d) => d.classList.toggle('ny-today', /i dag/i.test(d.querySelector('.dayplan__day')?.textContent || '')));
   }
 
+  // the date in words, and the rest of the week from the kitchen's plan
+  const S = (typeof SpiisStore !== 'undefined') ? SpiisStore : null;
+  const esc = (v) => String(v ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  function week() {
+    const d = new Date();
+    set('.nh-date', d.toLocaleDateString('da-DK', { weekday: 'long' }) + ' ' + d.toLocaleDateString('da-DK', { day: 'numeric', month: 'long' }));
+    const ol = $('#nhWeek'); if (!ol || !S) return;
+    let rows = [];
+    try {
+      // the next days the kitchen is open, up to four of them
+      // the next days with a dish planned, up to four; none planned, no card
+      rows = S.getPlan(10).slice(1).filter((day) => day.open && (day.dishes || []).length && !(S.isOrderingClosed && S.isOrderingClosed(day.iso))).slice(0, 4).map((day) => {
+        const dishes = day.dishes || [];
+        const name = dishes.length ? dishes.map((x) => x.title).join(' · ') : 'Menuen kommer snart';
+        const price = dishes.length === 1 && dishes[0].price ? `${dishes[0].price} kr.` : '';
+        return `<li class="${dishes.length ? '' : 'is-soon'}"><b>${esc(day.weekday.slice(0, 3))}</b><span>${esc(name)}</span><em>${esc(price)}</em></li>`;
+      });
+    } catch { rows = []; }
+    const h = rows.join('');
+    if (ol.innerHTML !== h) ol.innerHTML = h;
+    ol.closest('.nh-week').hidden = !rows.length;
+  }
+  week();
+  if (S && S.subscribe) S.subscribe(week);
+
   function clock() {
     const n = new Date();
     set('.nl-time', `${String(n.getHours()).padStart(2, '0')}.${String(n.getMinutes()).padStart(2, '0')}`);
