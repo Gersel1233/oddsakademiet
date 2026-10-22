@@ -1,0 +1,53 @@
+/* Spiis /ny/ menu page: solid cream cards that read, today on the same
+   dark chalkboard as the front page, and tidy rows. Loaded last. */
+body.menupage[data-ny]{ --cream:#FBF7F0; --cream-in:#F4EDE2; --edge:rgba(43,30,21,.11);
+  --card-sh:0 1px 2px rgba(43,30,21,.07), 0 16px 32px -20px rgba(43,30,21,.4); }
+body.menupage[data-ny] [data-reveal]{ opacity:1 !important; transform:none !important; transition:none !important; }
+body.menupage[data-ny] :is(.card, .menucat, .daymenu, .ugemenu){
+  background:var(--cream) !important; box-shadow:var(--card-sh), inset 0 0 0 1px var(--edge) !important;
+  -webkit-backdrop-filter:none !important; backdrop-filter:none !important; }
+body.menupage[data-ny] :is(.card, .menucat, .daymenu, .ugemenu)::after{ display:none !important; }
+
+/* today: the chalkboard band across the top of the card, edge to edge */
+body.menupage[data-ny] .daymenu{ max-width:none; padding:0 !important; overflow:hidden; border-radius:26px !important; }
+body.menupage[data-ny] .daymenu__head{ position:relative; isolation:isolate; display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap;
+  margin:0 !important; padding:22px 26px !important; border:0 !important; color:#F6F1E8;
+  background:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 .09 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"),
+    radial-gradient(60% 120% at 20% 0%, rgba(255,255,255,.08), transparent 70%),
+    linear-gradient(165deg, #2E2925, #1B1714); }
+body.menupage[data-ny] .daymenu__head::before{ display:none; }
+body.menupage[data-ny] .daymenu__title{ display:inline-flex; align-items:center; gap:12px; font:600 26px/1 var(--sans) !important; letter-spacing:-.03em; color:#FFFDF8 !important; }
+body.menupage[data-ny] .daymenu__title::before{ content:"Dagens ret"; font:600 11.5px/1 var(--sans); letter-spacing:.16em; text-transform:uppercase; color:#F4BE90; padding-right:12px; border-right:1px solid rgba(246,241,232,.25); }
+body.menupage[data-ny] .daymenu__date{ font:500 14.5px/1.3 var(--sans) !important; color:rgba(246,241,232,.82) !important; }
+body.menupage[data-ny] .daymenu > :not(.daymenu__head){ margin-left:26px !important; margin-right:26px !important; }
+body.menupage[data-ny] .daymenu > .menuline:last-child, body.menupage[data-ny] .daymenu > :last-child{ margin-bottom:12px !important; }
+body.menupage[data-ny] .daymenu .menuline__name{ font-size:19px !important; }
+body.menupage[data-ny] .daymenu .menuline__price{ font-size:19px !important; }
+
+/* the week: today stands out, closed days are one quiet line */
+body.menupage[data-ny] .ugemenu{ max-width:none; padding:8px 26px !important; }
+body.menupage[data-ny] .ugerow{ padding:16px 0; }
+body.menupage[data-ny] .ugerow--idag{ background:var(--cream-in) !important; margin-inline:-26px; padding-inline:26px; border-radius:0; box-shadow:inset 3px 0 0 #E2702E; }
+body.menupage[data-ny] .ugerow--lukket{ padding:10px 0; }
+body.menupage[data-ny] .ugerow--lukket .ugerow__dag small{ display:none; }
+body.menupage[data-ny] .ugerow__lukket, body.menupage[data-ny] .ugerow__tom{ font-weight:500; color:rgba(30,20,13,.68) !important; }
+body.menupage[data-ny] .ugerow__pris{ color:#8E3A0F !important; }
+
+/* categories: the bar solid, cards with a clear header, a wide card in columns */
+body.menupage[data-ny] .nm-bar{ background:rgba(251,247,240,.97) !important; box-shadow:var(--card-sh), inset 0 0 0 1px var(--edge) !important; }
+body.menupage[data-ny] .nm-bar a.on{ background:#2B1E15 !important; color:#FBF7F0 !important; box-shadow:none !important; }
+body.menupage[data-ny] .menucat h4{ padding-bottom:14px; margin-bottom:4px; border-bottom:1px solid var(--edge); }
+body.menupage[data-ny] .menucat--wide .menucat__items{ display:grid !important; grid-template-columns:repeat(auto-fill, minmax(300px, 1fr)); column-gap:40px; }
+body.menupage[data-ny] .menuline{ border-color:var(--edge) !important; }
+body.menupage[data-ny] .menuline--soldout{ opacity:.6; }
+body.menupage[data-ny] .menupage__foot{ justify-content:center; }
+
+@media (max-width:767px){
+  body.menupage[data-ny] .daymenu__head{ padding:18px 20px !important; }
+  body.menupage[data-ny] .daymenu__title{ font-size:22px !important; }
+  body.menupage[data-ny] .daymenu > :not(.daymenu__head){ margin-left:20px !important; margin-right:20px !important; }
+  body.menupage[data-ny] .ugemenu{ padding:6px 20px !important; }
+  body.menupage[data-ny] .ugerow--idag{ margin-inline:-20px; padding-inline:20px; }
+  body.menupage[data-ny] .menucat--wide .menucat__items{ grid-template-columns:1fr; }
+}

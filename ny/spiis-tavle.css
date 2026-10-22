@@ -1,30 +1,56 @@
 /* Spiis /ny/: today's dish on a café chalkboard. A dark board with a
    little chalk dust and a warm wooden edge; the dish of the day drawn in
    chalk – a bowl with steam – and the day written underneath. */
-body[data-ny] .today:has(.tboard), body[data-ny] .today--foto:has(.tboard){ grid-template-columns:minmax(240px, 300px) minmax(0, 1fr) !important; }
-body[data-ny] .today:has(.tboard) .today__foto{ display:none !important; }
-/* the board is a real photo of Spiis' food, edge to edge, with the day on it */
+/* the board fills its whole side of the card, edge to edge, top to bottom */
+body[data-ny] .today:has(.tboard){ grid-template-columns:minmax(230px, 280px) minmax(0, 1fr) !important; padding:0 !important; overflow:hidden !important; }
+body[data-ny] .today--foto:has(.tboard){ grid-template-columns:minmax(230px, 280px) minmax(0, 1fr) minmax(220px, 300px) !important; }
 body[data-ny] .today__badge.tboard{
-  position:relative; isolation:isolate; overflow:hidden; display:flex !important; flex-direction:column !important; align-items:flex-start !important; justify-content:space-between !important;
-  gap:0 !important; margin:0 !important; padding:20px 22px 22px !important; min-height:220px; color:#fff; text-align:left; font-style:normal;
-  background:#2B1E15 var(--tb-img) center / cover no-repeat !important; box-shadow:none !important; border:0 !important; border-radius:0 !important; }
-body[data-ny] .today__badge.tboard::before{ content:""; position:absolute; inset:0; z-index:-1;
-  background:linear-gradient(180deg, rgba(14,9,6,.45) 0%, rgba(14,9,6,0) 32%, rgba(14,9,6,0) 48%, rgba(14,9,6,.82) 100%); }
+  position:relative; isolation:isolate; overflow:hidden; display:flex !important; flex-direction:column !important; align-items:center !important; justify-content:center !important;
+  gap:10px !important; margin:0 !important; padding:30px 22px !important; align-self:stretch; min-height:100%; color:#F6F1E8; text-align:center; font-style:normal;
+  border:0 !important; border-radius:0 !important; box-shadow:inset -1px 0 0 rgba(0,0,0,.25) !important;
+  background:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 .09 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"),
+    radial-gradient(70% 45% at 30% 18%, rgba(255,255,255,.09), transparent 70%),
+    radial-gradient(60% 40% at 80% 85%, rgba(255,255,255,.06), transparent 70%),
+    linear-gradient(165deg, #2E2925, #1B1714) !important; }
+/* a chalk line drawn round the board, a little in from the edge */
+body[data-ny] .today__badge.tboard::before{ content:""; position:absolute; inset:12px; z-index:-1; border-radius:14px; border:1.5px dashed rgba(246,241,232,.22); }
 body[data-ny] .today__badge.tboard::after{ display:none !important; }
-.tboard__k{ display:inline-flex; align-items:center; gap:7px; height:28px; padding:0 12px; border-radius:14px; font:600 12px/1 var(--sans); letter-spacing:.06em; text-transform:uppercase; color:#24180F;
-  background:rgba(251,247,240,.94); box-shadow:0 4px 12px -4px rgba(0,0,0,.35); }
-.tboard__k::before{ content:""; width:7px; height:7px; border-radius:50%; background:#E2702E; }
-.tboard.no-k .tboard__k{ visibility:hidden; }
-.tboard__day{ display:grid; gap:4px; }
-body[data-ny] .tboard #todayLabel{ font:600 34px/1 var(--sans) !important; letter-spacing:-.035em; color:#fff; text-shadow:0 2px 14px rgba(0,0,0,.35); }
-.tboard__date{ display:none; font:500 15px/1.3 var(--sans); color:rgba(255,255,255,.88); text-shadow:0 1px 8px rgba(0,0,0,.4); }
+.tboard__k{ font:600 12px/1 var(--sans); letter-spacing:.18em; text-transform:uppercase; color:#F4BE90; }
+.tboard.no-k .tboard__k{ display:none; }
+body[data-ny] .tboard__bowl{ width:92px !important; height:76px !important; margin:2px 0 0; overflow:visible; }
+body[data-ny] .tboard__bowl .steam__line, .tboard__line{ fill:none; stroke:rgba(246,241,232,.9) !important; stroke-width:2.6 !important; stroke-linecap:round; stroke-linejoin:round; }
+.tboard__day{ display:grid; gap:6px; justify-items:center; }
+body[data-ny] .tboard #todayLabel{ font:600 38px/1 var(--sans) !important; letter-spacing:-.035em; color:#FFFDF8; }
+.tboard__date{ display:none; font:500 15px/1.3 var(--sans); color:rgba(246,241,232,.8); }
 .tboard.is-today .tboard__date{ display:block; }
+.tboard.is-today .tboard__date::after{ content:""; display:block; width:52px; height:3px; margin:12px auto 0; border-radius:3px; background:#E9945A; opacity:.85; }
 @media (max-width:767px){
   body[data-ny] .today:has(.tboard){ grid-template-columns:1fr !important; }
-  body[data-ny] .today__badge.tboard{ min-height:0; aspect-ratio:16 / 9; padding:16px 18px 18px !important; flex-direction:column !important; }
-  body[data-ny] .tboard #todayLabel{ font-size:28px !important; }
+  body[data-ny] .today__badge.tboard{ flex-direction:row !important; justify-content:flex-start !important; gap:14px !important; padding:18px 22px !important; min-height:0; text-align:left; }
+  body[data-ny] .today__badge.tboard::before{ inset:8px; border-radius:12px; }
+  body[data-ny] .tboard__bowl{ width:50px !important; height:42px !important; margin:0; order:-1; flex:none; }
+  .tboard__k{ display:none; }
+  .tboard__day{ justify-items:start; gap:2px; }
+  body[data-ny] .tboard #todayLabel{ font-size:26px !important; }
+  .tboard.is-today .tboard__date::after{ display:none; }
 }
 
 /* the Facebook mark as Facebook draws it: a blue circle with the white f */
 body[data-ny] .fbjoin__badge.ny-fb{ width:44px !important; height:44px !important; padding:0 !important; border-radius:50% !important; background:none !important; box-shadow:0 4px 12px -4px rgba(8,102,255,.5) !important; flex:none; display:block; }
 body[data-ny] .fbjoin__badge.ny-fb svg{ display:block; width:44px; height:44px; }
+
+/* chalk, not print: no grey dashed frame; the bowl and the line under the
+   day are drawn with a rough, grainy chalk stroke */
+body[data-ny] .today__badge.tboard::before{ display:none !important; }
+body[data-ny] .tboard__bowl .steam__line, body[data-ny] .tboard__line{ stroke:#F3EEE4 !important; stroke-width:3.2 !important; opacity:.95; }
+body[data-ny] .tboard__line--2{ stroke-width:1.6 !important; opacity:.5 !important; }
+.tboard.is-today .tboard__date::after{ display:none !important; }
+.tboard__chalkline{ display:none; width:84px; height:12px; margin:8px auto 0; overflow:visible; }
+.tboard.is-today .tboard__chalkline{ display:block; }
+.tboard__chalkline path{ fill:none; stroke:#EE9A5E; stroke-width:3.4; stroke-linecap:round; }
+/* the words get a faint chalk grain as well, still sharp enough to read */
+body[data-ny] .tboard #todayLabel, .tboard__k{
+  -webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='1.6' numOctaves='1' seed='3'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 -1.6 1.9'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='1.6' numOctaves='1' seed='3'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 -1.6 1.9'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+@media (max-width:767px){ .tboard.is-today .tboard__chalkline{ display:none; } }
