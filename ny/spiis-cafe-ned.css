@@ -29,7 +29,7 @@ body[data-ny] #menukort .nm-go{ background:var(--cream-in) !important; box-shado
 body[data-ny] #menukort .nm-item:hover .nm-go{ background:#E2702E !important; color:#fff !important; }
 
 /* forms: white fields with a clear line */
-body[data-ny] :is(#bestil, #tapas, #selskaber, #kontakt) .field :is(input, select, textarea){ background:#fff !important; box-shadow:inset 0 0 0 1px rgba(43,30,21,.2) !important; }
+body[data-ny] :is(#bestil, #tapas, #selskaber, #kontakt) .field :is(input, select, textarea){ background-color:#fff !important; box-shadow:inset 0 0 0 1px rgba(43,30,21,.2) !important; }
 body[data-ny] :is(#bestil, #tapas, #selskaber, #kontakt) .field :is(input, select, textarea):focus{ box-shadow:0 0 0 3px rgba(226,112,46,.25), inset 0 0 0 1.5px #E2702E !important; }
 body[data-ny] #tapas :is(.cavabtn, .tapasvilkaar__tlf){ background:#fff !important; box-shadow:0 1px 2px rgba(43,30,21,.08), inset 0 0 0 1px rgba(43,30,21,.16) !important; }
 body[data-ny] #tapas .tapas__cavacard.is-on{ background:var(--cream-in) !important; }

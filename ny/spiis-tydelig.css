@@ -41,3 +41,9 @@ body[data-ny] #newsGrid .news{ background:#FBF7F0 !important; -webkit-backdrop-f
 body[data-ny] #newsGrid .news::after{ display:none !important; }
 body[data-ny] #newsGrid .news__media img{ object-position:center top; }
 body[data-ny] #newsGrid .news__title{ color:#24180F !important; }
+
+/* drop-downs: our own chevron with room to breathe, the same in every browser */
+html body[data-ny] :is(#bestil, #tapas, #selskaber, #kontakt, #nyheder, #newsOrderWrap, main, .field) select, html body[data-ny] select{ -webkit-appearance:none !important; appearance:none !important; padding-right:48px !important; cursor:pointer;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M4 6l4 4 4-4' fill='none' stroke='%2324180F' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") !important;
+  background-repeat:no-repeat !important; background-position:right 18px center !important; background-size:16px 16px !important; }
+body[data-ny] select::-ms-expand{ display:none; }
