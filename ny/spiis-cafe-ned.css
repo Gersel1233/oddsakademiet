@@ -2,23 +2,23 @@
    Selskab & catering and Kontakt – in the clear café look. Everything from
    the top down to "Bestil dagens ret" keeps the glass. Loaded last. */
 
-body[data-ny] :is(#menukort, #tapas, #om, #selskaber, #kontakt){
+body[data-ny] :is(#bestil, #menukort, #tapas, #om, #selskaber, #kontakt){
   --cream:#FBF7F0; --cream-in:#F4EDE2; --espresso:#2B1E15;
   --t1:#24180F; --t2:rgba(36,24,15,.76); --t3:rgba(36,24,15,.58);
   --warm-text:#A9481A; --edge-line:rgba(43,30,21,.12); --hair:rgba(43,30,21,.12);
   --card-sh:0 1px 2px rgba(43,30,21,.06), 0 14px 30px -18px rgba(43,30,21,.32);
 }
 /* there when you arrive, not fading in */
-body[data-ny] :is(#menukort, #tapas, #om, #selskaber, #kontakt) [data-reveal]{ opacity:1 !important; transform:none !important; transition:none !important; }
+body[data-ny] :is(#bestil, #menukort, #tapas, #om, #selskaber, #kontakt) [data-reveal]{ opacity:1 !important; transform:none !important; transition:none !important; }
 
 /* cards: cream paper, crisp edge, real shadow */
-body[data-ny] :is(#menukort, #tapas, #om, #selskaber, #kontakt) :is(.card, .nm, .value, .selsk__cta, .tapas__info, .hourscard, .infocard, .ny-tapas-pause){
+body[data-ny] :is(#bestil, #menukort, #tapas, #om, #selskaber, #kontakt) :is(.card, .nm, .value, .selsk__cta, .tapas__info, .hourscard, .infocard, .ny-tapas-pause){
   background:var(--cream) !important; box-shadow:var(--card-sh), inset 0 0 0 1px var(--edge-line) !important;
   -webkit-backdrop-filter:none !important; backdrop-filter:none !important; }
-body[data-ny] :is(#menukort, #tapas, #om, #selskaber, #kontakt) :is(.card, .nm, .value, .selsk__cta, .tapas__info)::after{ display:none !important; }
-body[data-ny] :is(#menukort, #tapas, #om, #selskaber, #kontakt) .tone{ color:rgba(36,24,15,.46); }
-body[data-ny] :is(#menukort, #tapas, #om, #selskaber, #kontakt) :is(.eyebrow, .eyebrow--light){ color:var(--warm-text); }
-body[data-ny] :is(#menukort, #tapas, #om, #selskaber, #kontakt) :is(.section__lead, .about__text p, .selsk__points li){ color:var(--t2) !important; }
+body[data-ny] :is(#bestil, #menukort, #tapas, #om, #selskaber, #kontakt) :is(.card, .nm, .value, .selsk__cta, .tapas__info)::after{ display:none !important; }
+body[data-ny] :is(#bestil, #menukort, #tapas, #om, #selskaber, #kontakt) .tone{ color:rgba(36,24,15,.46); }
+body[data-ny] :is(#bestil, #menukort, #tapas, #om, #selskaber, #kontakt) :is(.eyebrow, .eyebrow--light){ color:var(--warm-text); }
+body[data-ny] :is(#bestil, #menukort, #tapas, #om, #selskaber, #kontakt) :is(.section__lead, .about__text p, .selsk__points li){ color:var(--t2) !important; }
 
 /* the menu: tabs as cream pills, the chosen one in espresso */
 body[data-ny] #menukort .nm-tab{ background:var(--cream-in) !important; box-shadow:inset 0 0 0 1px var(--edge-line) !important; color:var(--t1) !important; }
@@ -29,11 +29,21 @@ body[data-ny] #menukort .nm-go{ background:var(--cream-in) !important; box-shado
 body[data-ny] #menukort .nm-item:hover .nm-go{ background:#E2702E !important; color:#fff !important; }
 
 /* forms: white fields with a clear line */
-body[data-ny] :is(#tapas, #selskaber, #kontakt) .field :is(input, select, textarea){ background:#fff !important; box-shadow:inset 0 0 0 1px rgba(43,30,21,.2) !important; }
-body[data-ny] :is(#tapas, #selskaber, #kontakt) .field :is(input, select, textarea):focus{ box-shadow:0 0 0 3px rgba(226,112,46,.25), inset 0 0 0 1.5px #E2702E !important; }
+body[data-ny] :is(#bestil, #tapas, #selskaber, #kontakt) .field :is(input, select, textarea){ background:#fff !important; box-shadow:inset 0 0 0 1px rgba(43,30,21,.2) !important; }
+body[data-ny] :is(#bestil, #tapas, #selskaber, #kontakt) .field :is(input, select, textarea):focus{ box-shadow:0 0 0 3px rgba(226,112,46,.25), inset 0 0 0 1.5px #E2702E !important; }
 body[data-ny] #tapas :is(.cavabtn, .tapasvilkaar__tlf){ background:#fff !important; box-shadow:0 1px 2px rgba(43,30,21,.08), inset 0 0 0 1px rgba(43,30,21,.16) !important; }
 body[data-ny] #tapas .tapas__cavacard.is-on{ background:var(--cream-in) !important; }
 
 /* buttons: solid and sharp */
-body[data-ny] :is(#menukort, #tapas, #om, #selskaber, #kontakt) .btn:not(.btn--accent):not(.btn--ghost-dark){ background:#fff !important; color:var(--t1) !important; box-shadow:0 1px 2px rgba(43,30,21,.08), inset 0 0 0 1px rgba(43,30,21,.16) !important; }
-body[data-ny] :is(#menukort, #tapas, #om, #selskaber, #kontakt) .btn--ghost-dark{ background:var(--espresso) !important; color:#FBF7F0 !important; }
+body[data-ny] :is(#bestil, #menukort, #tapas, #om, #selskaber, #kontakt) .btn:not(.btn--accent):not(.btn--ghost-dark){ background:#fff !important; color:var(--t1) !important; box-shadow:0 1px 2px rgba(43,30,21,.08), inset 0 0 0 1px rgba(43,30,21,.16) !important; }
+body[data-ny] :is(#bestil, #menukort, #tapas, #om, #selskaber, #kontakt) .btn--ghost-dark{ background:var(--espresso) !important; color:#FBF7F0 !important; }
+
+/* the order: a calm order slip, not a sales pitch */
+body[data-ny] #bestil .builder__dagens{ background:var(--cream-in) !important; box-shadow:inset 0 0 0 1px var(--edge-line) !important; border-radius:16px !important; }
+body[data-ny] #bestil .builder__dagens::before{ background:#E2702E; }
+body[data-ny] #bestil :is(.stepper button, .segmented span){ background:#fff !important; box-shadow:0 1px 2px rgba(43,30,21,.08), inset 0 0 0 1px rgba(43,30,21,.16) !important; color:var(--t1); }
+body[data-ny] #bestil .segmented input:checked + span{ background:var(--espresso) !important; color:#FBF7F0 !important; box-shadow:none !important; }
+body[data-ny] #bestil .bcat{ border-top-color:var(--hair) !important; }
+body[data-ny] #bestil .bitem{ border-bottom-color:var(--hair) !important; }
+body[data-ny] #bestil :is(.bitem__info em, .builder__dagens em){ color:var(--t1) !important; font-weight:600; }
+body[data-ny] #bestil .menuline__badge--few{ background:rgba(43,30,21,.07) !important; color:var(--t2) !important; }

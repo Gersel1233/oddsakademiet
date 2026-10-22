@@ -37,10 +37,11 @@
       const d = S && S.getDagensRetList(S.todayISO()).find((x) => x.title === dish);
       if (d && d.stock != null && d.stock !== '') total = Number(d.stock) || null;
     } catch { /* no numbers, no bar */ }
-    set('.nl-stock', soldout ? 'Udsolgt i dag' : (left ? (total ? `${left} af ${total} tilbage` : `${left} portioner tilbage`) : stock));
+    // portions left are only mentioned when they are few – no countdown
+    set('.nl-stock', soldout ? 'Udsolgt i dag' : (left && Number(left) <= 5 ? `Kun ${left} portion${Number(left) === 1 ? '' : 'er'} tilbage i dag` : ''));
     const bar = $('.nl-bar');
     if (bar) {
-      const show = !soldout && total && left != null;
+      const show = false && total;
       bar.hidden = !show;
       if (show) bar.firstElementChild.style.transform = `scaleX(${Math.max(0, Math.min(1, Number(left) / total)).toFixed(3)})`;
     }
