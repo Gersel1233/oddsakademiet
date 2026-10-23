@@ -39,55 +39,62 @@
     }
   }
 
-  /* ---------- dagens ret: sedlen og ugen ---------- */
+  /* ---------- dagens ret: ugens dagskort ----------
+     I dag først. En åben dag med ret får navn, beskrivelse, pris, portioner tilbage og sin
+     egen Bestil; en åben dag uden ret siger "Følger snart"; en lukket dag står smal. */
   function dagens() {
-    var iDag = S.todayISO();
-    var seddel = $('[data-idag]');
-    if (seddel) {
-      var retter = S.getDagensRetList(iDag);
-      var lukket = lukketFor(iDag);
-      $('[data-idag-dato]', seddel).textContent = 'I dag · ' + S.formatDate(iDag);   // formatDate skriver selv ugedagen
-      var fod = $('[data-idag-fod]', seddel);
-      if (lukket) {
-        $('[data-idag-ret]', seddel).textContent = 'Lukket i dag';
-        $('[data-idag-tekst]', seddel).textContent = 'Se ugens retter herunder – eller ring og hør på 93 99 58 58.';
-        $('[data-idag-haand]', seddel).hidden = true;
-        fod.hidden = true;
-      } else if (!retter.length) {
-        $('[data-idag-ret]', seddel).textContent = 'Vi opdaterer menuen lige nu';
-        $('[data-idag-tekst]', seddel).textContent = 'Kig forbi snart – eller ring til os og hør, hvad der er på menuen.';
-        $('[data-idag-haand]', seddel).hidden = true;
-        fod.hidden = true;
-      } else {
-        var r = retter[0];
-        $('[data-idag-ret]', seddel).textContent = r.title;
-        var linjer = [];
-        if (r.desc) linjer.push(r.desc);
-        retter.slice(1).forEach(function (x) { linjer.push('Eller: ' + x.title + (x.price ? ' · ' + kr(x.price) : '')); });
-        $('[data-idag-tekst]', seddel).textContent = linjer.join(' ');
-        $('[data-idag-haand]', seddel).hidden = false;
-        $('[data-idag-pris]', seddel).textContent = kr(r.price);
-        var tilbage = $('[data-idag-tilbage]', seddel);
-        var n = null;
-        try { n = S.getRemainingFor ? S.getRemainingFor(iDag, r.title) : S.getRemaining(iDag); } catch (e) { n = null; }
-        if (typeof n === 'number' && isFinite(n)) {
-          tilbage.textContent = n > 0 ? '● ' + n + ' portioner tilbage' : 'Udsolgt i dag';
-          tilbage.hidden = false;
-        } else tilbage.hidden = true;
-        fod.hidden = false;
+    var boks = $('[data-dage]');
+    if (!boks) return;
+    var plan = S.getPlan(7, S.todayISO());
+    var html = plan.map(function (d, i) {
+      var luk = lukketFor(d.iso);
+      var retter = d.dishes || [];
+      var navn = i === 0 ? 'I dag' : i === 1 ? 'I morgen' : d.weekday;
+      var hoved = '<header class="dret-hoved"><b>' + esc(navn) + '</b><span>' + esc(i < 2 ? S.formatDate(d.iso) : S.formatDate(d.iso).replace(d.weekday + ' ', '')) + '</span>'
+        + '<svg class="dret-hue" aria-hidden="true"><use href="#hue"/></svg></header>';
+      if (luk) {
+        /* caféen kan have åbent, selv om køkkenet ikke tager bestillinger – sig det, så ingen tror, der er lukket */
+        var h = S.hoursFor ? S.hoursFor(d.iso) : null;
+        var aaben = h && !h.closed && h.open;
+        return '<article class="dret lukket">' + hoved + '<div class="dret-krop">'
+          + (aaben ? '<h3>Kom forbi</h3><p>Åbent ' + esc(kl(h.open) + '–' + kl(h.close)) + '. Ingen bestilling af dagens ret denne dag.</p>'
+                   : '<h3>Lukket</h3><p>Caféen holder lukket.</p>')
+          + '</div></article>';
       }
-    }
-    var uge = $('[data-uge]');
-    if (uge) {
-      uge.innerHTML = S.getPlan(7, S.addDays(S.todayISO(), 1)).map(function (d) {
-        var luk = lukketFor(d.iso);
-        var retter = d.dishes || [];
-        var navn = luk ? 'Lukket' : retter.length ? retter.map(function (x) { return x.title; }).join(' · ') : 'Følger snart';
-        var pris = !luk && retter.length === 1 && retter[0].price ? kr(retter[0].price) : (luk ? 'Lukket for bestillinger' : '');
-        return '<div class="dag' + (luk ? ' lukket' : '') + '"><small>' + esc(S.formatDate(d.iso)) + '</small><b>' + esc(navn) + '</b>' + (pris ? '<span>' + esc(pris) + '</span>' : '') + '</div>';
-      }).join('');
-    }
+      if (!retter.length) return '<article class="dret tom' + (i === 0 ? ' idag' : '') + '">' + hoved + '<div class="dret-krop"><h3>Følger snart</h3><p>Retten lægges op i løbet af ugen.</p></div></article>';
+      var r = retter[0];
+      var n = null;
+      try { n = S.getRemainingFor ? S.getRemainingFor(d.iso, r.title) : S.getRemaining(d.iso); } catch (e) { n = null; }
+      var tilbage = (typeof n === 'number' && isFinite(n))
+        ? (n > 0 ? '<span class="dret-tilbage">● ' + n + ' tilbage</span>' : '<span class="dret-tilbage ude">Udsolgt</span>') : '';
+      var eller = retter.slice(1).map(function (x) { return '<p class="eller">Eller: ' + esc(x.title) + (x.price ? ' · ' + esc(kr(x.price)) : '') + '</p>'; }).join('');
+      var kanBestilles = !(typeof n === 'number' && n <= 0);
+      return '<article class="dret' + (i === 0 ? ' idag' : '') + '">' + hoved
+        + '<div class="dret-krop"><h3>' + esc(r.title) + '</h3>' + (r.desc ? '<p>' + esc(r.desc) + '</p>' : '') + eller + '</div>'
+        + '<footer class="dret-fod">' + (r.price ? '<span class="dret-pris">' + esc(kr(r.price)) + '</span>' : '') + tilbage
+        + (kanBestilles ? '<a class="knap knap--orange" href="#bestil" data-bestil-dag="' + d.iso + '" aria-label="Bestil ' + esc(r.title) + ' ' + esc(navn.toLowerCase()) + '">Bestil</a>' : '')
+        + '</footer></article>';
+    }).join('');
+    boks.innerHTML = html;
+    /* ingen ret hele ugen: tom-kortet siger det, og ugen står som en lille stribe */
+    var ingen = !plan.some(function (d) { return !lukketFor(d.iso) && (d.dishes || []).length; });
+    boks.classList.toggle('mini', ingen);
+    var tom = $('[data-dage-tom]');
+    if (tom) tom.hidden = !ingen;
+    var prik = $('[data-dage-prik]');
+    if (prik) prik.innerHTML = plan.map(function (d, i) { return '<i' + (i === 0 ? ' class="on"' : '') + '></i>'; }).join('');
   }
+  /* prikkerne følger swipet */
+  document.addEventListener('scroll', function (e) {
+    var boks = e.target;
+    if (!boks || !boks.matches || !boks.matches('[data-dage]')) return;
+    var kort = boks.children, prik = document.querySelectorAll('[data-dage-prik] i');
+    if (!kort.length || !prik.length) return;
+    var x = boks.scrollLeft + 24, nr = 0;
+    for (var i = 0; i < kort.length; i++) if (kort[i].offsetLeft - boks.offsetLeft <= x + 40) nr = i;
+    if (boks.scrollLeft + boks.clientWidth >= boks.scrollWidth - 4) nr = kort.length - 1;
+    prik.forEach(function (p, j) { p.classList.toggle('on', j === nr); });
+  }, true);
 
   /* ---------- menukortet: faner og retter med priser ---------- */
   var valgtKat = 0;

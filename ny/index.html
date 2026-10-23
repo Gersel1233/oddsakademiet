@@ -127,34 +127,72 @@ h1,h2,h3{font-family:var(--vis);font-weight:600;letter-spacing:-.035em;margin:0;
 .opslag small{display:block;margin:14px 6px 0;font:600 12px/1 var(--krop);letter-spacing:.18em;text-transform:uppercase;color:var(--orange-d)}
 .opslag h3{margin:6px 6px 0;font-size:23px}
 .opslag p{margin:6px 6px 0;font-size:14.5px;color:var(--blaek2)}
-.fb{display:flex;align-items:center;gap:14px;margin-top:6px;padding:16px;border-radius:18px;background:var(--papir);box-shadow:inset 0 0 0 1.5px var(--streg)}
-.fb svg{flex:none;width:34px;height:34px}
-.fb b{display:block;font-size:15.5px}.fb span{font-size:14px;color:var(--blaek2)}
-.fb a{margin-left:auto;font-weight:600;color:var(--orange-d);text-decoration:none;white-space:nowrap}
+.fb{position:relative;overflow:hidden;display:grid;grid-template-columns:auto 1fr;gap:14px 14px;align-items:center;margin-top:10px;padding:20px;border-radius:24px;
+  color:#fff;text-decoration:none;background:linear-gradient(135deg,#1877F2,#0A5FD8);box-shadow:0 20px 40px -22px rgba(8,80,200,.75)}
+.fb-ikon{display:grid;place-items:center;width:52px;height:52px;border-radius:50%;background:#fff;box-shadow:0 6px 14px -6px rgba(0,0,0,.3)}
+.fb-ikon svg{width:30px;height:30px}
+.fb-tekst b{display:block;font:700 18px/1.15 var(--krop);letter-spacing:-.02em}
+.fb-tekst span{display:block;margin-top:4px;font-size:14.5px;line-height:1.4;color:rgba(255,255,255,.86)}
+.fb-knap{grid-column:1/-1;display:flex;align-items:center;justify-content:center;gap:8px;height:50px;border-radius:999px;background:#fff;color:#0A5FD8;font:600 16px/1 var(--krop)}
+.fb-knap i{font-style:normal;transition:transform .2s ease}
+.fb:hover .fb-knap i{transform:translateX(3px)}
+.fb-hue{position:absolute;right:-18px;top:-22px;width:120px;height:120px;opacity:.12;filter:brightness(0) invert(1)}
+@media (min-width:700px){.fb{grid-template-columns:auto 1fr auto}.fb-knap{grid-column:auto;padding:0 24px}}
 
-/* ---------- 3. DAGENS RET: køkkensedlen ---------- */
+/* ---------- 3. DAGENS RET: ugens dagskort ----------
+   I dag først og fremhævet; hver åben dag med ret, pris, portioner og sin egen Bestil.
+   Lukkede dage står smalle og dæmpede. Alt fra Dagens ret i admin (spiis-ny.js). */
 .dagens{background:var(--creme2)}
-.seddel{position:relative;max-width:620px;margin:0 auto;background:var(--papir);border-radius:4px;box-shadow:var(--skygge);
-}
-.seddel::before{content:"";position:absolute;top:0;bottom:0;left:46px;width:2px;background:rgba(217,108,44,.35)}
-.seddel-top{display:flex;align-items:center;gap:12px;padding:18px 20px 12px 62px;border-bottom:2px solid var(--orange)}
-.seddel-top .dato{font:600 13px/1 var(--krop);letter-spacing:.16em;text-transform:uppercase;color:var(--orange-d)}
-.seddel-top .haand{margin-left:auto;transform:rotate(-4deg)}
-.seddel-krop{padding:18px 22px 24px 62px}
-.seddel h3{font-size:clamp(30px,7.5vw,44px);line-height:1.02}
-.seddel p{margin:10px 0 0;font-size:16.5px;color:var(--blaek2)}
-.seddel-fod{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-top:18px;padding-top:16px;border-top:2px dashed rgba(217,108,44,.3)}
-.pris{font:600 34px/1 var(--vis);color:var(--orange-d)}
-.tilbage{display:inline-flex;align-items:center;gap:6px;padding:7px 12px;border-radius:999px;background:var(--orange-l);font:600 13px/1 var(--krop);color:var(--orange-d)}
-.seddel-fod .knap{margin-left:auto;height:50px}
-.uge{display:flex;gap:12px;overflow-x:auto;scroll-snap-type:x mandatory;padding:26px var(--pad) 8px;margin:0 calc(-1 * var(--pad));scrollbar-width:none}
-.uge::-webkit-scrollbar{display:none}
-.dag{flex:none;width:172px;scroll-snap-align:start;padding:14px 14px 16px;border-radius:16px;background:var(--papir);box-shadow:inset 0 0 0 1.5px var(--streg)}
-.dag small{display:block;font:600 12px/1 var(--krop);letter-spacing:.14em;text-transform:uppercase;color:var(--orange-d)}
-.dag b{display:block;margin-top:8px;font:600 18px/1.15 var(--vis)}
-.dag span{display:block;margin-top:8px;font-size:13.5px;color:var(--blaek2)}
-.dag.lukket{opacity:.55}
-.note-eks{text-align:center;margin:16px 0 0;font-size:13px;color:var(--blaek2)}
+.dagens-linje{margin:-10px auto 20px;text-align:center;color:var(--blaek2)}
+.dage{display:flex;gap:14px;overflow-x:auto;scroll-snap-type:x mandatory;padding:6px var(--pad) 24px;margin:0 calc(-1 * var(--pad));scrollbar-width:none;scroll-padding:0 var(--pad)}
+.dage::-webkit-scrollbar{display:none}
+.dret{flex:none;display:flex;flex-direction:column;width:min(80vw,330px);scroll-snap-align:start;border-radius:24px;background:var(--papir);overflow:hidden;
+  box-shadow:inset 0 0 0 1px rgba(31,26,22,.06),0 18px 34px -24px rgba(31,26,22,.5)}
+.dret-hoved{position:relative;display:flex;align-items:center;gap:10px;padding:16px 18px 14px;border-bottom:2px dashed rgba(31,26,22,.1)}
+.dret-hoved b{font:700 20px/1 var(--krop);letter-spacing:-.02em}
+.dret-hoved span{font:500 13.5px/1 var(--krop);color:var(--blaek2)}
+.dret-hoved .dret-hue{margin-left:auto;width:30px;height:30px;opacity:.9}
+.dret.idag{box-shadow:inset 0 0 0 2px var(--orange),0 22px 40px -22px rgba(184,84,23,.55)}
+.dret.idag .dret-hoved{background:var(--orange);color:#fff;border-bottom-color:rgba(255,255,255,.3)}
+.dret.idag .dret-hoved span{color:rgba(255,255,255,.85)}
+.dret.idag .dret-hue{filter:brightness(0) invert(1)}
+.dret-krop{flex:1;padding:18px 18px 6px}
+.dret h3{font:700 26px/1.08 var(--krop);letter-spacing:-.03em}
+.dret p{margin:8px 0 0;font-size:15px;color:var(--blaek2)}
+.dret .eller{font-weight:600;color:var(--blaek)}
+.dret-fod{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:14px 18px 18px}
+.dret-pris{font:700 28px/1 var(--krop);letter-spacing:-.03em;color:var(--orange-d)}
+.dret-tilbage{padding:6px 10px;border-radius:999px;background:var(--orange-l);font:600 12.5px/1 var(--krop);color:var(--orange-d)}
+.dret-tilbage.ude{background:#F1E5E3;color:#8C2B2B}
+.dret-fod .knap{margin-left:auto;height:46px;padding:0 20px;font-size:15px}
+.dret.lukket,.dret.tom{width:min(46vw,190px);background:transparent;box-shadow:inset 0 0 0 1.5px rgba(31,26,22,.12)}
+.dret.lukket .dret-hoved,.dret.tom .dret-hoved{flex-direction:column;align-items:flex-start;gap:6px;border-bottom:0}
+.dret.lukket .dret-hue,.dret.tom .dret-hue{display:none}
+.dret.lukket h3,.dret.tom h3{font-size:18px;color:var(--blaek2)}
+.dret.lukket p,.dret.tom p{font-size:13.5px}
+.dage-prik{display:flex;justify-content:center;gap:6px;margin-top:-6px}
+.dage-prik i{width:6px;height:6px;border-radius:50%;background:rgba(31,26,22,.18);transition:width .25s ease,background .25s ease}
+.dage-prik i.on{width:18px;border-radius:3px;background:var(--orange)}
+@media (min-width:900px){.dret{width:320px}.dage{padding-left:max(40px,calc(50% - 560px))}}
+/* når ugen ikke har en eneste ret endnu: ét kort, der siger det ordentligt, og ugen som en lille stribe */
+.dagens-tom{display:grid;gap:0;max-width:760px;margin:0 auto 18px;border-radius:26px;overflow:hidden;background:var(--papir);box-shadow:0 22px 40px -26px rgba(31,26,22,.5)}
+.dagens-tom img{width:100%;aspect-ratio:16/9;object-fit:cover}
+.dagens-tom > div{padding:22px}
+.dagens-tom h3{margin-top:8px;font:700 28px/1.05 var(--krop);letter-spacing:-.035em}
+.dagens-tom p{margin:10px 0 0;color:var(--blaek2)}
+.dagens-tom-knapper{display:flex;flex-wrap:wrap;gap:10px;margin-top:18px}
+.dagens-tom-knapper .knap{flex:1 1 180px;height:50px}
+@media (min-width:760px){.dagens-tom{grid-template-columns:1fr 1.1fr;align-items:center}.dagens-tom img{height:100%;aspect-ratio:auto}}
+.dage.mini{justify-content:safe center;gap:8px;padding-bottom:10px}
+.dage.mini .dret{width:auto;min-width:96px;flex:none;border-radius:16px;background:var(--papir);box-shadow:inset 0 0 0 1.5px rgba(31,26,22,.08)}
+.dage.mini .dret-hoved{padding:10px 12px 4px;flex-direction:column;align-items:flex-start;gap:3px;border:0;background:none;color:inherit}
+.dage.mini .dret-hoved b{font-size:14px}.dage.mini .dret-hoved span{font-size:11.5px;color:var(--blaek2)}
+.dage.mini .dret-hue,.dage.mini .dret-krop p{display:none}
+.dage.mini .dret-krop{padding:0 12px 10px}
+.dage.mini .dret h3{font-size:13px;font-weight:600;letter-spacing:0;color:var(--blaek2)}
+.dage.mini .dret.lukket h3{color:#9C5B3B}
+.dage.mini .dret.idag{box-shadow:inset 0 0 0 2px var(--orange)}
+.dage.mini + .dage-prik{display:none}
 
 /* ---------- 4. BESTIL: køkkenbonen ---------- */
 .bon{position:relative;max-width:560px;margin:0 auto;padding:30px 22px 26px;background:var(--papir);box-shadow:var(--skygge);
@@ -371,11 +409,12 @@ h1,h2,h3{font-family:var(--vis);font-weight:600;letter-spacing:-.035em;margin:0;
   <div class="wrap">
     <div class="hoved"><span class="kicker">Nyt fra køkkenet</span><h2>Det sker i <span class="vis-i">Kiffen</span></h2><div class="prikker"><i></i><i></i><i></i><i></i><i></i><i></i></div></div>
     <div class="opslag-raekke" data-nyheder></div>
-    <div class="fb">
-      <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="#0866FF" d="M9.1 23.7v-8H6.6V12h2.5v-1.6c0-4.1 1.8-6 5.9-6 .8 0 2.1.2 2.7.3v3.3h-1.4c-1.4 0-2 .5-2 2V12h3.3l-.6 3.7h-2.7v8.2C19.4 23.1 24 18.2 24 12 24 5.4 18.6 0 12 0S0 5.4 0 12c0 5.7 3.9 10.4 9.1 11.7z"/></svg>
-      <div><b>Bliv medlem af Spiis</b><span>Opslag, dagens retter og livet i Spiis</span></div>
-      <a href="#">Bliv medlem →</a>
-    </div>
+    <a class="fb" href="https://www.facebook.com/groups/733369805293695" target="_blank" rel="noopener">
+      <span class="fb-ikon" aria-hidden="true"><svg viewBox="0 0 24 24"><path fill="#0866FF" d="M9.1 23.7v-8H6.6V12h2.5v-1.6c0-4.1 1.8-6 5.9-6 .8 0 2.1.2 2.7.3v3.3h-1.4c-1.4 0-2 .5-2 2V12h3.3l-.6 3.7h-2.7v8.2C19.4 23.1 24 18.2 24 12 24 5.4 18.6 0 12 0S0 5.4 0 12c0 5.7 3.9 10.4 9.1 11.7z"/></svg></span>
+      <span class="fb-tekst"><b>Bliv medlem af Spiis på Facebook</b><span>Opslag, dagens retter og livet i Spiis – vi ses i gruppen.</span></span>
+      <span class="fb-knap">Bliv medlem <i aria-hidden="true">→</i></span>
+      <svg class="fb-hue" aria-hidden="true"><use href="#hue"/></svg>
+    </a>
   </div>
 </section>
 
@@ -383,15 +422,18 @@ h1,h2,h3{font-family:var(--vis);font-weight:600;letter-spacing:-.035em;margin:0;
 <section class="sektion dagens" id="dagens">
   <div class="wrap">
     <div class="hoved"><span class="kicker">Frisklavet hver dag</span><h2>Dagens <span class="vis-i">ret</span></h2><div class="prikker"><i></i><i></i><i></i><i></i><i></i><i></i></div></div>
-    <article class="seddel" data-idag>
-      <div class="seddel-top"><span class="dato" data-idag-dato>I dag</span><span class="haand" data-idag-haand>frisk fra gryden!</span></div>
-      <div class="seddel-krop">
-        <h3 data-idag-ret>Henter dagens ret …</h3>
-        <p data-idag-tekst></p>
-        <div class="seddel-fod" data-idag-fod hidden><span class="pris" data-idag-pris></span><span class="tilbage" data-idag-tilbage hidden></span><a class="knap knap--orange" href="#bestil">Bestil</a></div>
+    <p class="dagens-linje">En ret fra køkkenet hver dag – swipe og se ugen.</p>
+    <div class="dagens-tom" data-dage-tom hidden>
+      <img src="assets/foto/bowls-640.webp" alt="Bowls fra Spiis' køkken" loading="lazy">
+      <div>
+        <span class="kicker">Ugens retter</span>
+        <h3>Ugens retter er på vej</h3>
+        <p>Køkkenet lægger dagens retter op i løbet af ugen. Følg med i Facebook-gruppen – eller ring og hør, hvad der står på gryden.</p>
+        <div class="dagens-tom-knapper"><a class="knap knap--orange" href="#menukort">Se menukortet</a><a class="knap knap--lys" href="tel:+4593995858">Ring 93 99 58 58</a></div>
       </div>
-    </article>
-    <div class="uge" data-uge></div>
+    </div>
+    <div class="dage" data-dage aria-label="Dagens ret de næste syv dage"><p class="note-eks">Henter ugens retter …</p></div>
+    <div class="dage-prik" data-dage-prik aria-hidden="true"></div>
   </div>
 </section>
 
@@ -520,7 +562,7 @@ h1,h2,h3{font-family:var(--vis);font-weight:600;letter-spacing:-.035em;margin:0;
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <script src="../js/config.js?v=ny2"></script>
 <script src="../js/store.js?v=ny2"></script>
-<script src="spiis-ny.js?v=2"></script>
+<script src="spiis-ny.js?v=6"></script>
 <script>
 document.querySelectorAll('[data-valg] button').forEach(function (b) {
   b.addEventListener('click', function () {
