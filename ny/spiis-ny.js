@@ -84,7 +84,7 @@
         var retter = d.dishes || [];
         var navn = luk ? 'Lukket' : retter.length ? retter.map(function (x) { return x.title; }).join(' · ') : 'Følger snart';
         var pris = !luk && retter.length === 1 && retter[0].price ? kr(retter[0].price) : (luk ? 'Lukket for bestillinger' : '');
-        return '<div class="dag' + (luk ? ' lukket' : '') + '"><small>' + esc(d.weekday) + ' · ' + esc(S.formatDate(d.iso)) + '</small><b>' + esc(navn) + '</b>' + (pris ? '<span>' + esc(pris) + '</span>' : '') + '</div>';
+        return '<div class="dag' + (luk ? ' lukket' : '') + '"><small>' + esc(S.formatDate(d.iso)) + '</small><b>' + esc(navn) + '</b>' + (pris ? '<span>' + esc(pris) + '</span>' : '') + '</div>';
       }).join('');
     }
   }
