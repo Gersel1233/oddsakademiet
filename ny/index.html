@@ -31,6 +31,7 @@
   --skygge:0 1px 2px rgba(31,26,22,.05),0 18px 40px -22px rgba(31,26,22,.35);
 }
 *{box-sizing:border-box}
+[hidden]{display:none !important}
 html{scroll-behavior:smooth;-webkit-text-size-adjust:100%;overflow-x:clip}
 body{margin:0;background:var(--creme);color:var(--blaek);font:400 16px/1.55 var(--krop);overflow-x:clip}
 img{display:block;max-width:100%}
@@ -67,40 +68,49 @@ h1,h2,h3{font-family:var(--vis);font-weight:600;font-variation-settings:"SOFT" 1
 .burger{width:46px;height:46px;border-radius:50%;border:0;background:rgba(255,253,249,.92);box-shadow:0 8px 20px -12px rgba(31,26,22,.45),inset 0 0 0 1px rgba(31,26,22,.06);display:grid;place-items:center}
 .burger i{display:block;width:18px;height:2px;border-radius:2px;background:var(--blaek);box-shadow:0 6px 0 var(--blaek),0 -6px 0 var(--orange)}
 
-/* ---------- 1. HEROEN: maden, ikke en video-bjælke ---------- */
-.hero{position:relative;padding:96px 0 0;background:
-  radial-gradient(1200px 500px at 85% -10%,var(--orange-l),transparent 60%),var(--creme)}
-.hero-tekst{position:relative;z-index:2}
-.hero h1{font-size:clamp(46px,12.5vw,92px);line-height:.95;margin-top:16px}
-.hero h1 .travl{position:relative;display:inline-block;font-style:italic;font-weight:500;color:var(--orange)}
-.hero h1 .travl svg{position:absolute;left:-2%;bottom:-.16em;width:104%;height:.32em;overflow:visible}
-.hero .under{max-width:34ch;margin:18px 0 0;font-size:17.5px;color:var(--blaek2)}
-.hero-knapper{display:flex;flex-wrap:wrap;gap:10px;margin-top:24px}
-.hero-knapper .knap{flex:1 1 200px}
-.idag-seddel{position:relative;display:flex;align-items:center;gap:14px;margin-top:22px;padding:14px 16px;border-radius:18px;background:var(--papir);box-shadow:var(--skygge)}
-.idag-seddel .prik{flex:none;width:10px;height:10px;border-radius:50%;background:#2E9D5B;box-shadow:0 0 0 5px rgba(46,157,91,.15)}
-.idag-seddel b{display:block;font:600 14px/1.2 var(--krop)}
-.idag-seddel span{font-size:14px;color:var(--blaek2)}
-.idag-seddel a{margin-left:auto;font:600 14px/1 var(--krop);color:var(--orange-d);text-decoration:none;white-space:nowrap}
-
-.hero-billeder{position:relative;height:430px;margin:34px calc(-1 * var(--pad)) 0}
-.plade{position:absolute;margin:0;padding:8px 8px 30px;background:#fff;border-radius:6px;box-shadow:0 22px 40px -20px rgba(31,26,22,.55)}
-.plade img{width:100%;height:100%;object-fit:cover;border-radius:3px}
-.plade figcaption{position:absolute;left:0;right:0;bottom:4px;text-align:center;font:600 19px/1 var(--haand);color:var(--blaek2)}
-.plade--a{left:4%;top:20px;width:52%;height:290px;transform:rotate(-4deg)}
-.plade--b{right:3%;top:0;width:46%;height:240px;transform:rotate(3.5deg)}
-.plade--c{right:12%;top:205px;width:44%;height:210px;transform:rotate(-1.5deg)}
-.stempel{position:absolute;left:44%;top:258px;z-index:3;width:116px;height:116px;transform:rotate(-12deg)}
+/* ---------- 1. TOPPEN: videoen ---------- */
+.hero{position:relative;isolation:isolate;display:flex;flex-direction:column;justify-content:flex-end;min-height:min(92svh,820px);padding:120px 0 118px;color:var(--creme);overflow:hidden;background:#2A1C14}
+.hero-video{position:absolute;inset:0;z-index:-2;width:100%;height:100%;object-fit:cover}
+.hero-slor{position:absolute;inset:0;z-index:-1;background:
+  linear-gradient(180deg,rgba(31,20,13,.55) 0%,rgba(31,20,13,0) 22%,rgba(31,20,13,.15) 45%,rgba(31,20,13,.86) 82%,#24170F 100%)}
+.hero-ind{position:relative;width:100%}
+.hero-status{display:inline-flex;align-items:center;gap:9px;margin:0 0 16px;padding:8px 14px 8px 12px;border-radius:999px;background:rgba(250,246,240,.14);
+  -webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);box-shadow:inset 0 0 0 1px rgba(250,246,240,.22);font:600 13.5px/1 var(--krop)}
+.hero-status .prik{width:8px;height:8px;border-radius:50%;background:#5DD38C;box-shadow:0 0 0 4px rgba(93,211,140,.22)}
+.hero-status.lukket .prik{background:#F2A65A;box-shadow:0 0 0 4px rgba(242,166,90,.22)}
+.hero-kicker{display:block;font:600 12.5px/1 var(--krop);letter-spacing:.24em;text-transform:uppercase;color:#F4C9A6}
+.hero h1{margin-top:14px;font-size:clamp(44px,12vw,104px);line-height:.98;font-weight:600;color:var(--creme);text-wrap:balance;text-shadow:0 2px 30px rgba(0,0,0,.25)}
+.hero h1 .travl{position:relative;display:inline-block;font-style:italic;font-weight:500;color:#F08A47}
+.hero h1 .travl svg{position:absolute;left:-2%;bottom:-.12em;width:104%;height:.3em;overflow:visible}
+@media (prefers-reduced-motion:no-preference){
+  .hero h1 .travl path{stroke-dasharray:210;stroke-dashoffset:210;animation:streg 1.1s .5s cubic-bezier(.6,0,.2,1) forwards}
+  @keyframes streg{to{stroke-dashoffset:0}}
+}
+.hero-under{max-width:36ch;margin:18px 0 0;font-size:18px;line-height:1.5;color:rgba(250,246,240,.86)}
+.hero-idag{display:flex;align-items:center;gap:10px;max-width:440px;margin-top:20px;padding:12px 14px 12px 16px;border-radius:16px;text-decoration:none;color:var(--blaek);background:var(--papir);box-shadow:0 14px 30px -14px rgba(0,0,0,.6)}
+.hero-idag small{flex:none;padding:5px 8px;border-radius:999px;background:var(--orange);color:#fff;font:600 11px/1 var(--krop);letter-spacing:.12em;text-transform:uppercase}
+.hero-idag b{min-width:0;flex:1;font:600 17px/1.2 var(--vis);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hero-idag span{flex:none;font:600 17px/1 var(--vis);color:var(--orange-d)}
+.hero-idag i{font-style:normal;color:var(--orange-d)}
+.hero-knapper{display:flex;flex-wrap:wrap;gap:10px;max-width:560px;margin-top:22px}
+.hero-knapper .knap{flex:1 1 190px}
+.knap--glas{color:var(--creme);background:rgba(250,246,240,.14);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);box-shadow:inset 0 0 0 1.5px rgba(250,246,240,.35)}
+.hero .stempel{position:absolute;right:14px;bottom:14px;z-index:3;width:92px;height:92px;transform:rotate(-12deg)}
 .stempel svg{width:100%;height:100%}
 @media (prefers-reduced-motion:no-preference){.stempel .ring{transform-origin:60px 60px;animation:drej 40s linear infinite}}
 @keyframes drej{to{transform:rotate(360deg)}}
 
-/* bånd med løfterne — fra den oprindelige side */
-.baand{position:relative;z-index:4;margin-top:-6px;overflow:hidden;background:var(--orange);color:#fff;transform:rotate(-1.4deg) scale(1.02)}
-.baand-ind{display:flex;gap:28px;width:max-content;padding:13px 0;font:italic 500 20px/1 var(--vis)}
-.baand-ind span:nth-child(even){font:600 16px/1 var(--krop);opacity:.7;align-self:center}
-@media (prefers-reduced-motion:no-preference){.baand-ind{animation:bevæg 30s linear infinite}}
-@keyframes bevæg{to{transform:translateX(-50%)}}
+/* ---------- billedrækken under videoen ---------- */
+.raekke{position:relative;padding:38px 0 30px;background:linear-gradient(#24170F 0,#24170F 70px,var(--creme) 70px)}
+.raekke-spor{display:flex;gap:16px;overflow-x:auto;padding:4px 20px 18px;scrollbar-width:none;-webkit-overflow-scrolling:touch;scroll-behavior:auto}
+.raekke-spor::-webkit-scrollbar{display:none}
+.foto-kort{position:relative;flex:none;width:min(54vw,280px);padding:9px 9px 14px;border-radius:6px;background:#fff;text-decoration:none;color:var(--blaek);
+  box-shadow:0 22px 34px -22px rgba(31,26,22,.6),0 1px 2px rgba(31,26,22,.08);transition:transform .35s cubic-bezier(.2,.9,.24,1)}
+.foto-kort:nth-child(odd){transform:rotate(-1.6deg)}.foto-kort:nth-child(even){transform:rotate(1.4deg) translateY(10px)}
+.foto-kort:hover{transform:rotate(0) translateY(-4px)}
+.foto-kort img{width:100%;aspect-ratio:4/5;object-fit:cover;border-radius:3px}
+.foto-kort span{display:block;margin-top:10px;font:600 22px/1.05 var(--haand);color:var(--blaek)}
+.foto-kort em{display:block;margin-top:4px;font:600 13px/1 var(--krop);font-style:normal;color:var(--orange-d)}
 
 /* ---------- 2. NYHEDER: opslag sat op med tape ---------- */
 .sektion{padding:78px 0}
@@ -249,7 +259,9 @@ h1,h2,h3{font-family:var(--vis);font-weight:600;font-variation-settings:"SOFT" 1
 .bund small{display:block;margin-top:26px;color:rgba(255,255,255,.5)}
 
 /* den faste bestil-knap på telefonen */
-.pille{position:fixed;left:14px;right:14px;bottom:max(14px,env(safe-area-inset-bottom));z-index:40;display:flex}
+.pille{position:fixed;left:14px;right:14px;bottom:max(14px,env(safe-area-inset-bottom));z-index:40;display:flex;transition:transform .35s cubic-bezier(.2,.9,.24,1),opacity .25s ease}
+/* pillen venter, til videoen er rullet forbi — toppen har sine egne knapper */
+.pille.skjult{transform:translateY(140%);opacity:0;pointer-events:none}
 .pille .knap{width:100%;height:58px;font-size:17px}
 
 /* udkast-mærket */
@@ -259,11 +271,11 @@ h1,h2,h3{font-family:var(--vis);font-weight:600;font-variation-settings:"SOFT" 1
 @media (min-width:900px){
   :root{--pad:40px}
   .top{padding:16px 28px}
-  .hero{padding-top:120px}
-  .hero-grid{display:grid;grid-template-columns:1fr 1fr;gap:40px;align-items:center}
-  .hero-billeder{height:560px;margin:0}
-  .plade--a{height:380px}.plade--b{height:300px}.plade--c{top:270px;height:260px}
-  .stempel{top:330px;width:140px;height:140px}
+  .hero{padding-bottom:90px}
+  .hero-ind{max-width:1160px}
+  .hero .stempel{right:max(40px,calc(50% - 560px));bottom:40px;width:150px;height:150px}
+  .raekke-spor{padding-left:max(40px,calc(50% - 560px));gap:22px}
+  .foto-kort{width:270px}
   .opslag{width:300px}
   .opslag-raekke{justify-content:center;overflow:visible}
   .tapas-grid,.om-grid{grid-template-columns:1fr 1fr;gap:44px;align-items:center}
@@ -297,53 +309,54 @@ h1,h2,h3{font-family:var(--vis);font-weight:600;font-variation-settings:"SOFT" 1
   <button class="burger" aria-label="Menu"><i></i></button>
 </header>
 
-<!-- ============ 1. HEROEN ============ -->
-<section class="hero">
-  <div class="wrap hero-grid">
-    <div class="hero-tekst">
-      <span class="kicker">Hjemmelavet · Friskt · Karlslunde</span>
-      <h1>Hjemmelavet mad, når hverdagen er <span class="travl">travl<svg viewBox="0 0 200 20" preserveAspectRatio="none" aria-hidden="true"><path d="M3 14C40 4 90 2 197 9" fill="none" stroke="#D96C2C" stroke-width="5" stroke-linecap="round"/></svg></span></h1>
-      <p class="under">Velsmag og kvalitet i hver en bid – nemt, hurtigt og altid en fornøjelse.</p>
-      <div class="hero-knapper">
-        <a class="knap knap--orange" href="#dagens">Se dagens ret</a>
-        <a class="knap knap--lys" href="#selskaber">Selskab &amp; catering</a>
-      </div>
-      <div class="idag-seddel">
-        <span class="prik"></span>
-        <div><b>Åbent i dag til 22</b><span>Kongens Enge 42 · Karlslunde</span></div>
-        <a href="#kontakt">Find os →</a>
-      </div>
-    </div>
-    <div class="hero-billeder">
-      <figure class="plade plade--a"><img src="assets/foto/bowls-640.webp" alt="Bowls med kylling, rødkål og gulerod, anrettet i hånden"><figcaption>lavet i dag</figcaption></figure>
-      <figure class="plade plade--b"><img src="assets/foto/vitrine-640.webp" alt="Burgere og salater i vitrinen"><figcaption>til at tage med</figcaption></figure>
-      <figure class="plade plade--c"><img src="assets/foto/brod-640.webp" alt="Hjemmebagt surdejsbrød"><figcaption>bagt her i huset</figcaption></figure>
-      <div class="stempel" aria-hidden="true">
-        <svg viewBox="0 0 120 120">
-          <circle cx="60" cy="60" r="57" fill="#6B2226"/>
-          <circle cx="60" cy="60" r="52" fill="none" stroke="#D3AE68" stroke-width="1" stroke-dasharray="2 3"/>
-          <g class="ring"><text font-family="Outfit" font-weight="600" font-size="10.5" letter-spacing="3.2" fill="#FAF6F0"><textPath href="#ringsti">SPIIS · CAFÉ · TAKE AWAY · CATERING ·</textPath></text></g>
-          <circle cx="60" cy="60" r="27" fill="#FAF6F0"/>
-          <use href="#hue" x="40" y="39" width="40" height="40"/>
-        </svg>
-      </div>
+<!-- ============ 1. TOPPEN: videoen og billedrækken (23/10) ============
+     Mikkel: "vi rykker tilbage til videoen, også bedre tekst og skrift — og lige nedenunder
+     kunne jeg godt lide billederne, der gled hen til siden". Videoen er Spiis' egen
+     (festbuffeten med dannebrog); teksten er deres eget slogan, sat i Fraunces. Status og
+     dagens ret kommer fra databasen (spiis-ny.js) — står intet, står linjen ikke. -->
+<section class="hero" id="top">
+  <video class="hero-video" autoplay muted loop playsinline preload="metadata" poster="../assets/hero-poster.jpg" aria-hidden="true">
+    <source src="../assets/hero.mp4" type="video/mp4">
+  </video>
+  <div class="hero-slor" aria-hidden="true"></div>
+  <div class="wrap hero-ind">
+    <p class="hero-status" data-status hidden><span class="prik"></span><span data-status-tekst></span></p>
+    <span class="hero-kicker">Café · Take away · Catering</span>
+    <h1>Hjemmelavet mad, <br>når hverdagen er <span class="travl">travl<svg viewBox="0 0 200 20" preserveAspectRatio="none" aria-hidden="true"><path d="M3 14C40 4 90 2 197 9" fill="none" stroke="#E8823C" stroke-width="5" stroke-linecap="round"/></svg></span></h1>
+    <p class="hero-under">Lavet fra bunden hver dag i Karlslunde Idrætsforening – til at tage med eller spise her.</p>
+    <a class="hero-idag" href="#dagens" data-hero-idag hidden><small>I dag</small><b data-hero-ret></b><span data-hero-pris></span><i aria-hidden="true">→</i></a>
+    <div class="hero-knapper">
+      <a class="knap knap--orange" href="#bestil">Bestil dagens ret</a>
+      <a class="knap knap--glas" href="#menukort">Se menukortet</a>
     </div>
   </div>
-  <div class="baand" aria-hidden="true"><div class="baand-ind">
-    <span>Hjemmelavet mad</span><span>✦</span><span>Frisk hver dag</span><span>✦</span><span>Ingen stress</span><span>✦</span><span>Ingen opvask</span><span>✦</span><span>Bare god mad</span><span>✦</span><span>Perfekt til børnefamilien</span><span>✦</span>
-    <span>Hjemmelavet mad</span><span>✦</span><span>Frisk hver dag</span><span>✦</span><span>Ingen stress</span><span>✦</span><span>Ingen opvask</span><span>✦</span><span>Bare god mad</span><span>✦</span><span>Perfekt til børnefamilien</span><span>✦</span>
-  </div></div>
+  <div class="stempel" aria-hidden="true">
+    <svg viewBox="0 0 120 120">
+      <circle cx="60" cy="60" r="57" fill="#6B2226"/>
+      <circle cx="60" cy="60" r="52" fill="none" stroke="#D3AE68" stroke-width="1" stroke-dasharray="2 3"/>
+      <g class="ring"><text font-family="Outfit" font-weight="600" font-size="10.5" letter-spacing="3.2" fill="#FAF6F0"><textPath href="#ringsti">SPIIS · CAFÉ · TAKE AWAY · CATERING ·</textPath></text></g>
+      <circle cx="60" cy="60" r="27" fill="#FAF6F0"/>
+      <use href="#hue" x="40" y="39" width="40" height="40"/>
+    </svg>
+  </div>
 </section>
 
+<!-- Billedrækken glider roligt af sig selv og kan swipes; hvert billede fører til sit afsnit -->
+<div class="raekke" aria-label="Fra køkkenet hos Spiis">
+  <div class="raekke-spor" data-raekke>
+    <a class="foto-kort" href="#dagens"><img src="assets/foto/bowls-640.webp" alt="Bowls anrettet i hånden" loading="eager"><span>Hjemmelavet fra bunden</span><em>Dagens ret →</em></a>
+    <a class="foto-kort" href="#menukort"><img src="assets/foto/brod-640.webp" alt="Hjemmebagt surdejsbrød"><span>Bagt her i huset</span><em>Menukortet →</em></a>
+    <a class="foto-kort" href="#bestil"><img src="assets/foto/vitrine-640.webp" alt="Burgere og salater i vitrinen"><span>Spis her eller tag med</span><em>Bestil →</em></a>
+    <a class="foto-kort" href="#tapas"><img src="assets/foto/tapas-640.webp" alt="Tapasfade"><span>Tapas til hyggen</span><em>Spiis Tapas →</em></a>
+    <a class="foto-kort" href="#selskaber"><img src="assets/foto/buffet-640.webp" alt="Lange fade til et selskab"><span>Selskaber og catering</span><em>Holder I fest? →</em></a>
+  </div>
+</div>
+
 <!-- ============ 2. NYHEDER ============ -->
-<section class="sektion" id="nyheder">
+<section class="sektion" id="nyheder" data-nyheder-afsnit>
   <div class="wrap">
     <div class="hoved"><span class="kicker">Nyt fra køkkenet</span><h2>Det sker i <span class="vis-i">Kiffen</span></h2><div class="prikker"><i></i><i></i><i></i><i></i><i></i><i></i></div></div>
-    <div class="opslag-raekke">
-      <article class="opslag"><img src="assets/foto/nyhed-jdag.webp" alt="Plakat: tre måneder til J-dag"><small>12. oktober</small><h3>J-dag i Kiffen</h3><p>Vi lover et brag af en fest, når julebryggen frigives.</p></article>
-      <article class="opslag"><img src="assets/foto/tapas-1.webp" alt="Tapasfade"><small>Nyhed</small><h3>Spiis Tapas</h3><p>Bestil dagen før – vi anretter det hele i hånden.</p></article>
-      <article class="opslag"><img src="assets/foto/selskab-2.webp" alt="Små burgere til et selskab"><small>Selskaber</small><h3>Holder I fest?</h3><p>Vi står for maden, så I kan være sammen.</p></article>
-    </div>
+    <div class="opslag-raekke" data-nyheder></div>
     <div class="fb">
       <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="#0866FF" d="M9.1 23.7v-8H6.6V12h2.5v-1.6c0-4.1 1.8-6 5.9-6 .8 0 2.1.2 2.7.3v3.3h-1.4c-1.4 0-2 .5-2 2V12h3.3l-.6 3.7h-2.7v8.2C19.4 23.1 24 18.2 24 12 24 5.4 18.6 0 12 0S0 5.4 0 12c0 5.7 3.9 10.4 9.1 11.7z"/></svg>
       <div><b>Bliv medlem af Spiis</b><span>Opslag, dagens retter og livet i Spiis</span></div>
@@ -356,22 +369,15 @@ h1,h2,h3{font-family:var(--vis);font-weight:600;font-variation-settings:"SOFT" 1
 <section class="sektion dagens" id="dagens">
   <div class="wrap">
     <div class="hoved"><span class="kicker">Frisklavet hver dag</span><h2>Dagens <span class="vis-i">ret</span></h2><div class="prikker"><i></i><i></i><i></i><i></i><i></i><i></i></div></div>
-    <article class="seddel">
-      <div class="seddel-top"><span class="dato">I dag · torsdag 23. oktober</span><span class="haand">frisk fra gryden!</span></div>
+    <article class="seddel" data-idag>
+      <div class="seddel-top"><span class="dato" data-idag-dato>I dag</span><span class="haand" data-idag-haand>frisk fra gryden!</span></div>
       <div class="seddel-krop">
-        <h3>Boller i karry med ris</h3>
-        <p>Med hjemmelavede kødboller, porre og æble.</p>
-        <div class="seddel-fod"><span class="pris">95,-</span><span class="tilbage">● 14 portioner tilbage</span><a class="knap knap--orange" href="#bestil">Bestil</a></div>
+        <h3 data-idag-ret>Henter dagens ret …</h3>
+        <p data-idag-tekst></p>
+        <div class="seddel-fod" data-idag-fod hidden><span class="pris" data-idag-pris></span><span class="tilbage" data-idag-tilbage hidden></span><a class="knap knap--orange" href="#bestil">Bestil</a></div>
       </div>
     </article>
-    <div class="uge">
-      <div class="dag"><small>Fredag</small><b>Lasagne med salat</b><span>95,-</span></div>
-      <div class="dag lukket"><small>Lørdag</small><b>Lukket</b><span>Lukket for bestillinger</span></div>
-      <div class="dag lukket"><small>Søndag</small><b>Lukket</b><span>Lukket for bestillinger</span></div>
-      <div class="dag"><small>Mandag</small><b>Kylling i karry</b><span>95,-</span></div>
-      <div class="dag"><small>Tirsdag</small><b>Frikadeller med kartoffelsalat</b><span>95,-</span></div>
-    </div>
-    <p class="note-eks">Retterne her er eksempler i udkastet — på siden kommer de fra Dagens ret i admin.</p>
+    <div class="uge" data-uge></div>
   </div>
 </section>
 
@@ -401,14 +407,8 @@ h1,h2,h3{font-family:var(--vis);font-weight:600;font-variation-settings:"SOFT" 1
 <section class="sektion" id="menukort" style="padding-top:20px">
   <div class="wrap">
     <div class="hoved"><span class="kicker">Altid noget godt</span><h2>Menu<span class="vis-i">kortet</span></h2><div class="prikker"><i></i><i></i><i></i><i></i><i></i><i></i></div></div>
-    <div class="faner" data-faner><button class="on">Retter</button><button>Salater</button><button>Friture</button><button>Andet</button><button>Drikkevarer</button></div>
-    <div class="kort">
-      <div class="ret"><div class="ret-top"><b>Spiis Burger</b><i></i><span>Spørg</span></div><p>Med to bøffer – i alt 250 g. Fås også som menu med sodavand, pommes og dip.</p></div>
-      <div class="ret"><div class="ret-top"><b>Børneburger</b><i></i><span>Spørg</span></div><p>Som Spiis Burgeren, bare med én bøf på 125 g.</p></div>
-      <div class="ret"><div class="ret-top"><b>Nachos med kylling</b><i></i><span>Spørg</span></div></div>
-      <div class="ret"><div class="ret-top"><b>Pasta bolognese</b><i></i><span>Spørg</span></div></div>
-      <div class="ret"><div class="ret-top"><b>Hjemmelavet surdejsbrød</b><i></i><span>40,-</span></div><p>Halvt brød 25,-</p></div>
-    </div>
+    <div class="faner" data-faner role="tablist" aria-label="Menukortets kategorier"></div>
+    <div class="kort" data-kort><p class="note-eks">Henter menukortet …</p></div>
     <p class="allergi">Allergi? Spørg personalet ift. allergener – vi hjælper gerne.</p>
   </div>
 </section>
@@ -475,10 +475,7 @@ h1,h2,h3{font-family:var(--vis);font-weight:600;font-variation-settings:"SOFT" 1
     <div class="kontakt-grid">
       <div class="kort-hvid">
         <h3>Åbningstider</h3>
-        <div class="tid"><span>Mandag – onsdag</span><i></i><b>16–22</b></div>
-        <div class="tid idag"><span>Torsdag (i dag)</span><i></i><b>16–22.30</b></div>
-        <div class="tid"><span>Fredag – søndag</span><i></i><b>16–22</b></div>
-        <p class="note-eks" style="text-align:left">Eksempel – tiderne kommer fra admin.</p>
+        <div data-tider></div>
       </div>
       <div class="kort-hvid">
         <h3>Her finder du os</h3>
@@ -502,10 +499,16 @@ h1,h2,h3{font-family:var(--vis);font-weight:600;font-variation-settings:"SOFT" 1
   <small>Personale · Persondata · Lavet af Lesreg</small>
 </footer>
 
-<div class="pille"><a class="knap knap--orange" href="#bestil">Bestil dagens ret</a></div>
+<div class="pille skjult" data-pille><a class="knap knap--orange" href="#bestil">Bestil dagens ret</a></div>
 
+<!-- Spiis' egen database — de samme filer som den rigtige forside (js/config.js, js/store.js).
+     spiis-ny.js tegner udkastets felter af dem: dagens ret, ugen, menukortet, nyhederne og tiderne. -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script src="../js/config.js?v=ny2"></script>
+<script src="../js/store.js?v=ny2"></script>
+<script src="spiis-ny.js?v=1"></script>
 <script>
-document.querySelectorAll('[data-valg] button,[data-faner] button').forEach(function (b) {
+document.querySelectorAll('[data-valg] button').forEach(function (b) {
   b.addEventListener('click', function () {
     [].forEach.call(b.parentNode.children, function (x) { x.classList.toggle('on', x === b); });
   });
