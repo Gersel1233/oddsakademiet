@@ -76,12 +76,31 @@
         + '</footer></article>';
     }).join('');
     boks.innerHTML = html;
-    /* ingen ret hele ugen: tom-kortet siger det, og ugen står som en lille stribe */
+    /* ingen ret hele ugen: tavlen siger det og skriver ugen op i kridt; swipe-rækken skjules */
     var ingen = !plan.some(function (d) { return !lukketFor(d.iso) && (d.dishes || []).length; });
-    boks.classList.toggle('mini', ingen);
+    boks.hidden = ingen;
+    var linje = $('[data-dagens-linje]');
+    if (linje) linje.hidden = ingen;
     var tom = $('[data-dage-tom]');
-    if (tom) tom.hidden = !ingen;
+    if (tom) {
+      tom.hidden = !ingen;
+      var liste = $('[data-tavle-dage]');
+      if (liste && ingen) liste.innerHTML = plan.map(function (d, i) {
+        var h = S.hoursFor ? S.hoursFor(d.iso) : null;
+        var aaben = h && !h.closed && h.open;
+        var tekst = !aaben ? 'Lukket' : lukketFor(d.iso) ? 'Kom forbi ' + kl(h.open) + '–' + kl(h.close) : 'Følger snart';
+        return '<li style="--n:' + i + '" class="' + (i === 0 ? 'idag ' : '') + (aaben ? 'aaben' : '') + '"><b>' + esc(d.weekday) + '</b><span>' + esc(tekst) + '</span></li>';
+      }).join('');
+      if (ingen && !tom.dataset.set) {
+        tom.dataset.set = '1';
+        if ('IntersectionObserver' in window) {
+          var io = new IntersectionObserver(function (e) { if (e[0].isIntersecting) { tom.classList.add('vis'); io.disconnect(); } }, { threshold: .35 });
+          io.observe(tom);
+        } else tom.classList.add('vis');
+      }
+    }
     var prik = $('[data-dage-prik]');
+    if (prik) prik.hidden = ingen;
     if (prik) prik.innerHTML = plan.map(function (d, i) { return '<i' + (i === 0 ? ' class="on"' : '') + '></i>'; }).join('');
   }
   /* prikkerne følger swipet */
