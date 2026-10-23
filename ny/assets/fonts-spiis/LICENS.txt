@@ -1,2 +1,2 @@
-Fraunces, Outfit, Baloo 2 og Caveat — alle under SIL Open Font License 1.1.
-Hentet via @fontsource (npm) 23/10 til /ny/-udkastet, så intet hentes fra Google.
+Host Grotesk (Lesregs tekstskrift, som på Mosede Havnecafe) og Baloo 2 (Spiis-logoet) — begge under SIL Open Font License 1.1.
+Ligger her, så intet hentes fra Google.

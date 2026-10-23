@@ -46,7 +46,7 @@
     if (seddel) {
       var retter = S.getDagensRetList(iDag);
       var lukket = lukketFor(iDag);
-      $('[data-idag-dato]', seddel).textContent = 'I dag · ' + S.WEEKDAYS[S.weekdayIndex(iDag)].toLowerCase() + ' ' + S.formatDate(iDag);
+      $('[data-idag-dato]', seddel).textContent = 'I dag · ' + S.formatDate(iDag);   // formatDate skriver selv ugedagen
       var fod = $('[data-idag-fod]', seddel);
       if (lukket) {
         $('[data-idag-ret]', seddel).textContent = 'Lukket i dag';
