@@ -79,10 +79,17 @@ h1,h2,h3{font-family:var(--vis);font-weight:600;letter-spacing:-.035em;margin:0;
 .hero-status.lukket .prik{background:#F2A65A;box-shadow:0 0 0 4px rgba(242,166,90,.22)}
 .hero-kicker{display:block;font:600 12.5px/1 var(--krop);letter-spacing:.24em;text-transform:uppercase;color:#F4C9A6}
 .hero h1{margin-top:14px;font-size:clamp(44px,12.4vw,100px);line-height:.96;font-weight:700;letter-spacing:-.045em;color:var(--creme);text-wrap:balance;text-shadow:0 2px 30px rgba(0,0,0,.25)}
-/* "travl": husets orange og en rolig, rund streg under — ingen håndtegning, ingen kursiv */
-.hero h1 .travl{color:#F08A47;text-decoration:underline;text-decoration-thickness:.075em;text-underline-offset:.14em;
-  text-decoration-skip-ink:none;text-decoration-color:rgba(240,138,71,.55)}
-.hero h1{padding-bottom:.08em}
+/* "travl" — streget under med kridt, der tegner sig fra venstre (Mikkel: "som om det tegnes med kridt") */
+.hero h1 .travl{position:relative;display:inline-block;color:#F08A47}
+.hero h1 .kridt{position:absolute;left:-4%;right:-6%;bottom:-.3em;width:110%;height:.42em;overflow:visible;filter:url(#kridtfilter)}
+.hero h1 .kridt path{fill:none;stroke:#F6B385;stroke-width:9.5;stroke-linecap:round;stroke-linejoin:round;opacity:.95}
+.hero h1 .kridt .kridt-2{stroke-width:5.5;opacity:.65}
+@media (prefers-reduced-motion:no-preference){
+  .hero h1 .kridt path{stroke-dasharray:1;stroke-dashoffset:1;animation:kridt .95s .55s cubic-bezier(.55,.05,.35,1) forwards}
+  .hero h1 .kridt .kridt-2{animation-duration:.6s;animation-delay:1.35s}
+  @keyframes kridt{to{stroke-dashoffset:0}}
+}
+.hero h1{padding-bottom:.22em}
 .hero-under{max-width:36ch;margin:18px 0 0;font-size:18px;line-height:1.5;color:rgba(250,246,240,.86)}
 .hero-idag{display:flex;align-items:center;gap:10px;max-width:440px;margin-top:20px;padding:12px 14px 12px 16px;border-radius:16px;text-decoration:none;color:var(--blaek);background:var(--papir);box-shadow:0 14px 30px -14px rgba(0,0,0,.6)}
 .hero-idag small{flex:none;padding:5px 8px;border-radius:999px;background:var(--orange);color:#fff;font:600 11px/1 var(--krop);letter-spacing:.12em;text-transform:uppercase}
@@ -295,6 +302,14 @@ h1,h2,h3{font-family:var(--vis);font-weight:600;letter-spacing:-.035em;margin:0;
         <path d="M20.6 30.2v3.4M24 30.2v3.4M27.4 30.2v3.4" stroke-width="2.7"/>
       </g>
     </symbol>
+    <!-- kridt: ru kant (forskydning) og korn (støj som maske) -->
+    <filter id="kridtfilter" x="-5%" y="-40%" width="110%" height="180%">
+      <feTurbulence type="fractalNoise" baseFrequency=".9" numOctaves="2" seed="4" result="stoej"/>
+      <feDisplacementMap in="SourceGraphic" in2="stoej" scale="3.2" xChannelSelector="R" yChannelSelector="G" result="ru"/>
+      <feTurbulence type="fractalNoise" baseFrequency="1.6" numOctaves="1" seed="9" result="korn"/>
+      <feColorMatrix in="korn" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 -1.9 1.62" result="hul"/>
+      <feComposite in="ru" in2="hul" operator="in"/>
+    </filter>
     <path id="ringsti" d="M60 60m-44 0a44 44 0 1 1 88 0a44 44 0 1 1 -88 0"/>
   </defs>
 </svg>
@@ -318,7 +333,10 @@ h1,h2,h3{font-family:var(--vis);font-weight:600;letter-spacing:-.035em;margin:0;
   <div class="wrap hero-ind">
     <p class="hero-status" data-status hidden><span class="prik"></span><span data-status-tekst></span></p>
     <span class="hero-kicker">Café · Take away · Catering</span>
-    <h1>Hjemmelavet mad, <br>når hverdagen er <span class="travl">travl</span></h1>
+    <h1>Hjemmelavet mad, <br>når hverdagen er <span class="travl">travl<svg class="kridt" viewBox="0 0 220 36" preserveAspectRatio="none" aria-hidden="true">
+      <path pathLength="1" d="M6 22C46 12 104 9 160 13s44 6 54 8"/>
+      <path pathLength="1" class="kridt-2" d="M22 31c40-6 92-8 150-4"/>
+    </svg></span></h1>
     <p class="hero-under">Lavet fra bunden hver dag i Karlslunde Idrætsforening – til at tage med eller spise her.</p>
     <a class="hero-idag" href="#dagens" data-hero-idag hidden><small>I dag</small><b data-hero-ret></b><span data-hero-pris></span><i aria-hidden="true">→</i></a>
     <div class="hero-knapper">
