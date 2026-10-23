@@ -1,0 +1,695 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="ny-version" content="20261022090711" />
+  <!-- a browser that kept an older copy of this page fetches the new one once -->
+  <script>(function(){try{var m=document.querySelector('meta[name="ny-version"]').content;fetch('ny-version.txt?t='+Date.now(),{cache:'no-store'}).then(function(r){return r.ok?r.text():''}).then(function(v){v=(v||'').trim();if(!v||v===m||sessionStorage.getItem('nyv'+v))return;sessionStorage.setItem('nyv'+v,'1');fetch(location.pathname,{cache:'reload'}).then(function(){location.reload()});}).catch(function(){});}catch(e){}})();</script>
+  <meta name="robots" content="noindex, nofollow" />
+  <title>Spiis – Hjemmelavet mad i Karlslunde | Dagens ret &amp; catering</title>
+  <meta name="description" content="Spiis i Karlslunde laver hjemmelavet mad fra bunden. Se dagens ret, bestil takeaway eller spis her, prøv vores tapas – og lad os holde jeres næste selskab. Kongens Enge 42, 2690 Karlslunde." />
+  <meta name="theme-color" content="#140F0B" />
+  <meta property="og:title" content="Spiis – Hjemmelavet mad i Karlslunde" />
+  <meta property="og:description" content="Dagens ret, tapas og catering fra Spiis i Karlslunde Idrætsforening. Hjemmelavet fra bunden, hver eneste dag." />
+  <meta property="og:type" content="restaurant.restaurant" />
+  <meta property="og:url" content="https://spiis.dk/" />
+  <meta property="og:site_name" content="Spiis" />
+  <meta property="og:locale" content="da_DK" />
+  <meta property="og:image" content="https://spiis.dk/assets/selskab-3.jpg" />
+  <meta property="og:image:width" content="1440" />
+  <meta property="og:image:height" content="1080" />
+  <meta property="og:image:alt" content="Hjemmelavet mad fra Spiis i Karlslunde" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Spiis – Hjemmelavet mad i Karlslunde" />
+  <meta name="twitter:description" content="Dagens ret, tapas og catering fra Spiis i Karlslunde Idrætsforening." />
+  <meta name="twitter:image" content="https://spiis.dk/assets/selskab-3.jpg" />
+  <link rel="icon" href="../assets/favicon.svg" type="image/svg+xml" />
+  <link rel="icon" href="../assets/favicon-96.png" type="image/png" sizes="96x96" />
+  <link rel="icon" href="../assets/favicon-48.png" type="image/png" sizes="48x48" />
+  <link rel="apple-touch-icon" href="../assets/favicon-96.png" />
+  <link rel="canonical" href="https://spiis.dk/" />
+  <!-- fortæller Google sidens navn, logo og forretning – pænere søgeresultat -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "WebSite",
+        "url": "https://spiis.dk/",
+        "name": "Spiis",
+        "alternateName": "spiis.dk"
+      },
+      {
+        "@type": "Restaurant",
+        "@id": "https://spiis.dk/#restaurant",
+        "name": "Spiis",
+        "legalName": "Spiis ApS",
+        "description": "Spiis laver hjemmelavet mad fra bunden i Karlslunde – dagens ret, takeaway, tapas og catering til selskaber.",
+        "url": "https://spiis.dk/",
+        "image": [
+          "https://spiis.dk/assets/selskab-3.jpg",
+          "https://spiis.dk/assets/selskab-2.jpg"
+        ],
+        "logo": "https://spiis.dk/assets/favicon-96.png",
+        "servesCuisine": "Dansk",
+        "priceRange": "$$",
+        "currenciesAccepted": "DKK",
+        "hasMenu": "https://spiis.dk/menu.html",
+        "vatID": "DK46303717",
+        "telephone": "+45 93 99 58 58",
+        "email": "spiis.bestilling@gmail.com",
+        "address": {
+          "@type": "PostalAddress",
+          "streetAddress": "Kongens Enge 42",
+          "postalCode": "2690",
+          "addressLocality": "Karlslunde",
+          "addressRegion": "Region Sjælland",
+          "addressCountry": "DK"
+        },
+        "containedInPlace": {
+          "@type": "Place",
+          "name": "Karlslunde Idrætsforening"
+        },
+        "areaServed": [
+          { "@type": "City", "name": "Karlslunde" },
+          { "@type": "City", "name": "Greve" },
+          { "@type": "City", "name": "Solrød" }
+        ],
+        "potentialAction": {
+          "@type": "OrderAction",
+          "target": "https://spiis.dk/#bestil",
+          "deliveryMethod": "http://purl.org/goodrelations/v1#PickUp"
+        }
+      }
+    ]
+  }
+  </script>
+  <link rel="preconnect" href="https://jhdlxexgrwvuoqetcgbt.supabase.co" crossorigin />
+  <link rel="preload" href="assets/fonts/chivo-500.woff2" as="font" type="font/woff2" crossorigin />
+  <link rel="stylesheet" href="../css/style.css?v=ny1" />
+  <link rel="stylesheet" href="../css/datepicker.css?v=ny1" />
+  <!-- the new look: Lesreg signatur over the same page -->
+  <link rel="stylesheet" href="spiis-signatur.css?v=5" />
+  <link rel="stylesheet" href="spiis-lys.css?v=7" />
+  <link rel="stylesheet" href="spiis-glas.css?v=6" />
+  <link rel="stylesheet" href="spiis-cafe-ned.css?v=3" />
+  <link rel="stylesheet" href="spiis-live.css?v=5" />
+  <link rel="stylesheet" href="spiis-ribbon.css?v=3" />
+  <link rel="stylesheet" href="spiis-tydelig.css?v=4" />
+  <link rel="stylesheet" href="spiis-tavle.css?v=6" />
+</head>
+<body data-ny="1">
+  <div class="ny-bg" aria-hidden="true"><i class="b1"></i><i class="b2"></i><i class="b3"></i></div>
+
+  <!-- ====== NAVIGATION ====== -->
+  <header class="nav" id="nav">
+    <div class="nav__inner">
+      <a href="#top" class="logo" aria-label="Spiis – forside">
+        <svg class="logo__hat" viewBox="0 0 48 48" aria-hidden="true">
+          <path d="M15 30v7c0 1.7 1.3 3 3 3h12c1.7 0 3-1.3 3-3v-7" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>
+          <path d="M14.5 31c-4.7-.6-8.5-4.6-8.5-9.4 0-4.6 3.4-8.4 7.9-9.3C15.2 8.5 19.2 6 24 6s8.8 2.5 10.1 6.3c4.5.9 7.9 4.7 7.9 9.3 0 4.8-3.8 8.8-8.5 9.4" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>
+          <path d="M20 30v4M24 30v4M28 30v4" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/>
+        </svg>
+        <span class="logo__word">Spiis<span class="logo__dots" aria-hidden="true"></span></span>
+      </a>
+      <nav class="nav__links" id="navLinks" aria-label="Hovedmenu">
+        <a href="#dagensret">Dagens ret</a>
+        <a href="menu.html">Menukort</a>
+        <a href="#tapas">Tapas</a>
+        <a href="#om">Om Spiis</a>
+        <a href="#selskaber">Selskab &amp; catering</a>
+        <a href="#kontakt">Kontakt</a>
+        <a href="#bestil" class="btn btn--small btn--accent nav__cta">Bestil</a>
+      </nav>
+      <button class="nav__burger" id="navBurger" aria-label="Åbn menu" aria-expanded="false">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </header>
+
+  <!-- ====== HERO ====== -->
+  <section class="hero" id="top">
+    <div class="hero__media">
+      <!-- src sættes af js: straks på desktop, dovent på mobil så teksten lander først -->
+      <!-- poster = et skarpt billede fra selve videoen. Det ligger bag som
+           baggrund, så der ALDRIG er et mørkt hul mens videoen loader – og
+           så siden ser rigtig ud, selv hvis telefonen nægter at afspille. -->
+      <video id="heroVideo" autoplay muted loop playsinline preload="auto"
+             poster="../assets/hero-poster.jpg" src="../assets/hero.mp4" data-src="../assets/hero.mp4"></video>
+      <div class="hero__overlay"></div>
+    </div>
+    <!-- the opening is today's dish itself, live from the kitchen's own system -->
+    <div class="hero__content nh">
+      <div class="nh-status" data-hero="1">
+        <span class="nl-pill"><span class="nl-dot"></span><span class="nl-state">Indlæser…</span></span>
+        <span class="nh-cut nl-cut"></span>
+      </div>
+      <p class="hero__kicker nh-kicker" data-hero="1">Dagens ret hos Spiis · <span class="nh-date"></span></p>
+      <h1 class="hero__title nh-title"><span class="hero__line" data-hero="2"><span class="nl-dish">Dagens ret</span></span></h1>
+      <p class="hero__sub nh-desc nl-desc" data-hero="3"></p>
+      <div class="nh-fig" data-hero="4">
+        <span class="nl-price"></span>
+        <div class="nh-left"><span class="nl-stock"></span><div class="nl-bar" hidden><i></i></div></div>
+      </div>
+      <div class="hero__cta" data-hero="5">
+        <a href="#bestil" class="btn btn--accent">Bestil</a>
+        <a href="menu.html" class="btn btn--ghost">Se menukortet</a>
+      </div>
+    </div>
+
+    <!-- the rest of the week, on a computer -->
+    <aside class="nh-week" aria-label="Resten af ugen" data-hero="5">
+      <p class="nh-week__k">Resten af ugen</p>
+      <ol class="nh-week__list" id="nhWeek"></ol>
+      <a class="nh-week__all" href="#dagensret">Se hele ugen</a>
+    </aside>
+    <a href="#dagensret" class="hero__scroll" aria-label="Scroll ned">
+      <span class="hero__scroll-dot"></span>
+    </a>
+  </section>
+
+  <!-- the old text band stays for the page script; it is not shown -->
+  <div class="marquee" aria-hidden="true" style="display:none"><div class="marquee__track"></div></div>
+
+  <!-- ====== FROM THE KITCHEN: a slow ribbon of real photos ====== -->
+  <div class="ribbon" aria-label="Fra køkkenet hos Spiis">
+    <div class="ribbon__track"><figure class="rb-card"><img src="assets/foto/bowls-640.webp" alt="" loading="lazy" decoding="async" /><figcaption>Hjemmelavet fra bunden</figcaption></figure><figure class="rb-card"><img src="assets/foto/brod-640.webp" alt="" loading="lazy" decoding="async" /><figcaption>Bagt her i huset</figcaption></figure><figure class="rb-card"><img src="assets/foto/vitrine-640.webp" alt="" loading="lazy" decoding="async" /><figcaption>Spis her eller tag med</figcaption></figure><figure class="rb-card"><img src="assets/foto/tapas-640.webp" alt="" loading="lazy" decoding="async" /><figcaption>Tapas til hyggen</figcaption></figure><figure class="rb-card"><img src="assets/foto/buffet-640.webp" alt="" loading="lazy" decoding="async" /><figcaption>Selskaber og catering</figcaption></figure><span class="ribbon__copy" aria-hidden="true"><figure class="rb-card"><img src="assets/foto/bowls-640.webp" alt="" loading="lazy" decoding="async" /><figcaption>Hjemmelavet fra bunden</figcaption></figure><figure class="rb-card"><img src="assets/foto/brod-640.webp" alt="" loading="lazy" decoding="async" /><figcaption>Bagt her i huset</figcaption></figure><figure class="rb-card"><img src="assets/foto/vitrine-640.webp" alt="" loading="lazy" decoding="async" /><figcaption>Spis her eller tag med</figcaption></figure><figure class="rb-card"><img src="assets/foto/tapas-640.webp" alt="" loading="lazy" decoding="async" /><figcaption>Tapas til hyggen</figcaption></figure><figure class="rb-card"><img src="assets/foto/buffet-640.webp" alt="" loading="lazy" decoding="async" /><figcaption>Selskaber og catering</figcaption></figure></span></div>
+  </div>
+
+  <main>
+    <!-- ====== NOMINERING (Greve Business Awards) – auto-skjules efter udløbsdato ====== -->
+    <div class="award" id="awardBanner" hidden>
+      <span class="award__badge" aria-hidden="true">🏆</span>
+      <span class="award__text">
+        <strong>Spiis er nomineret ved Greve Business Awards 2026</strong>
+        <span>Giv os din stemme – det tager under et minut 🙏</span>
+      </span>
+      <a class="award__cta" href="https://erhvervscentret.greve.dk/nyheder/2026/greve-ivaerksaetterpris-2026" target="_blank" rel="noopener">Stem på os →</a>
+      <button class="award__close" type="button" id="awardClose" aria-label="Skjul">✕</button>
+    </div>
+
+    <!-- ====== FACEBOOK-GRUPPEN – kun knappen er klikbar ====== -->
+    <div class="fbjoin">
+      <span class="fbjoin__badge ny-fb" aria-hidden="true">
+        <svg viewBox="0 0 24 24" width="44" height="44" focusable="false" aria-hidden="true"><defs><clipPath id="fbc"><circle cx="12" cy="12" r="12"/></clipPath></defs><circle cx="12" cy="12" r="12" fill="#0866FF"/><path clip-path="url(#fbc)" fill="#fff" d="M16.67 15.56l.53-3.49h-3.32V9.81c0-.96.46-1.89 1.95-1.89h1.51V4.95s-1.37-.24-2.68-.24c-2.74 0-4.53 1.68-4.53 4.7v2.66H7.08v3.49h3.05V24h3.75v-8.44z"/></svg>
+      </span>
+      <span class="fbjoin__text">
+        <strong>Bliv medlem af Spiis</strong>
+        <span>Følg med i opslag, dagens retter og livet i Spiis – vi ses i gruppen 💛</span>
+      </span>
+      <a class="fbjoin__cta" href="https://www.facebook.com/groups/733369805293695" target="_blank" rel="noopener">Bliv medlem →</a>
+    </div>
+
+    <!-- ====== FERIE/LUK-BANNER (vises kun i en luk-periode) ====== -->
+    <div id="closureBanner" class="closurebanner" hidden></div>
+
+    <!-- ====== NYHEDER (vises kun, når køkkenet har lagt noget op) ====== -->
+    <section class="section section--news" id="nyheder" hidden>
+      <div class="container">
+        <div class="section__head">
+          <p class="eyebrow">Nyt fra køkkenet</p>
+          <h2>Nyheder.<span class="tone">Nyt fra køkkenet.</span></h2>
+          <span class="dotline" aria-hidden="true"></span>
+        </div>
+        <div class="newsgrid" id="newsGrid"><!-- js --></div>
+      </div>
+    </section>
+
+    <!-- ====== DAGENS RET ====== -->
+    <section class="section" id="dagensret">
+      <div class="container">
+        <div class="section__head" data-reveal>
+          <p class="eyebrow">Frisklavet hver dag</p>
+          <h2>Dagens ret.<span class="tone">Frisklavet hver dag.</span></h2>
+          <span class="dotline" aria-hidden="true"></span>
+        </div>
+
+        <div class="today" data-reveal>
+          <div class="today__badge tboard">
+            <span class="tboard__k">Dagens ret</span>
+            <svg viewBox="0 0 96 80" class="steam tboard__bowl" aria-hidden="true">
+              <defs><filter id="chalk" x="-15%" y="-15%" width="130%" height="130%"><feTurbulence type="fractalNoise" baseFrequency="1.1" numOctaves="2" seed="4" result="t"/><feDisplacementMap in="SourceGraphic" in2="t" scale="2.6" xChannelSelector="R" yChannelSelector="G" result="d"/><feTurbulence type="fractalNoise" baseFrequency="2.2" numOctaves="1" seed="9" result="g"/><feColorMatrix in="g" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 -2.4 2.05" result="m"/><feComposite in="d" in2="m" operator="in"/></filter></defs>
+              <g filter="url(#chalk)">
+                <path class="steam__line steam__line--1" d="M36 30c-4-5 4-9 0-14" />
+                <path class="steam__line steam__line--2" d="M48 28c-4-6 4-10 0-16" />
+                <path class="steam__line steam__line--3" d="M60 30c-4-5 4-9 0-14" />
+                <path class="tboard__line" d="M11 40.5c20 .8 52-.6 74 .2c-.6 17-15.5 28.6-36.5 28.4C27 69 12 57.6 11 40.5z" />
+                <path class="tboard__line tboard__line--2" d="M13 41.6c22-.4 48 .3 70-.3" />
+                <path class="tboard__line" d="M37.5 69.5l-2.2 6.2c8.6.4 17.2.2 25.6 0l-2.3-6.1" />
+              </g>
+            </svg>
+            <span class="tboard__day"><span id="todayLabel">I dag</span><span class="tboard__date"></span>
+              <svg class="tboard__chalkline" viewBox="0 0 120 12" aria-hidden="true"><g filter="url(#chalk)"><path d="M4 7.5c18-3 40-2.2 58-1.6 18 .6 36-.9 54-2.4" /><path d="M10 9c22-1.8 48-1.4 70-.6" opacity=".55" /></g></svg>
+            </span>
+          </div>
+          <div class="today__body">
+            <h3 class="today__dish" id="todayDish">Indlæser…</h3>
+            <p class="today__desc" id="todayDesc"></p>
+            <!-- er der FLERE dagens retter samme dag, får hver ret sin egen
+                 linje her – med navn, pris, beskrivelse og eget udsolgt-mærke.
+                 Med én ret står feltet tomt, og kortet er præcis som før. -->
+            <div class="today__retter" id="todayRetter" hidden></div>
+            <div class="today__meta">
+              <span class="today__price" id="todayPrice"></span>
+              <span class="today__stock" id="todayStock"></span>
+              <a href="#bestil" class="btn btn--accent" id="todayOrderBtn">Bestil dagens ret</a>
+            </div>
+          </div>
+          <!-- valgfrit billede af dagens ret. Er der intet, er feltet
+               helt væk, og kortet ser ud præcis som det plejer. -->
+          <figure class="today__foto" id="todayFoto" hidden><img id="todayFotoImg" alt="" /></figure>
+        </div>
+
+        <div class="weekplan" data-reveal>
+          <h3 class="weekplan__title">Ugen der kommer.<span class="tone">Dagens ret, dag for dag.</span></h3>
+          <div class="weekplan__grid" id="weekPlan"><!-- js --></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ====== BESTIL DAGENS RET ====== -->
+    <section class="section section--tint" id="bestil">
+      <div class="container container--narrow">
+        <div class="section__head" data-reveal>
+          <p class="eyebrow">Nemt og hurtigt</p>
+          <h2>Bestil hos os.<span class="tone">Vi har maden klar, når I kommer.</span></h2>
+          <span class="dotline" aria-hidden="true"></span>
+          <p class="section__lead">Udfyld formularen, så står maden klar til dig – som takeaway eller ved bordet.</p>
+        </div>
+
+        <form class="card form" id="orderForm" data-reveal novalidate>
+          <div class="form__grid">
+            <label class="field field--full">
+              <span>Dato</span>
+              <select id="orderDate" required></select>
+              <small class="field__hint" id="orderDishHint"></small>
+              <!-- køkkenets egen besked på netop denne dag (fx "kun take-away i dag") -->
+              <small class="field__hint field__hint--besked" id="dayMsgNote" hidden></small>
+            </label>
+            <div class="field field--full">
+              <span>Vælg jeres retter</span>
+              <div class="builder" id="builder"><!-- js --></div>
+              <div class="basketbar" id="basketBar" hidden></div>
+            </div>
+            <label class="field">
+              <span>Tidspunkt</span>
+              <select id="orderTime" required></select>
+            </label>
+            <!-- Antal personer siger kun noget, når man spiser her: så skal
+                 der dækkes bord. Ved to-go er det ligegyldigt, og et felt
+                 man ikke kan svare rigtigt på koster bestillinger. Det
+                 vises og kræves derfor kun ved "Spis her" (styres i js). -->
+            <label class="field" id="personsField">
+              <span>Antal personer <em>(så vi kan dække bord)</em></span>
+              <input type="number" id="orderPersons" min="0" max="100" value="0" />
+              <small class="field__hint" id="personsHint"></small>
+            </label>
+            <div class="field field--full">
+              <span>Hvordan vil I spise?</span>
+              <div class="segmented" role="radiogroup" aria-label="Takeaway eller spis her">
+                <label><input type="radio" name="orderType" value="togo" checked /><span>🥡 To-go</span></label>
+                <label><input type="radio" name="orderType" value="spise" /><span>🍽️ Spis her</span></label>
+              </div>
+              <!-- nogle dage er kun den ene måde mulig – så står grunden her -->
+              <small class="field__hint field__hint--lukket" id="typeLukketNote" hidden></small>
+              <small class="field__hint" id="packHint" hidden></small>
+              <label class="reuse" id="reuseWrap" hidden>
+                <input type="checkbox" id="reuseBox" />
+                <span><strong>♻️ Vi tager vores tidligere emballage med til dagens ret</strong><br/>
+                <em>Så er emballagen til dagens ret gratis – tak fordi I er med på den grønne omstilling!</em></span>
+              </label>
+            </div>
+            <label class="field">
+              <span>Navn</span>
+              <input type="text" id="orderName" placeholder="Dit fulde navn" autocomplete="name" required />
+            </label>
+            <label class="field">
+              <span>Telefonnummer</span>
+              <input type="tel" id="orderPhone" placeholder="12 34 56 78" autocomplete="tel" required />
+            </label>
+            <label class="field field--full">
+              <span>Besked <em>(valgfrit)</em></span>
+              <input type="text" id="orderNote" placeholder="Fx allergier eller særlige ønsker" />
+            </label>
+          </div>
+          <p class="form__error" id="orderError" hidden></p>
+          <p class="form__error" id="orderOffline" hidden></p>
+          <!-- nettet svigtede midt i afsendelsen: bestillingen står stadig,
+               og der er en vej igennem som ikke kræver internet -->
+          <div class="noed" id="orderNoedudgang" hidden></div>
+          <p class="pausenote" id="orderPausedNote" hidden></p>
+          <button type="submit" class="btn btn--accent btn--big form__submit">Send bestilling</button>
+          <p class="form__note">Din bestilling ryger direkte ind i vores køkken-overblik – ingen mails, ingen ventetid.</p>
+          <p class="form__note form__note--allergi">Allergi? Spørg personalet ift. allergener.</p>
+        </form>
+
+        <div class="card success" id="orderSuccess" hidden>
+          <div class="success__check" aria-hidden="true">
+            <svg viewBox="0 0 52 52"><circle cx="26" cy="26" r="24" fill="none"/><path fill="none" d="M14 27l8 8 16-17"/></svg>
+          </div>
+          <h3>Tak for din bestilling!</h3>
+          <p id="orderSuccessText"></p>
+          <button class="btn btn--ghost-dark" id="orderAgainBtn" type="button">Lav en ny bestilling</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ====== MENUKORT ====== -->
+    <!-- ====== MENUKORT-TEASER (hele kortet ligger på sin egen side) ====== -->
+    <section class="section" id="menukort">
+      <div class="container">
+        <div class="section__head" data-reveal>
+          <p class="eyebrow">Altid noget godt</p>
+          <h2>Menukort.<span class="tone">Altid noget godt.</span></h2>
+          <span class="dotline" aria-hidden="true"></span>
+          <p class="section__lead">Dagens retter for hele ugen og vores faste sortiment – burgere, salater, panini og sandwich, nachos og friturens klassikere. Samlet ét sted, nemt at bladre i.</p>
+        </div>
+        <div class="nm" id="nyMenu" data-reveal>
+          <div class="nm-tabs" role="tablist" aria-label="Kategorier"></div>
+          <div class="nm-list"></div>
+          <div class="nm-foot">
+            <a href="menu.html" class="btn btn--accent">Se hele menukortet</a>
+            <p>Allergi? Spørg personalet om allergener – vi hjælper gerne.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ====== SPIIS TAPAS – bestilles senest dagen før ====== -->
+    <section class="section section--tint" id="tapas">
+      <div class="container">
+        <div class="section__head" data-reveal>
+          <p class="eyebrow">Nyhed · bestilles senest dagen før</p>
+          <h2>Spiis Tapas.<span class="tone">Bestil dagen før.</span></h2>
+          <span class="dotline" aria-hidden="true"></span>
+          <p class="section__lead">Vores nye stolthed 🧀 En overdådig tapas med alt det gode – perfekt til hyggeaftener, gæster eller bare fordi I fortjener det.</p>
+        </div>
+
+        <figure class="tapasfoto" data-reveal>
+          <img src="../assets/tapas-1.jpg" width="810" height="1080" loading="lazy" decoding="async"
+               alt="Tre tapasfade fra Spiis med ost, spegepølse, serranoskinke, hummus, pesto, oliven, druer og friske krydderurter" />
+          <figcaption>Sådan ser et Spiis-tapasfad ud – alt er anrettet i hånden på dagen 🧀</figcaption>
+        </figure>
+
+        <div class="tapas">
+          <div class="card tapas__info" data-reveal>
+            <h3>Det får I</h3>
+            <ul class="tapas__items" id="tapasItems"><!-- js --></ul>
+            <div class="tapas__prices">
+              <div class="tapas__price"><strong id="tapasPriceLabel">199 kr.</strong><span>pr. person</span></div>
+              <div class="tapas__price"><strong id="tapasDuoLabel">548 kr.</strong><span>for 2 personer inkl. en flaske Cava Brut Nature<br/>– anbefalet af vores vinmand 🥂</span></div>
+            </div>
+            <ul class="tapas__facts">
+              <li>📅 Skal bestilles senest dagen før</li>
+              <li>🍽️ Kan anrettes på porcelænsfade, så det hele er klar til servering</li>
+            </ul>
+          </div>
+
+          <form class="card form tapas__form" id="tapasForm" novalidate data-reveal>
+            <h3>Bestil tapas</h3>
+            <div class="form__grid">
+              <label class="field"><span>Dato <em>(tidligst i morgen)</em></span>
+                <select id="tapasDate"></select></label>
+              <label class="field"><span>Tidspunkt</span>
+                <select id="tapasTime"></select></label>
+              <label class="field"><span>Antal personer</span>
+                <input type="number" id="tapasPersons" min="0" max="60" value="0" /></label>
+              <label class="field"><span>Hvordan?</span>
+                <select id="tapasType"><option value="togo">🥡 To-go</option><option value="spise">🍽️ Spis her</option></select></label>
+              <!-- nogle dage er kun den ene måde mulig – så står grunden her -->
+              <small class="field__hint field__hint--lukket field--full" id="tapasTypeNote" hidden></small>
+              <div class="tapas__cavacard field--full" id="tapasCavaCard">
+                <span class="tapas__cavatxt"><strong>🥂 Cava Brut Nature</strong><em>Anbefalet af vores vinmand · <b id="tapasCavaPrice">150 kr.</b> pr. flaske</em></span>
+                <span class="tapas__cavaqty">
+                  <button type="button" class="cavabtn" data-cava="-1" aria-label="Én flaske mindre">−</button>
+                  <input type="number" id="tapasCava" min="0" max="20" value="0" readonly aria-label="Antal flasker" />
+                  <button type="button" class="cavabtn" data-cava="1" aria-label="Én flaske mere">+</button>
+                </span>
+              </div>
+              <label class="field"><span>Navn</span>
+                <input type="text" id="tapasName" placeholder="Dit fulde navn" autocomplete="name" /></label>
+              <label class="field"><span>Telefonnummer</span>
+                <input type="tel" id="tapasPhone" placeholder="12 34 56 78" autocomplete="tel" /></label>
+              <label class="field field--full"><span>Besked <em>(valgfrit)</em></span>
+                <input type="text" id="tapasNote" placeholder="Fx allergier eller særlige ønsker" /></label>
+            </div>
+            <div class="tapas__sum" id="tapasSum" aria-live="polite"></div>
+            <!-- Kun ÉT sted står der, at bestillingen er bindende: på
+                 bekræftelsen, lige inden man trykker send. Her står bare
+                 det, man ikke kan gætte – at man må ringe bagefter. -->
+            <div class="tapasvilkaar">
+              <b class="tapasvilkaar__top">💬 Ønsker I noget til eller fra fadet?</b>
+              <p>Ring til os, <b>når bestillingen er sendt</b> – så finder vi den frem og skriver ønskerne på. Ellers får I det klassiske tapasbord.</p>
+              <a class="tapasvilkaar__tlf" href="tel:+4593995858" data-spiistel>📞 <span>93 99 58 58</span></a>
+            </div>
+            <p class="pausenote" id="tapasPausedNote" hidden></p>
+            <p class="form__error" id="tapasError" hidden></p>
+            <button type="submit" class="btn btn--accent btn--big form__submit">🧀 Bestil tapas</button>
+            <p class="form__note">Ryger direkte ind i køkkenets overblik – vi har det klar til jer.</p>
+          </form>
+
+          <div class="card success tapas__success" id="tapasSuccess" hidden>
+            <div class="success__check" aria-hidden="true">
+              <svg viewBox="0 0 52 52"><circle cx="26" cy="26" r="24" fill="none"/><path fill="none" d="M14 27l8 8 16-17"/></svg>
+            </div>
+            <h3>Tak for jeres bestilling! 🧀</h3>
+            <p id="tapasSuccessText"></p>
+            <!-- nummeret kan trykkes: på en telefon ringer den med det samme -->
+            <p class="tapas__ring">Ønsker I noget til eller fra fadet? Ring til os nu på
+              <a href="tel:+4593995858" data-spiistel><span>93 99 58 58</span></a> – så skriver vi det på jeres bestilling. 📞</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ====== OM SPIIS ====== -->
+    <section class="section section--dark" id="om">
+      <div class="container">
+        <div class="about">
+          <div class="about__text" data-reveal>
+            <p class="eyebrow eyebrow--light">Hvem er vi?</p>
+            <h2>Mad med nærvær,<span class="tone">lavet fra bunden.</span></h2>
+            <span class="dotline dotline--light" aria-hidden="true"></span>
+            <p>Hos Spiis i Karlslunde laver vi smagfulde, hjemmelavede måltider til dig, der ikke altid har tid til at lave mad fra bunden. Vi tror på kvalitet, nærvær og god smag – og vores menu skifter løbende, så du altid får varieret og frisk mad lavet med kærlighed.</p>
+            <p>Du finder os i Karlslunde Idrætsforening på Kongens Enge 42, hvor vi hver dag serverer dagens ret, takeaway, tapas og mad til selskaber – for alle i og omkring Karlslunde, Greve og Solrød.</p>
+            <p>Perfekt til børnefamilien, den travle hverdag – eller bare når du vil forkæles lidt ekstra.</p>
+            <p class="about__sign">Velbekomme – fra hele holdet hos Spiis! 👋</p>
+          </div>
+          <div class="about__values">
+            <div class="value card--dark" data-reveal>
+              <span class="value__icon">🥘</span>
+              <h3>Kvalitet</h3>
+              <p>Alt laves fra bunden af gode råvarer – hver eneste dag.</p>
+            </div>
+            <div class="value card--dark" data-reveal>
+              <span class="value__icon">🤝</span>
+              <h3>Nærvær</h3>
+              <p>Vi kender vores gæster, og du er altid velkommen til en snak.</p>
+            </div>
+            <div class="value card--dark" data-reveal>
+              <span class="value__icon">😋</span>
+              <h3>God smag</h3>
+              <p>Ingen stress. Ingen opvask. Bare god mad.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ====== SELSKABER & CATERING ====== -->
+    <span id="booking" class="anchor-alias" aria-hidden="true"></span>
+    <section class="section section--tint" id="selskaber">
+      <div class="container">
+        <div class="section__head" data-reveal>
+          <p class="eyebrow">Selskab &amp; catering</p>
+          <h2>Lad os holde<span class="tone">jeres næste arrangement.</span></h2>
+          <span class="dotline" aria-hidden="true"></span>
+          <p class="section__lead">Her hos Spiis ELSKER vi at holde arrangementer – det er noget af det, vi er allermest stolte af.</p>
+        </div>
+
+        <div class="selsk" data-reveal>
+          <div class="selsk__text">
+            <h3>Vi gør os umage – hver eneste gang</h3>
+            <p>Fødselsdag, konfirmation, mindestund eller firmafest – uanset hvad jeres dag går på, lægger vi hjertet i den. Vores dygtige personale sørger for maden, opdækningen og de små detaljer, så I kan læne jer tilbage og være sammen med jeres gæster. Det er dét, vi brænder for.</p>
+            <ul class="selsk__points">
+              <li>🍲 <strong>Hjemmelavet fra bunden</strong> – vi går aldrig på kompromis med maden</li>
+              <li>👩‍🍳 <strong>Et dygtigt personale</strong> – der elsker det, de laver</li>
+              <li>💛 <strong>Store som små arrangementer</strong> – vi skræddersyr menu og opdækning til jer</li>
+            </ul>
+            <a class="selsk__stars" href="https://www.google.com/search?sa=X&amp;sca_esv=d8473d4d0eaf6e64&amp;rlz=1C5CHFA_enDK1008DK1008&amp;sxsrf=APpeQnvAz4lMK0mFnziXNnTvVAKSOTh60w:1786057574545&amp;q=Spiis+ApS+Anmeldelser&amp;rflfq=1&amp;num=20&amp;stick=H4sIAAAAAAAAAONgkxIxNDA2Nzc2NDczMzAwMDIyNTE1M9nAyPiKUTS4IDOzWMGxIFjBMS83NSclNac4tWgRK3ZxADLDrLJLAAAA&amp;rldimm=10377317660002254564&amp;tbm=lcl&amp;hl=da-DK&amp;ved=2ahUKEwjzs536jo2WAxVhAtsEHUuGIqQQ9fQKegQITxAG&amp;biw=1440&amp;bih=900&amp;dpr=2#lkt=LocalPoiReviews" target="_blank" rel="noopener" aria-label="5 ud af 5 stjerner – læs vores anmeldelser på Google">
+              <span class="selsk__starrow" aria-hidden="true">⭐⭐⭐⭐⭐</span>
+              <span class="selsk__starstxt">Vores gæster giver os 5 stjerner <em>Læs anmeldelserne på Google →</em></span>
+            </a>
+          </div>
+          <div class="selsk__fotos" aria-hidden="true">
+            <!-- NÅR BILLEDERNE ER KLAR: erstat hvert emoji-felt med
+                 <img src="../assets/selskab-1.jpg" alt="" loading="lazy" /> -->
+            <div class="selsk__foto selsk__foto--a">🎂</div>
+            <div class="selsk__foto">🥂</div>
+            <div class="selsk__foto">🍲</div>
+          </div>
+        </div>
+
+        <div class="card selsk__cta" data-reveal>
+          <h3>Skal vi tage snakken?</h3>
+          <p>Klik på knappen herunder og fortæl os om jeres arrangement – dato, antal og ønsker. Vi glæder os allerede til at høre fra jer.</p>
+          <a class="btn btn--accent btn--big" id="selskabMail" href="mailto:spiis.bestilling@gmail.com">✉️ Book jeres selskab</a>
+          <p class="selsk__ring">…eller ring til os på <a id="contactPhone" href="tel:+4593995858"><span>93 99 58 58</span></a> 📞</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ====== ÅBNINGSTIDER & KONTAKT ====== -->
+    <section class="section" id="kontakt">
+      <div class="container">
+        <div class="section__head" data-reveal>
+          <p class="eyebrow">Kom forbi</p>
+          <h2>Åbningstider<span class="tone">og kontakt.</span></h2>
+          <span class="dotline" aria-hidden="true"></span>
+        </div>
+        <div class="contact">
+          <div class="card hourscard" data-reveal>
+            <h3>Åbningstider</h3>
+            <table class="hours" id="hoursTable"><!-- js --></table>
+            <p class="hours__kitchen" id="kitchenNote"></p>
+            <p class="hours__cutoff" id="orderCutoff" hidden></p>
+            <p class="hours__status" id="openStatus"></p>
+          </div>
+          <div class="card infocard" data-reveal>
+            <h3>Her finder du os</h3>
+            <p class="infocard__address" id="addressText">
+              Karlslunde Idrætsforening<br/>Kongens Enge 42<br/>2690 Karlslunde
+            </p>
+            <p class="infocard__where">Vi holder til i cafeteriet i Karlslunde Idrætsforening – der er gratis parkering lige uden for døren, og der er kun få minutters kørsel fra Greve, Solrød og Mosede.</p>
+            <a class="btn btn--ghost-dark" href="https://maps.google.com/?q=Kongens+Enge+42,+2690+Karlslunde" target="_blank" rel="noopener">Åbn i Google Maps</a>
+            <div class="infocard__contact">
+              <a href="tel:+4593995858">📞 93 99 58 58</a>
+              <a href="mailto:spiis.bestilling@gmail.com">✉️ spiis.bestilling@gmail.com</a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- the dock: today at a glance, always within reach -->
+  <div class="ny-dock" aria-live="polite">
+    <span class="nd-dot"></span>
+    <span class="nd-t"><b class="nd-state">Spiis</b><span class="nd-dish"></span></span>
+    <span class="nd-stock"></span>
+    <a href="#bestil" class="nd-go">Bestil<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8h9.4M9.1 4.4 12.6 8 9.1 11.6"/></svg></a>
+  </div>
+
+  <!-- fast bestil-knap i bunden på mobil -->
+  <a href="#bestil" class="mobilecta" id="mobileCta">🍲 Bestil dagens ret</a>
+
+  <!-- bestil en special direkte fra en nyhed (fx juleplatter) -->
+  <!-- hele dagen i et vindue: alle retter med fuld beskrivelse -->
+  <div class="confirm" id="dayInfoWrap" hidden>
+    <div class="confirm__card daycard" role="dialog" aria-modal="true" aria-labelledby="dayInfoTitle">
+      <button type="button" class="confirm__x" id="dayInfoClose" aria-label="Luk">✕</button>
+      <p class="confirm__kicker" id="dayInfoKicker">Dagens ret</p>
+      <h3 class="confirm__title" id="dayInfoTitle">Dagen</h3>
+      <div id="dayInfoBody"></div>
+      <button type="button" class="btn btn--accent btn--big daycard__cta" id="dayInfoOrder" hidden>🍲 Bestil til denne dag</button>
+    </div>
+  </div>
+
+  <div class="confirm" id="newsOrderWrap" hidden>
+    <div class="confirm__card" role="dialog" aria-modal="true" aria-labelledby="newsOrderTitle">
+      <button type="button" class="confirm__x" id="newsOrderClose" aria-label="Luk">✕</button>
+      <p class="confirm__kicker">Bestil</p>
+      <h3 class="confirm__title" id="newsOrderTitle">Bestil</h3>
+      <p class="confirm__sub" id="newsOrderSub"></p>
+      <form id="newsOrderForm" novalidate>
+        <label class="nof">Hvornår vil du hente/modtage det?
+          <input type="date" id="newsOrderDate" required />
+        </label>
+        <label class="nof">Antal
+          <input type="number" id="newsOrderQty" min="1" max="100" value="1" required />
+        </label>
+        <label class="nof">Navn
+          <input type="text" id="newsOrderName" autocomplete="name" required />
+        </label>
+        <label class="nof">Telefon
+          <input type="tel" id="newsOrderPhone" inputmode="tel" autocomplete="tel" required />
+        </label>
+        <p class="nof__total" id="newsOrderTotal"></p>
+        <p class="confirm__policy">🔔 Bestillingen er <b>bindende</b>. Kan du ikke komme, så ring og afbestil <b>senest 1 time før</b> – ellers opkræves beløbet, da maden allerede er forberedt.</p>
+        <p class="form__error" id="newsOrderError" hidden></p>
+        <button type="submit" class="btn btn--accent btn--big" id="newsOrderSend">Send bestilling</button>
+      </form>
+      <div class="nof__done" id="newsOrderDone" hidden>
+        <div class="nof__check">✓</div>
+        <h3>Tak for din bestilling!</h3>
+        <p id="newsOrderDoneText">Vi har modtaget din bestilling og glæder os til at lave den til dig.</p>
+        <button type="button" class="btn btn--ghost-dark" id="newsOrderDoneClose">Luk</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- bekræft bestilling: kvittering inden afsendelse -->
+  <div class="confirm" id="orderConfirmWrap" hidden>
+    <div class="confirm__card" role="dialog" aria-modal="true" aria-labelledby="confirmTitle">
+      <p class="confirm__kicker">Ét sidste kig</p>
+      <h3 class="confirm__title" id="confirmTitle">Tjek jeres bestilling</h3>
+      <div class="confirm__lines" id="confirmLines"></div>
+      <div class="confirm__meta" id="confirmMeta"></div>
+      <!-- teksten skiftes af js: tapas har en anden frist end dagens ret,
+           fordi der købes ind og anrettes dagen i forvejen -->
+      <p class="confirm__policy" id="confirmPolicy">🔔 Bestillingen er <b>bindende</b>. Kan du ikke komme, så ring og afbestil <b>senest 1 time før</b> – ellers opkræves beløbet, da maden allerede er forberedt og gjort klar.</p>
+      <div class="confirm__btns">
+        <button type="button" class="btn btn--ghost-dark" id="confirmBack">← Ret noget</button>
+        <button type="button" class="btn btn--accent" id="confirmSend">✓ Bekræft &amp; send</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ====== FOOTER ====== -->
+  <footer class="footer">
+    <div class="container footer__inner">
+      <div class="footer__brand">
+        <span class="logo logo--footer">
+          <svg class="logo__hat" viewBox="0 0 48 48" aria-hidden="true">
+            <path d="M15 30v7c0 1.7 1.3 3 3 3h12c1.7 0 3-1.3 3-3v-7" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>
+            <path d="M14.5 31c-4.7-.6-8.5-4.6-8.5-9.4 0-4.6 3.4-8.4 7.9-9.3C15.2 8.5 19.2 6 24 6s8.8 2.5 10.1 6.3c4.5.9 7.9 4.7 7.9 9.3 0 4.8-3.8 8.8-8.5 9.4" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>
+            <path d="M20 30v4M24 30v4M28 30v4" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/>
+          </svg>
+          <span class="logo__word">Spiis<span class="logo__dots"></span></span>
+        </span>
+        <p>Velsmag og kvalitet i hver en bid.</p>
+      </div>
+      <nav class="footer__links" aria-label="Sidefod">
+        <a href="#dagensret">Dagens ret</a>
+        <a href="menu.html">Menukort</a>
+        <a href="#tapas">Tapas</a>
+        <a href="#selskaber">Selskab &amp; catering</a>
+        <a href="#kontakt">Kontakt</a>
+      </nav>
+      <div class="footer__meta">
+        <a class="smileybadge" href="https://findsmiley.dk/Sider/Search.aspx?k=spiis" target="_blank" rel="noopener" aria-label="Se vores smiley-rapport hos Fødevarestyrelsen">
+          <span class="smileybadge__face" aria-hidden="true">😊</span>
+          <span class="smileybadge__text">Kontrolleret af Fødevarestyrelsen<em>Se vores smiley-rapport</em></span>
+        </a>
+        <p class="footer__nap">Spiis · Kongens Enge 42, 2690 Karlslunde · <a href="tel:+4593995858">93 99 58 58</a></p>
+        <p>© <span id="year"></span> Spiis · Karlslunde</p>
+        <p class="footer__lesreg">made by Lesreg</p>
+        <a href="../admin.html" class="footer__admin">Personale-login</a>
+      </div>
+    </div>
+  </footer>
+
+  <!-- realtime: ændringer fra køkkenet slår igennem med det samme -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <script src="../js/config.js?v=ny1"></script>
+  <script src="../js/store.js?v=ny1"></script>
+  <script src="../js/datepicker.js?v=ny1"></script>
+  <script src="../js/main.js?v=ny1"></script>
+  <script src="live.js?v=11"></script>
+  <script src="menu-front.js?v=3"></script>
+  <script src="til-bestil.js?v=3"></script>
+  <script src="site-mode.js?v=1"></script>
+  <script src="news-sheet.js?v=3"></script>
+</body>
+</html>
