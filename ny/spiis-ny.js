@@ -14,13 +14,40 @@
   var kl = function (t) { return String(t || '').replace(/^0/, '').replace(':00', '').replace(':', '.'); };
   var lukketFor = function (iso) { try { return !S.isOpenDay(iso) || (S.isOrderingClosed && S.isOrderingClosed(iso)); } catch (e) { return false; } };
 
+  /* ---------- eksempel: "lad os lege det er mandag" (Mikkel 23/10) ----------
+     /ny/ viser som standard en almindelig hverdag: vi lader som om det er førstkommende mandag
+     og låner Spiis' egne retter fra ugen før (de ligger i databasen). ?rigtig viser ugen,
+     som den står nu. Kun på udkastet – den rigtige forside kender ikke til det. */
+  var EKSEMPEL = !/[?&]rigtig/.test(location.search);
+  var mandag = function () { var d = S.todayISO(); while (S.weekdayIndex(d) !== 0) d = S.addDays(d, 1); return d; };
+  var DAG = EKSEMPEL ? mandag() : S.todayISO();
+  var paen = function (t) { t = String(t || '').trim().replace(/\.$/, ''); return t.charAt(0).toUpperCase() + t.slice(1); };
+  function plan7() {
+    var plan = S.getPlan(7, DAG);
+    if (!EKSEMPEL) return plan;
+    return plan.map(function (d, i) {
+      var laan = S.getDagensRetList(S.addDays(d.iso, -7));
+      if (!laan.length && i < 4) laan = [[{ title: 'Åben lasagne', desc: 'Med salciccia, frisk spinat, svampe og mascarponecreme.', price: 109, stock: 30 }],
+        [{ title: 'Pork au vin', desc: 'Nakkefilet i rødvinssauce med grøntsager, urter og kartoffelmos.', price: 109, stock: 30 }],
+        [{ title: 'Chili con carne', desc: 'Med creme fraiche og ris.', price: 109, stock: 30 }],
+        [{ title: 'Cremet kyllingegryde', desc: 'Med æblecider, porrer, bacon og timianstegte kartofler.', price: 109, stock: 30 }]][i];
+      d.dishes = lukketFor(d.iso) ? [] : (laan || []);
+      d.ingenRet = !d.dishes.length; /* Spiis laver dagens ret mandag–torsdag; resten er caféens egne dage */
+      return d;
+    });
+  }
+  function tilbageFor(d, r, i) {
+    if (EKSEMPEL) return r.stock ? (i === 0 ? Math.round(r.stock * 0.6) : r.stock) : null;
+    try { return S.getRemainingFor ? S.getRemainingFor(d.iso, r.title) : S.getRemaining(d.iso); } catch (e) { return null; }
+  }
+
   /* ---------- toppen: åbent nu og dagens ret ---------- */
   function top() {
-    var iDag = S.todayISO();
+    var iDag = DAG;
     var t = S.hoursFor(iDag) || {};
     var status = $('[data-status]');
     if (status && (t.open || t.closed)) {
-      var nu = new Date(), m = nu.getHours() * 60 + nu.getMinutes();
+      var nu = new Date(), m = EKSEMPEL ? 12 * 60 : nu.getHours() * 60 + nu.getMinutes();
       var tilMin = function (x) { var p = String(x).split(':'); return (+p[0]) * 60 + (+p[1] || 0); };
       var tekst, aaben = false;
       if (t.closed) tekst = 'Lukket i dag';
@@ -31,56 +58,94 @@
       status.classList.toggle('lukket', !aaben);
       status.hidden = false;
     }
-    var ret = S.getDagensRet(iDag);
+    var ret = (plan7()[0].dishes || [])[0];
     var idag = $('[data-hero-idag]');
     if (idag) {
       idag.hidden = !ret || lukketFor(iDag);
-      if (ret) { $('[data-hero-ret]', idag).textContent = ret.title; $('[data-hero-pris]', idag).textContent = kr(ret.price); }
+      if (ret) { $('[data-hero-ret]', idag).textContent = paen(ret.title); $('[data-hero-pris]', idag).textContent = kr(ret.price); }
     }
   }
 
-  /* ---------- dagens ret: ugens dagskort ----------
-     I dag først. En åben dag med ret får navn, beskrivelse, pris, portioner tilbage og sin
-     egen Bestil; en åben dag uden ret siger "Følger snart"; en lukket dag står smal. */
+  /* ---------- dagens ret ----------
+     I dag står alene øverst og stort: retten, prisen, portioner tilbage og hvornår den kan
+     hentes. Resten af ugen ligger som små dagskort, man swiper igennem. Er der ingen ret hele
+     ugen, skriver kridttavlen ugen op i stedet. */
+  function dagKort(d, i) {
+    var luk = lukketFor(d.iso);
+    var retter = d.dishes || [];
+    var navn = i === 1 ? 'I morgen' : d.weekday;
+    var hoved = '<header class="dret-hoved"><b>' + esc(navn) + '</b><span>' + esc(i === 1 ? S.formatDate(d.iso) : S.formatDate(d.iso).replace(d.weekday + ' ', '')) + '</span>'
+      + '<svg class="dret-hue" aria-hidden="true"><use href="#hue"/></svg></header>';
+    if (luk || (d.ingenRet && !retter.length)) {
+      /* caféen kan have åbent, selv om køkkenet ikke tager bestillinger – sig det, så ingen tror, der er lukket */
+      var h = S.hoursFor ? S.hoursFor(d.iso) : null;
+      var aaben = h && !h.closed && h.open;
+      return '<article class="dret lukket">' + hoved + '<div class="dret-krop">'
+        + (aaben ? '<h3>Kom forbi</h3><p>Åbent ' + esc(kl(h.open) + '–' + kl(h.close)) + '. Ingen dagens ret.</p>'
+                 : '<h3>Lukket</h3><p>Caféen holder lukket.</p>')
+        + '</div></article>';
+    }
+    if (!retter.length) return '<article class="dret tom">' + hoved + '<div class="dret-krop"><h3>Følger snart</h3><p>Retten skrives op i løbet af ugen.</p></div></article>';
+    var r = retter[0];
+    var eller = retter.slice(1).map(function (x) { return '<p class="eller">Eller: ' + esc(paen(x.title)) + '</p>'; }).join('');
+    return '<article class="dret">' + hoved
+      + '<div class="dret-krop"><h3>' + esc(paen(r.title)) + '</h3>' + (r.desc ? '<p>' + esc(r.desc) + '</p>' : '') + eller + '</div>'
+      + '<footer class="dret-fod">' + (r.price ? '<span class="dret-pris">' + esc(kr(r.price)) + '</span>' : '')
+      + '<a class="knap knap--lys" href="#bestil" data-bestil-dag="' + d.iso + '" aria-label="Forudbestil ' + esc(paen(r.title)) + ' ' + esc(navn.toLowerCase()) + '">Forudbestil</a>'
+      + '</footer></article>';
+  }
+  function idagKort(d, plan) {
+    var h = S.hoursFor(d.iso) || {};
+    var retter = d.dishes || [];
+    var baand = '<div class="idag-baand"><span class="idag-prik" aria-hidden="true"></span><b>I dag</b><span>' + esc(S.formatDate(d.iso)) + '</span></div>';
+    if (lukketFor(d.iso) || !retter.length) {
+      var naeste = plan.slice(1).filter(function (x) { return !lukketFor(x.iso) && (x.dishes || []).length; })[0];
+      return '<article class="idag-kort fri">' + baand + '<div class="idag-krop"><span class="kicker">Dagens ret</span>'
+        + '<h3>' + (lukketFor(d.iso) ? 'Køkkenet holder fri i dag' : 'Dagens ret skrives op senere') + '</h3>'
+        + (naeste ? '<p class="idag-naeste">Næste ret: <b>' + esc(naeste.weekday) + ' · ' + esc(paen(naeste.dishes[0].title)) + '</b></p>' : '')
+        + '</div></article>';
+    }
+    var r = retter[0];
+    var n = tilbageFor(d, r, 0);
+    var ude = typeof n === 'number' && n <= 0;
+    var maaler = '';
+    if (typeof n === 'number' && isFinite(n)) {
+      var ialt = r.stock || n;
+      maaler = '<div class="idag-portioner' + (ude ? ' ude' : '') + '"><div><b>' + (ude ? 'Udsolgt i dag' : n + ' portioner tilbage') + '</b>'
+        + (ialt && !ude ? '<span>af ' + ialt + '</span>' : '') + '</div>'
+        + '<i style="--fyld:' + (ialt ? Math.max(0, Math.min(1, n / ialt)) : 0) + '"></i></div>';
+    }
+    var eller = retter.slice(1).map(function (x) { return '<p class="eller">Eller: <b>' + esc(paen(x.title)) + '</b>' + (x.price ? ' · ' + esc(kr(x.price)) : '') + '</p>'; }).join('');
+    return '<article class="idag-kort">' + baand
+      + '<svg class="idag-hue" aria-hidden="true"><use href="#hue"/></svg>'
+      + '<div class="idag-krop"><span class="kicker">Dagens ret</span><h3>' + esc(paen(r.title)) + '</h3>'
+      + (r.desc ? '<p class="idag-beskriv">' + esc(r.desc) + '</p>' : '') + eller
+      + '<div class="idag-fakta"><span class="idag-pris">' + esc(kr(r.price)) + '</span>'
+      + (h.open && h.close ? '<span class="idag-tid">Kan hentes<br><b>' + esc(kl(h.open) + '–' + kl(h.close)) + '</b></span>' : '') + '</div>'
+      + maaler
+      + (ude ? '' : '<a class="knap knap--orange idag-bestil" href="#bestil" data-bestil-dag="' + d.iso + '">Bestil dagens ret <i aria-hidden="true">→</i></a>')
+      + '</div></article>';
+  }
   function dagens() {
     var boks = $('[data-dage]');
     if (!boks) return;
-    var plan = S.getPlan(7, S.todayISO());
-    var html = plan.map(function (d, i) {
-      var luk = lukketFor(d.iso);
-      var retter = d.dishes || [];
-      var navn = i === 0 ? 'I dag' : i === 1 ? 'I morgen' : d.weekday;
-      var hoved = '<header class="dret-hoved"><b>' + esc(navn) + '</b><span>' + esc(i < 2 ? S.formatDate(d.iso) : S.formatDate(d.iso).replace(d.weekday + ' ', '')) + '</span>'
-        + '<svg class="dret-hue" aria-hidden="true"><use href="#hue"/></svg></header>';
-      if (luk) {
-        /* caféen kan have åbent, selv om køkkenet ikke tager bestillinger – sig det, så ingen tror, der er lukket */
-        var h = S.hoursFor ? S.hoursFor(d.iso) : null;
-        var aaben = h && !h.closed && h.open;
-        return '<article class="dret lukket">' + hoved + '<div class="dret-krop">'
-          + (aaben ? '<h3>Kom forbi</h3><p>Åbent ' + esc(kl(h.open) + '–' + kl(h.close)) + '. Ingen bestilling af dagens ret denne dag.</p>'
-                   : '<h3>Lukket</h3><p>Caféen holder lukket.</p>')
-          + '</div></article>';
-      }
-      if (!retter.length) return '<article class="dret tom' + (i === 0 ? ' idag' : '') + '">' + hoved + '<div class="dret-krop"><h3>Følger snart</h3><p>Retten lægges op i løbet af ugen.</p></div></article>';
-      var r = retter[0];
-      var n = null;
-      try { n = S.getRemainingFor ? S.getRemainingFor(d.iso, r.title) : S.getRemaining(d.iso); } catch (e) { n = null; }
-      var tilbage = (typeof n === 'number' && isFinite(n))
-        ? (n > 0 ? '<span class="dret-tilbage">● ' + n + ' tilbage</span>' : '<span class="dret-tilbage ude">Udsolgt</span>') : '';
-      var eller = retter.slice(1).map(function (x) { return '<p class="eller">Eller: ' + esc(x.title) + (x.price ? ' · ' + esc(kr(x.price)) : '') + '</p>'; }).join('');
-      var kanBestilles = !(typeof n === 'number' && n <= 0);
-      return '<article class="dret' + (i === 0 ? ' idag' : '') + '">' + hoved
-        + '<div class="dret-krop"><h3>' + esc(r.title) + '</h3>' + (r.desc ? '<p>' + esc(r.desc) + '</p>' : '') + eller + '</div>'
-        + '<footer class="dret-fod">' + (r.price ? '<span class="dret-pris">' + esc(kr(r.price)) + '</span>' : '') + tilbage
-        + (kanBestilles ? '<a class="knap knap--orange" href="#bestil" data-bestil-dag="' + d.iso + '" aria-label="Bestil ' + esc(r.title) + ' ' + esc(navn.toLowerCase()) + '">Bestil</a>' : '')
-        + '</footer></article>';
-    }).join('');
-    boks.innerHTML = html;
-    /* ingen ret hele ugen: tavlen siger det og skriver ugen op i kridt; swipe-rækken skjules */
+    var plan = plan7();
     var ingen = !plan.some(function (d) { return !lukketFor(d.iso) && (d.dishes || []).length; });
+    var stor = $('[data-dagens-idag]');
+    if (stor) { stor.hidden = ingen; stor.innerHTML = ingen ? '' : idagKort(plan[0], plan); }
+    var rest = plan.slice(1);
+    boks.innerHTML = rest.map(function (d, i) { return dagKort(d, i + 1); }).join('');
     boks.hidden = ingen;
-    var linje = $('[data-dagens-linje]');
-    if (linje) linje.hidden = ingen;
+    var ugeTitel = $('[data-resten]');
+    if (ugeTitel) ugeTitel.hidden = ingen;
+    var skilt = $('[data-eksempel]');
+    if (skilt) {
+      skilt.hidden = false;
+      skilt.innerHTML = EKSEMPEL
+        ? '<b>Eksempel</b> Sådan ser en mandag ud – med Spiis\' egne retter fra sidste uge. <a href="?rigtig#dagens">Se ugen, som den står nu →</a>'
+        : '<b>Rigtige data</b> Ugen, som den står i databasen lige nu. <a href="./#dagens">Se eksemplet →</a>';
+    }
+    /* ingen ret hele ugen: tavlen siger det og skriver ugen op i kridt */
     var tom = $('[data-dage-tom]');
     if (tom) {
       tom.hidden = !ingen;
@@ -100,8 +165,7 @@
       }
     }
     var prik = $('[data-dage-prik]');
-    if (prik) prik.hidden = ingen;
-    if (prik) prik.innerHTML = plan.map(function (d, i) { return '<i' + (i === 0 ? ' class="on"' : '') + '></i>'; }).join('');
+    if (prik) { prik.hidden = ingen; prik.innerHTML = rest.map(function (d, i) { return '<i' + (i === 0 ? ' class="on"' : '') + '></i>'; }).join(''); }
   }
   /* prikkerne følger swipet */
   document.addEventListener('scroll', function (e) {

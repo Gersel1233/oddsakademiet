@@ -175,6 +175,40 @@ h1,h2,h3{font-family:var(--vis);font-weight:600;letter-spacing:-.035em;margin:0;
 .dage-prik i.on{width:18px;border-radius:3px;background:var(--orange)}
 @media (min-width:900px){.dret{width:320px}.dage{padding-left:max(40px,calc(50% - 560px))}}
 /* når ugen ikke har en eneste ret endnu: ét kort, der siger det ordentligt, og ugen som en lille stribe */
+/* i dag: dagens ret står alene og stort, så ingen er i tvivl */
+.eksempel-skilt{max-width:620px;margin:0 auto 16px;padding:10px 14px;border-radius:14px;background:#FFF3C9;box-shadow:inset 0 0 0 1.5px #EBCB6B;font-size:13.5px;line-height:1.45;color:#5A4511;text-align:center}
+.eksempel-skilt b{margin-right:6px;padding:3px 7px;border-radius:6px;background:#5A4511;color:#FFF3C9;font-size:11px;letter-spacing:.12em;text-transform:uppercase}
+.eksempel-skilt a{color:inherit;font-weight:600;white-space:nowrap}
+.idag-plads{max-width:620px;margin:0 auto}
+.idag-kort{position:relative;overflow:hidden;border-radius:28px;background:var(--papir);box-shadow:inset 0 0 0 2px var(--orange),0 30px 50px -30px rgba(184,84,23,.6)}
+.idag-baand{display:flex;align-items:center;gap:10px;padding:14px 22px;background:var(--orange);color:#fff}
+.idag-baand b{font:700 15px/1 var(--krop);letter-spacing:.16em;text-transform:uppercase}
+.idag-baand span:last-child{margin-left:auto;font:500 14px/1 var(--krop);opacity:.9}
+.idag-prik{width:9px;height:9px;border-radius:50%;background:#fff;box-shadow:0 0 0 0 rgba(255,255,255,.7);animation:puls 2s ease-out infinite}
+@keyframes puls{70%{box-shadow:0 0 0 9px rgba(255,255,255,0)}100%{box-shadow:0 0 0 0 rgba(255,255,255,0)}}
+.idag-hue{position:absolute;right:-26px;top:58px;width:150px;height:150px;opacity:.07;pointer-events:none}
+.idag-krop{position:relative;padding:22px 22px 24px}
+.idag-kort h3{margin-top:8px;font:700 clamp(32px,9vw,44px)/1 var(--krop);letter-spacing:-.04em}
+.idag-beskriv{margin:12px 0 0;font-size:16.5px;line-height:1.5;color:var(--blaek2)}
+.idag-kort .eller{margin:10px 0 0;font-size:15px;color:var(--blaek2)}
+.idag-fakta{display:flex;align-items:flex-end;gap:18px;margin-top:20px;padding-top:18px;border-top:2px dashed rgba(31,26,22,.1)}
+.idag-pris{font:700 40px/1 var(--krop);letter-spacing:-.04em;color:var(--orange-d)}
+.idag-tid{margin-left:auto;text-align:right;font-size:13px;line-height:1.35;color:var(--blaek2)}
+.idag-tid b{font-size:17px;color:var(--blaek)}
+.idag-portioner{margin-top:16px}
+.idag-portioner div{display:flex;align-items:baseline;gap:6px;font-size:14px;color:var(--blaek2)}
+.idag-portioner div b{color:var(--orange-d);font-size:15px}
+.idag-portioner i{display:block;height:8px;margin-top:8px;border-radius:99px;background:var(--orange-l);overflow:hidden;position:relative}
+.idag-portioner i::after{content:"";position:absolute;inset:0;width:calc(var(--fyld) * 100%);border-radius:inherit;background:linear-gradient(90deg,#E27A3A,var(--orange-d))}
+.idag-portioner.ude div b{color:#8C2B2B}
+.idag-bestil{width:100%;margin-top:20px}
+.idag-kort.fri{box-shadow:inset 0 0 0 1.5px rgba(31,26,22,.12)}
+.idag-kort.fri .idag-baand{background:var(--blaek)}
+.idag-kort.fri h3{font-size:clamp(26px,7vw,32px)}
+.idag-naeste{margin:12px 0 0;color:var(--blaek2)}
+.resten{max-width:620px;margin:34px auto 12px;font:700 13px/1 var(--krop);letter-spacing:.2em;text-transform:uppercase;color:var(--blaek2)}
+@media (min-width:900px){.resten{text-align:center}}
+.dret-fod .knap--lys{margin-left:auto;height:42px;padding:0 16px;font-size:14px}
 /* tom uge: en cafétavle i kridt – intet foto, for køkkenet fotograferer ikke dagens ret */
 .tavle{position:relative;max-width:620px;margin:0 auto 6px;padding:32px 30px 34px;border-radius:22px;color:#F3EFE6;text-align:center;
   background:radial-gradient(120% 70% at 20% 10%,rgba(255,255,255,.07),transparent 60%),radial-gradient(90% 60% at 85% 90%,rgba(255,255,255,.05),transparent 60%),#24302B;
@@ -451,7 +485,8 @@ h1,h2,h3{font-family:var(--vis);font-weight:600;letter-spacing:-.035em;margin:0;
 <section class="sektion dagens" id="dagens">
   <div class="wrap">
     <div class="hoved"><span class="kicker">Frisklavet hver dag</span><h2>Dagens <span class="vis-i">ret</span></h2><div class="prikker"><i></i><i></i><i></i><i></i><i></i><i></i></div></div>
-    <p class="dagens-linje" data-dagens-linje>En ret fra køkkenet hver dag – swipe og se ugen.</p>
+    <p class="eksempel-skilt" data-eksempel hidden></p>
+    <div class="idag-plads" data-dagens-idag></div>
     <div class="tavle" data-dage-tom hidden>
       <svg class="tavle-hue" viewBox="0 0 48 48" aria-hidden="true"><g transform="translate(24 24) scale(1.16) translate(-24 -23.5)"><path d="M16.4 30.2v6.2c0 1.6 1.3 2.9 2.9 2.9h9.4c1.6 0 2.9-1.3 2.9-2.9v-6.2"/><path d="M15.4 31.1c-4.4-.6-7.9-4.3-7.9-8.8 0-4.3 3.1-7.9 7.4-8.7C16.1 10.4 19.7 8.1 24 8.1s7.9 2.3 9.1 5.5c4.3.8 7.4 4.4 7.4 8.7 0 4.5-3.5 8.2-7.9 8.8"/><path d="M20.6 30.2v3.4M24 30.2v3.4M27.4 30.2v3.4"/></g></svg>
       <span class="tavle-kicker">Ugens tavle</span>
@@ -460,6 +495,7 @@ h1,h2,h3{font-family:var(--vis);font-weight:600;letter-spacing:-.035em;margin:0;
       <p>Køkkenet skriver retterne op i løbet af ugen. Følg med i Facebook-gruppen – eller ring og hør, hvad der står på gryden.</p>
       <div class="tavle-knapper"><a class="knap knap--orange" href="#menukort">Se menukortet</a><a class="knap tavle-ring" href="tel:+4593995858">Ring 93 99 58 58</a></div>
     </div>
+    <h3 class="resten" data-resten>Resten af ugen</h3>
     <div class="dage" data-dage aria-label="Dagens ret de næste syv dage"><p class="note-eks">Henter ugens retter …</p></div>
     <div class="dage-prik" data-dage-prik aria-hidden="true"></div>
   </div>
@@ -590,7 +626,7 @@ h1,h2,h3{font-family:var(--vis);font-weight:600;letter-spacing:-.035em;margin:0;
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <script src="../js/config.js?v=ny2"></script>
 <script src="../js/store.js?v=ny2"></script>
-<script src="spiis-ny.js?v=7"></script>
+<script src="spiis-ny.js?v=9"></script>
 <script>
 document.querySelectorAll('[data-valg] button').forEach(function (b) {
   b.addEventListener('click', function () {
