@@ -463,7 +463,12 @@
   var top = document.getElementById('top'), bund = document.querySelector('.bund');
   if (!meta || !top || !('IntersectionObserver' in window)) return;
   var mork = { top: true, bund: false };
-  var saet = function () { meta.setAttribute('content', (mork.top || mork.bund) ? '#24170F' : '#FAF6F0'); };
+  var bjaelke = document.querySelector('.top');
+  var saet = function () {
+    var m = mork.top || mork.bund;
+    meta.setAttribute('content', m ? '#24170F' : '#FAF6F0');
+    if (bjaelke) bjaelke.classList.toggle('over-lys', !m); /* logoet bliver mørkt over de lyse afsnit */
+  };
   new IntersectionObserver(function (p) { mork.top = p[0].isIntersecting; saet(); }, { rootMargin: '0px 0px -92% 0px' }).observe(top);
   if (bund) new IntersectionObserver(function (p) { mork.bund = p[0].isIntersecting; saet(); }, { rootMargin: '-92% 0px 0px 0px' }).observe(bund);
 })();
