@@ -413,3 +413,26 @@
   else window.addEventListener('load', tilpas);
 })();
 
+/* ---------- menuen: status øverst, luk med Escape eller ved tryk udenfor, ingen scroll bagved ---------- */
+(function () {
+  var ark = document.getElementById('navLinks'), knap = document.getElementById('navBurger');
+  if (!ark || !knap) return;
+  var aaben = function () { return ark.classList.contains('is-open'); };
+  new MutationObserver(function () {
+    var a = aaben();
+    if (matchMedia('(max-width: 899px)').matches) document.documentElement.style.overflow = a ? 'hidden' : '';
+    if (!a) return;
+    knap.setAttribute('aria-label', 'Luk menu');
+    var hero = document.querySelector('[data-status]'), m = ark.querySelector('[data-menu-status]');
+    if (hero && m && !hero.hidden) {
+      m.hidden = false;
+      m.classList.toggle('lukket', hero.classList.contains('lukket'));
+      m.querySelector('[data-menu-status-tekst]').textContent = (hero.querySelector('[data-status-tekst]') || {}).textContent || '';
+    }
+  }).observe(ark, { attributes: true, attributeFilter: ['class'] });
+  new MutationObserver(function () { if (!aaben()) knap.setAttribute('aria-label', 'Åbn menu'); })
+    .observe(knap, { attributes: true, attributeFilter: ['aria-expanded'] });
+  ark.addEventListener('click', function (e) { if (e.target === ark && aaben()) knap.click(); });
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && aaben()) { knap.click(); knap.focus(); } });
+})();
+
