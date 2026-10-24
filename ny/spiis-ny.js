@@ -455,3 +455,16 @@
   document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && aaben()) { knap.click(); knap.focus(); } });
 })();
 
+/* ---------- bjælkens farve i Safari følger siden ----------
+   Over den mørke top er telefonens bjælke mørk, så det hele føles som fuld skærm; i de lyse
+   afsnit bliver den creme igen, og ved den mørke bund mørk. */
+(function () {
+  var meta = document.querySelector('meta[data-temafarve]');
+  var top = document.getElementById('top'), bund = document.querySelector('.bund');
+  if (!meta || !top || !('IntersectionObserver' in window)) return;
+  var mork = { top: true, bund: false };
+  var saet = function () { meta.setAttribute('content', (mork.top || mork.bund) ? '#24170F' : '#FAF6F0'); };
+  new IntersectionObserver(function (p) { mork.top = p[0].isIntersecting; saet(); }, { rootMargin: '0px 0px -92% 0px' }).observe(top);
+  if (bund) new IntersectionObserver(function (p) { mork.bund = p[0].isIntersecting; saet(); }, { rootMargin: '-92% 0px 0px 0px' }).observe(bund);
+})();
+

@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Spiis – Hjemmelavet mad i Karlslunde | Dagens ret &amp; catering</title>
   <meta name="description" content="Spiis i Karlslunde laver hjemmelavet mad fra bunden. Se dagens ret, bestil takeaway eller spis her, prøv vores tapas – og lad os holde jeres næste selskab. Kongens Enge 42, 2690 Karlslunde." />
-  <meta name="theme-color" content="#FAF6F0" />
+  <meta name="theme-color" content="#24170F" data-temafarve />
   <meta property="og:title" content="Spiis – Hjemmelavet mad i Karlslunde" />
   <meta property="og:description" content="Dagens ret, tapas og catering fra Spiis i Karlslunde Idrætsforening. Hjemmelavet fra bunden, hver eneste dag." />
   <meta property="og:type" content="restaurant.restaurant" />
@@ -687,6 +687,16 @@ html,body{overflow-x:clip}
 @media (min-width:900px){
   .top .menu-ark{position:absolute;inset:auto;top:calc(100% - 6px);right:max(24px,calc(50% - 600px));width:400px;padding:0;background:none;-webkit-backdrop-filter:none;backdrop-filter:none}
 }
+
+/* ---------- fuld skærm på telefonen (24/10) ----------
+   Toppen fylder hele skærmen, og bjælkerne øverst og nederst i Safari får toppens mørke farve i
+   stedet for creme, så videoen går fra kant til kant. Rulles der ned i de lyse afsnit, skifter
+   bjælken til creme (spiis-ny.js). Uden for siden (træk ned/op) ses også den mørke farve, så
+   hverken toppen eller den mørke bund får en lys kant. */
+html{background:#24170F}
+.hero{min-height:100svh;padding-top:max(120px,calc(env(safe-area-inset-top) + 100px));padding-bottom:max(118px,calc(env(safe-area-inset-bottom) + 96px))}
+@supports (min-height:100dvh){.hero{min-height:100dvh}}
+@media (min-width:900px){.hero{min-height:min(100svh,900px)}}
 </style>
 </head>
 <body>
