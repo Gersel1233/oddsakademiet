@@ -455,21 +455,48 @@
   document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && aaben()) { knap.click(); knap.focus(); } });
 })();
 
-/* ---------- bjælkens farve i Safari følger siden ----------
-   Over den mørke top er telefonens bjælke mørk, så det hele føles som fuld skærm; i de lyse
-   afsnit bliver den creme igen, og ved den mørke bund mørk. */
+/* ---------- bjælkerne i Safari følger det afsnit, man er i ----------
+   Telefonens bjælker (øverst, og nederst på nyere iPhones) farves med sidens theme-color. Den sættes
+   nu løbende til farven på det afsnit, der står øverst på skærmen – mørk over toppen og bunden,
+   bordeaux over tapas, creme over de lyse afsnit – så der aldrig står en lys bjælke over en mørk
+   flade. Logoet skifter samtidig mellem lyst og mørkt, så det altid kan læses. */
 (function () {
   var meta = document.querySelector('meta[data-temafarve]');
-  var top = document.getElementById('top'), bund = document.querySelector('.bund');
-  if (!meta || !top || !('IntersectionObserver' in window)) return;
-  var mork = { top: true, bund: false };
   var bjaelke = document.querySelector('.top');
-  var saet = function () {
-    var m = mork.top || mork.bund;
-    meta.setAttribute('content', m ? '#24170F' : '#FAF6F0');
-    if (bjaelke) bjaelke.classList.toggle('over-lys', !m); /* logoet bliver mørkt over de lyse afsnit */
+  if (!meta) return;
+  var afsnit = [].filter.call(document.body.children, function (e) {
+    return e.offsetHeight > 0 && getComputedStyle(e).position !== 'fixed' && !e.hidden;
+  });
+  var bodyFarve = getComputedStyle(document.body).backgroundColor;
+  var farveVed = function (y) {
+    for (var i = 0; i < afsnit.length; i++) {
+      var r = afsnit[i].getBoundingClientRect();
+      if (y < r.top || y >= r.bottom) continue;
+      var c = getComputedStyle(afsnit[i]);
+      /* billedrækken: mørk stribe øverst, derefter creme */
+      if (c.backgroundImage.indexOf('gradient') > -1) return (y - r.top) < 70 ? '#24170F' : bodyFarve;
+      return c.backgroundColor === 'rgba(0, 0, 0, 0)' || c.backgroundColor === 'transparent' ? bodyFarve : c.backgroundColor;
+    }
+    return bodyFarve;
   };
-  new IntersectionObserver(function (p) { mork.top = p[0].isIntersecting; saet(); }, { rootMargin: '0px 0px -92% 0px' }).observe(top);
-  if (bund) new IntersectionObserver(function (p) { mork.bund = p[0].isIntersecting; saet(); }, { rootMargin: '-92% 0px 0px 0px' }).observe(bund);
+  var morkt = function (farve) {
+    var m = String(farve).match(/\d+(\.\d+)?/g);
+    if (!m) return /^#2|^#1|^#6B/i.test(farve);
+    return (0.299 * m[0] + 0.587 * m[1] + 0.114 * m[2]) < 140;
+  };
+  var sidst = '', venter = false;
+  var opdater = function () {
+    venter = false;
+    var f = farveVed(2);
+    if (f === sidst) return;
+    sidst = f;
+    meta.setAttribute('content', f);
+    if (bjaelke) bjaelke.classList.toggle('over-lys', !morkt(f));
+  };
+  var planlaeg = function () { if (!venter) { venter = true; requestAnimationFrame(opdater); } };
+  addEventListener('scroll', planlaeg, { passive: true });
+  addEventListener('resize', planlaeg);
+  opdater();
+  setTimeout(opdater, 1500); /* når databasen har fyldt afsnittene, flytter de sig */
 })();
 
