@@ -118,13 +118,16 @@ async function send(tlf: string, besked: string): Promise<boolean> {
     body: JSON.stringify({ sender: 'Spiis', message: besked, recipients: [{ msisdn: Number(nr) }] }),
   });
   if (!svar.ok) console.error('sms fejlede', svar.status, await svar.text().catch(() => ''));
+  else console.log(`sms sendt til ${nr}`);
   return svar.ok;
 }
 
 /* gør krav på en sms for en ordre: kun den der når at sætte feltet, sender */
 async function krav(id: string, felt: 'sms_bekraeftet_at' | 'sms_paamindet_at') {
-  const { data } = await supa.from('orders').update({ [felt]: new Date().toISOString() })
+  const { data, error } = await supa.from('orders').update({ [felt]: new Date().toISOString() })
     .eq('id', id).is(felt, null).select('*');
+  if (error) console.error(`sms: kunne ikke markere ordren (${felt})`, error.message);
+  else if (!data || !data.length) console.log(`sms: ordren findes ikke, eller ${felt} er allerede sat – springer over`);
   return (data && data[0]) as Ordre | undefined;
 }
 async function slip(id: string, felt: 'sms_bekraeftet_at' | 'sms_paamindet_at') {
@@ -132,10 +135,17 @@ async function slip(id: string, felt: 'sms_bekraeftet_at' | 'sms_paamindet_at') 
 }
 
 Deno.serve(async (req) => {
-  if (req.headers.get('x-spiis-secret') !== Deno.env.get('SMS_SECRET')) {
+  /* mellemrum før/efter tæller ikke – de sniger sig let med, når man kopierer */
+  const kode = (req.headers.get('x-spiis-secret') || '').trim();
+  const forventet = (Deno.env.get('SMS_SECRET') || '').trim();
+  if (!forventet || kode !== forventet) {
+    console.error(forventet
+      ? 'sms: afvist – den hemmelige kode fra databasen passer ikke med SMS_SECRET'
+      : 'sms: afvist – SMS_SECRET mangler under Edge Functions → Secrets');
     return new Response('forbidden', { status: 401 });
   }
   const kald = await req.json().catch(() => ({}));
+  console.log(`sms: kaldt (${kald.mode || 'ukendt'})`);
 
   if (kald.mode === 'bekraeft' && kald.id) {
     const o = await krav(kald.id, 'sms_bekraeftet_at');
