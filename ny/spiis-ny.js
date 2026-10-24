@@ -391,3 +391,25 @@
   window.addEventListener('resize', function () { if (!vindue.hidden && !faerdig) nulstil(); });
 })();
 
+/* ---------- stemplet: teksten skal gå præcis én gang rundt ----------
+   Skriften er lidt forskellig fra telefon til telefon, så en fast afstand mellem bogstaverne
+   kunne få teksten til at løbe ind i sig selv ("…CATERISPIIS"). Her måles teksten, og
+   afstanden sættes, så den fylder cirklen helt – med lige stor luft ved hvert "·". */
+(function () {
+  function tilpas() {
+    [].forEach.call(document.querySelectorAll('text[data-rundt]'), function (t) {
+      var tp = t.querySelector('textPath');
+      var sti = tp && document.querySelector(tp.getAttribute('href'));
+      if (!sti || !sti.getTotalLength) return;
+      try {
+        t.setAttribute('letter-spacing', '0');
+        var rest = sti.getTotalLength() - t.getComputedTextLength();
+        var n = tp.textContent.length;
+        t.setAttribute('letter-spacing', Math.max(0, rest / n).toFixed(2));
+      } catch (e) { t.setAttribute('letter-spacing', '2.4'); }
+    });
+  }
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(tilpas);
+  else window.addEventListener('load', tilpas);
+})();
+
