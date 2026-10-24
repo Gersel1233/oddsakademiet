@@ -123,8 +123,8 @@
     if (!tavle) return;
     tavle.hidden = false;
     var dage = ingen ? plan : plan.slice(1);
-    $('[data-tavle-kicker]', tavle).textContent = ingen ? 'Ugens tavle' : 'Ugens tavle · resten af ugen';
-    $('[data-tavle-titel]', tavle).textContent = ingen ? 'Ugens retter er på vej' : 'Det står på gryden';
+    $('[data-tavle-kicker]', tavle).textContent = 'Ugens tavle';
+    $('[data-tavle-titel]', tavle).textContent = ingen ? 'Ugens retter er på vej' : 'Resten af ugen';
     $('[data-tavle-tekst]', tavle).textContent = ingen
       ? 'Køkkenet skriver retterne op i løbet af ugen. Følg med i Facebook-gruppen – eller ring og hør, hvad der står på gryden.'
       : 'Tryk på en ret for at forudbestille den til dagen.';
@@ -134,18 +134,19 @@
       + '<a class="knap tavle-ring" href="tel:+4593995858">Ring 93 99 58 58</a>';
     $('[data-tavle-dage]', tavle).innerHTML = dage.map(function (d, i) {
       var nr = ingen ? i : i + 1;
-      var navn = nr === 0 ? d.weekday + ' · i dag' : nr === 1 ? 'I morgen' : d.weekday;
+      var navn = d.weekday + (nr === 0 ? ' · i dag' : nr === 1 ? ' · i morgen' : '');
+      var dato = '<span class="dato">' + (+d.iso.slice(8, 10)) + '/' + (+d.iso.slice(5, 7)) + '</span>';
       var retter = d.dishes || [];
       if (!lukketFor(d.iso) && retter.length) {
         var r = retter[0];
         var flere = retter.length > 1 ? '<span class="forud">Eller: ' + esc(retter.slice(1).map(function (x) { return paen(x.title); }).join(', ')) + '</span>' : '';
         return '<li class="ret" style="--n:' + i + '"><a href="#bestil" data-bestil-dag="' + d.iso + '" aria-label="Forudbestil ' + esc(paen(r.title)) + ', ' + esc(navn) + '">'
-          + '<small>' + esc(navn) + '</small><em>' + esc(paen(r.title)) + '</em><span>' + esc(kr(r.price)) + '</span>' + flere + '</a></li>';
+          + '<small>' + esc(navn) + dato + '</small><em>' + esc(paen(r.title)) + '</em><span>' + esc(kr(r.price)) + '</span>' + flere + '</a></li>';
       }
       var h = S.hoursFor ? S.hoursFor(d.iso) : null;
       var aaben = h && !h.closed && h.open;
       var tekst = !aaben ? 'Lukket' : (lukketFor(d.iso) || d.ingenRet) ? 'Kom forbi ' + kl(h.open) + '–' + kl(h.close) : 'Følger snart';
-      return '<li style="--n:' + i + '" class="' + (nr === 0 ? 'idag ' : '') + (aaben ? 'aaben' : '') + '"><b>' + esc(nr === 1 ? 'I morgen' : d.weekday) + '</b><span>' + esc(tekst) + '</span></li>';
+      return '<li style="--n:' + i + '" class="' + (nr === 0 ? 'idag ' : nr === 1 ? 'imorgen ' : '') + (aaben ? 'aaben' : '') + '"><b>' + esc(d.weekday) + dato + '</b><span>' + esc(tekst) + '</span></li>';
     }).join('');
     if (!tavle.dataset.set) {
       tavle.dataset.set = '1';
