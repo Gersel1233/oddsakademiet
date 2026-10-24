@@ -267,3 +267,65 @@
   if (!pille || !top || !('IntersectionObserver' in window)) { if (pille) pille.classList.remove('skjult'); return; }
   new IntersectionObserver(function (p) { pille.classList.toggle('skjult', p[0].isIntersecting); }, { threshold: 0.15 }).observe(top);
 })();
+
+/* ---------- påmindelse i kalenderen (Mikkel 24/10: "notifikation med bekræftelse og 30 min før") ----------
+   Når tak-kortet kommer frem, får kunden en knap, der lægger bestillingen i telefonens kalender
+   med en alarm 30 minutter før. Gratis, ingen konto, virker på iPhone og Android. Tiden læses
+   af formularen, som js/main.js lader stå udfyldt bag tak-kortet – main.js røres ikke. */
+(function () {
+  var ADR = 'Spiis, Kongens Enge 42, 2690 Karlslunde';
+  var to = function (n) { return (n < 10 ? '0' : '') + n; };
+  var stempel = function (iso, hhmm, plusMin) {
+    var d = new Date(iso + 'T' + hhmm + ':00');
+    d.setMinutes(d.getMinutes() + (plusMin || 0));
+    return d.getFullYear() + to(d.getMonth() + 1) + to(d.getDate()) + 'T' + to(d.getHours()) + to(d.getMinutes()) + '00';
+  };
+  var icsTekst = function (t) { return String(t).replace(/\\/g, '\\\\').replace(/\n/g, '\\n').replace(/([,;])/g, '\\$1'); };
+  function kalender(kort, iso, tid, titel, varighed) {
+    var gl = kort.querySelector('.paamind');
+    if (gl) gl.remove();
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(iso || '') || !/^\d{1,2}:\d{2}$/.test(tid || '')) return;
+    if (tid.length === 4) tid = '0' + tid;
+    var tekst = (kort.querySelector('p') || {}).textContent || '';
+    var tlf = (window.SpiisStore && SpiisStore.getSettings && SpiisStore.getSettings().phone) || '93 99 58 58';
+    var detaljer = tekst + '\n\nKan du ikke komme? Ring til Spiis på ' + tlf + ' senest 1 time før.';
+    var nu = new Date();
+    var ics = [
+      'BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Spiis//Bestilling//DA', 'CALSCALE:GREGORIAN', 'METHOD:PUBLISH',
+      'BEGIN:VEVENT',
+      'UID:' + Date.now().toString(36) + Math.random().toString(36).slice(2) + '@spiis.dk',
+      'DTSTAMP:' + nu.toISOString().replace(/[-:]/g, '').replace(/\.\d+/, ''),
+      'DTSTART:' + stempel(iso, tid), 'DTEND:' + stempel(iso, tid, varighed),
+      'SUMMARY:' + icsTekst(titel), 'LOCATION:' + icsTekst(ADR), 'DESCRIPTION:' + icsTekst(detaljer),
+      'BEGIN:VALARM', 'ACTION:DISPLAY', 'DESCRIPTION:' + icsTekst(titel + ' om 30 minutter'), 'TRIGGER:-PT30M', 'END:VALARM',
+      'END:VEVENT', 'END:VCALENDAR'
+    ].join('\r\n');
+    var url = URL.createObjectURL(new Blob([ics], { type: 'text/calendar;charset=utf-8' }));
+    var google = 'https://calendar.google.com/calendar/render?action=TEMPLATE&text=' + encodeURIComponent(titel)
+      + '&dates=' + stempel(iso, tid) + '/' + stempel(iso, tid, varighed) + '&ctz=Europe/Copenhagen'
+      + '&location=' + encodeURIComponent(ADR) + '&details=' + encodeURIComponent(detaljer);
+    var boks = document.createElement('div');
+    boks.className = 'paamind';
+    boks.innerHTML = '<p><b>Få en påmindelse 30 min før</b>Så ligger bestillingen i din kalender, og telefonen siger til i god tid.</p>'
+      + '<a class="knap knap--orange" href="' + url + '" download="spiis-bestilling.ics" data-kalender>Sæt i kalenderen</a>'
+      + '<a class="paamind-google" href="' + google + '" target="_blank" rel="noopener">Bruger du Google Kalender? Tilføj den her</a>';
+    var foer = kort.querySelector('button, .tapas__ring');
+    kort.insertBefore(boks, foer);
+  }
+  function vagt(id, laes) {
+    var kort = document.getElementById(id);
+    if (!kort) return;
+    new MutationObserver(function () { if (!kort.hidden) { var v = laes(); kalender(kort, v[0], v[1], v[2], v[3]); } })
+      .observe(kort, { attributes: true, attributeFilter: ['hidden'] });
+  }
+  var val = function (id) { var e = document.getElementById(id); return e ? e.value : ''; };
+  vagt('orderSuccess', function () {
+    var t = document.querySelector('input[name="orderType"]:checked');
+    var spise = t && t.value === 'spise';
+    return [val('orderDate'), val('orderTime'), spise ? 'Spisning hos Spiis' : 'Hent din mad hos Spiis', spise ? 90 : 15];
+  });
+  vagt('tapasSuccess', function () {
+    var spise = val('tapasType') === 'spise';
+    return [val('tapasDate'), val('tapasTime'), spise ? 'Tapas hos Spiis' : 'Hent jeres tapas hos Spiis', spise ? 120 : 15];
+  });
+})();
