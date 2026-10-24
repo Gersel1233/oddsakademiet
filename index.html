@@ -34,7 +34,8 @@
         "@type": "WebSite",
         "url": "https://spiis.dk/",
         "name": "Spiis",
-        "alternateName": "spiis.dk"
+        "alternateName": "spiis.dk",
+        "creator": { "@type": "Organization", "name": "Lesreg", "url": "https://lesreg.com" }
       },
       {
         "@type": "Restaurant",
@@ -461,11 +462,18 @@ h1,h2,h3{font-family:var(--vis);font-weight:600;letter-spacing:-.035em;margin:0;
 .kontakt-knapper .knap{width:100%}
 
 /* ---------- 10. BUNDEN ---------- */
-.bund{padding:56px 0 110px;background:var(--blaek);color:rgba(255,255,255,.78);text-align:center}
+.bund{padding:56px 20px 110px;background:var(--blaek);color:rgba(255,255,255,.78);text-align:center}
 .bund .stempel-lille{width:110px;height:110px;margin:0 auto}
 .bund h3{margin-top:16px;font-size:32px;color:#fff}
 .bund p{margin:8px 0 0}
 .bund small{display:block;margin-top:26px;color:rgba(255,255,255,.5)}
+.bund small a{color:inherit}
+/* krediteringen: tydelig nok til at blive set (og fundet), stille nok til at høre til i bunden */
+.lavet-af{display:inline-flex;align-items:center;gap:6px;margin-top:14px;padding:8px 14px;border-radius:999px;text-decoration:none;
+  font:500 13px/1 var(--krop);color:rgba(255,255,255,.62);box-shadow:inset 0 0 0 1px rgba(255,255,255,.14);transition:color .2s ease,box-shadow .2s ease}
+.lavet-af b{font-weight:700;color:#fff;letter-spacing:.01em}
+.lavet-af i{font-style:normal;color:var(--orange)}
+.lavet-af:hover{color:#fff;box-shadow:inset 0 0 0 1px rgba(255,255,255,.35)}
 
 /* den faste bestil-knap på telefonen */
 .pille{position:fixed;left:14px;right:14px;bottom:max(14px,env(safe-area-inset-bottom));z-index:40;display:flex;transition:transform .35s cubic-bezier(.2,.9,.24,1),opacity .25s ease}
@@ -1039,7 +1047,8 @@ html,body{overflow-x:clip}
   <h3>Velbekomme!</h3>
   <p>Karlslunde Idrætsforening · Kongens Enge 42 · 2690 Karlslunde</p>
   <p>93 99 58 58 · spiis.bestilling@gmail.com</p>
-  <small>© <span id="year"></span> Spiis · <a href="admin.html">Personale-login</a> · Lavet af Lesreg</small>
+  <small>© <span id="year"></span> Spiis · <a href="admin.html">Personale-login</a></small>
+  <a class="lavet-af" href="https://lesreg.com" target="_blank" rel="noopener" title="Lesreg – hjemmesider og bestillingssystemer">Hjemmeside og bestilling lavet af <b>Lesreg</b><i aria-hidden="true">↗</i></a>
 </footer>
 
 <div class="pille skjult" id="mobileCta" data-pille><a class="knap knap--orange" href="#bestil">Bestil dagens ret</a></div>
