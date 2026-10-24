@@ -61,6 +61,11 @@ const SpiisStore = (() => {
     { title: 'Kylling i karry', desc: 'Mør kylling i mild karrysauce med ris og mangochutney.', price: 75 },
   ];
 
+  /* Er databasen sat op (js/config.js), kommer dagens ret KUN derfra. Eksempelretterne
+     herover bruges kun, når siden kører lokalt uden database – en kunde må aldrig se dem. */
+  const MED_DATABASE = !!(typeof window !== 'undefined' && window.SPIIS_CLOUD && window.SPIIS_CLOUD.url);
+  const erEksempelRet = (d) => !!d && DISH_ROTATION.some((r) => r.title === d.title && r.desc === d.desc);
+
   function seed() {
     const data = {
       settings: {
@@ -149,10 +154,10 @@ const SpiisStore = (() => {
       log: [],
     };
 
-    /* Planlæg dagens ret 14 dage frem på åbne dage – 30 portioner pr. dag */
+    /* Planlæg dagens ret 14 dage frem på åbne dage – 30 portioner pr. dag (kun uden database) */
     let iso = todayISO();
     let dishIdx = 0;
-    for (let i = 0; i < 14; i++) {
+    for (let i = 0; !MED_DATABASE && i < 14; i++) {
       const w = weekdayIndex(iso);
       if (!data.hours[w].closed) {
         data.dagensRet[iso] = { ...DISH_ROTATION[dishIdx % DISH_ROTATION.length], stock: 30 };
@@ -195,6 +200,16 @@ const SpiisStore = (() => {
   }
 
   data = load() || seed();
+  /* en gammel browser-kopi fra før databasen kan stadig rumme eksempelretterne – de ryger ud
+     her, så siden aldrig viser dem, mens den venter på databasen */
+  if (MED_DATABASE && data.dagensRet) {
+    Object.keys(data.dagensRet).forEach((iso) => {
+      const v = data.dagensRet[iso];
+      const rest = (Array.isArray(v) ? v : [v]).filter((d) => !erEksempelRet(d));
+      if (!rest.length) delete data.dagensRet[iso];
+      else data.dagensRet[iso] = Array.isArray(v) ? rest : rest[0];
+    });
+  }
   save(false);
 
   /* Synkronisér på tværs af faner (kunde bestiller -> admin opdaterer) */

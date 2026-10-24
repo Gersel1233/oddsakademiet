@@ -89,7 +89,7 @@
      sat i Lesregs Host Grotesk. Bestillingen er den samme som før: js/main.js og js/store.js står
      uændret, så alt lander i admin præcis som det plejer. Kun udseendet er nyt.
      Designet blev bygget afsnit for afsnit på /ny/; ny/ rummer dets filer (spiis-ny.js, motor.css,
-     billeder og skrifter). ?eksempel viser eksempel-mandagen. Den gamle forside ligger i git-historikken. -->
+     billeder og skrifter). Den gamle forside ligger i git-historikken. -->
 <style>
 /* Lesregs tekstskrift — den samme som på Mosede Havnecafe. Ingen kursiv, ingen serif (Mikkel). */
 @font-face{font-family:"Host Grotesk";src:url(ny/assets/fonts-spiis/host-grotesk-400.woff2) format("woff2");font-weight:400;font-display:swap}
@@ -271,9 +271,6 @@ h1,h2,h3{font-family:var(--vis);font-weight:600;letter-spacing:-.035em;margin:0;
 @media (min-width:900px){.dret{width:320px}.dage{padding-left:max(40px,calc(50% - 560px))}}
 /* når ugen ikke har en eneste ret endnu: ét kort, der siger det ordentligt, og ugen som en lille stribe */
 /* i dag: dagens ret står alene og stort, så ingen er i tvivl */
-.eksempel-skilt{max-width:620px;margin:0 auto 16px;padding:10px 14px;border-radius:14px;background:#FFF3C9;box-shadow:inset 0 0 0 1.5px #EBCB6B;font-size:13.5px;line-height:1.45;color:#5A4511;text-align:center}
-.eksempel-skilt b{margin-right:6px;padding:3px 7px;border-radius:6px;background:#5A4511;color:#FFF3C9;font-size:11px;letter-spacing:.12em;text-transform:uppercase}
-.eksempel-skilt a{color:inherit;font-weight:600;white-space:nowrap}
 .idag-plads{max-width:620px;margin:0 auto}
 .idag-kort{position:relative;overflow:hidden;border-radius:28px;background:var(--papir);box-shadow:inset 0 0 0 2px var(--orange),0 30px 50px -30px rgba(184,84,23,.6)}
 .idag-baand{display:flex;align-items:center;gap:10px;padding:14px 22px;background:var(--orange);color:#fff}
@@ -834,7 +831,6 @@ html{background:#24170F}
 <section class="sektion dagens" id="dagens">
   <div class="wrap">
     <div class="hoved"><span class="kicker">Frisklavet hver dag</span><h2>Dagens <span class="vis-i">ret</span></h2><div class="skille" aria-hidden="true"><i></i><svg><use href="#hue"/></svg><i></i></div></div>
-    <p class="eksempel-skilt" data-eksempel hidden></p>
     <div class="dagens-par" data-dagens-par>
       <div class="idag-plads" data-dagens-idag></div>
       <div class="tavle" data-tavle hidden>

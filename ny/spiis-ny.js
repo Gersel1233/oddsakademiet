@@ -14,30 +14,10 @@
   var kl = function (t) { return String(t || '').replace(/^0/, '').replace(':00', '').replace(':', '.'); };
   var lukketFor = function (iso) { try { return !S.isOpenDay(iso) || (S.isOrderingClosed && S.isOrderingClosed(iso)); } catch (e) { return false; } };
 
-  /* ---------- eksempel: "lad os lege det er mandag" (Mikkel 23/10) ----------
-     /ny/ viser som standard en almindelig hverdag: vi lader som om det er førstkommende mandag
-     og låner Spiis' egne retter fra ugen før (de ligger i databasen). Kun med ?eksempel –
-     uden står siden præcis som databasen siger lige nu. */
-  var EKSEMPEL = /[?&]eksempel/.test(location.search);
-  var mandag = function () { var d = S.todayISO(); while (S.weekdayIndex(d) !== 0) d = S.addDays(d, 1); return d; };
-  var DAG = EKSEMPEL ? mandag() : S.todayISO();
+  var DAG = S.todayISO();
   var paen = function (t) { t = String(t || '').trim().replace(/\.$/, ''); return t.charAt(0).toUpperCase() + t.slice(1); };
-  function plan7() {
-    var plan = S.getPlan(7, DAG);
-    if (!EKSEMPEL) return plan;
-    return plan.map(function (d, i) {
-      var laan = S.getDagensRetList(S.addDays(d.iso, -7));
-      if (!laan.length && i < 4) laan = [[{ title: 'Åben lasagne', desc: 'Med salciccia, frisk spinat, svampe og mascarponecreme.', price: 109, stock: 30 }],
-        [{ title: 'Pork au vin', desc: 'Nakkefilet i rødvinssauce med grøntsager, urter og kartoffelmos.', price: 109, stock: 30 }],
-        [{ title: 'Chili con carne', desc: 'Med creme fraiche og ris.', price: 109, stock: 30 }],
-        [{ title: 'Cremet kyllingegryde', desc: 'Med æblecider, porrer, bacon og timianstegte kartofler.', price: 109, stock: 30 }]][i];
-      d.dishes = lukketFor(d.iso) ? [] : (laan || []);
-      d.ingenRet = !d.dishes.length; /* Spiis laver dagens ret mandag–torsdag; resten er caféens egne dage */
-      return d;
-    });
-  }
+  var plan7 = function () { return S.getPlan(7, DAG); };
   function tilbageFor(d, r, i) {
-    if (EKSEMPEL) return r.stock ? (i === 0 ? Math.round(r.stock * 0.6) : r.stock) : null;
     try { return S.getRemainingFor ? S.getRemainingFor(d.iso, r.title) : S.getRemaining(d.iso); } catch (e) { return null; }
   }
 
@@ -47,7 +27,7 @@
     var t = S.hoursFor(iDag) || {};
     var status = $('[data-status]');
     if (status && (t.open || t.closed)) {
-      var nu = new Date(), m = EKSEMPEL ? 12 * 60 : nu.getHours() * 60 + nu.getMinutes();
+      var nu = new Date(), m = nu.getHours() * 60 + nu.getMinutes();
       var tilMin = function (x) { var p = String(x).split(':'); return (+p[0]) * 60 + (+p[1] || 0); };
       var tekst, aaben = false;
       if (t.closed) tekst = 'Lukket i dag';
@@ -110,13 +90,6 @@
     par.classList.toggle('tom', ingen);
     var stor = $('[data-dagens-idag]');
     if (stor) { stor.hidden = ingen; stor.innerHTML = ingen ? '' : idagKort(plan[0], plan); }
-    var skilt = $('[data-eksempel]');
-    if (skilt) {
-      skilt.hidden = !EKSEMPEL;
-      skilt.innerHTML = EKSEMPEL
-        ? '<b>Eksempel</b> Sådan ser en mandag ud – med Spiis\' egne retter fra sidste uge. <a href="./#dagens">Se ugen, som den står nu →</a>'
-        : '';
-    }
     /* tavlen: resten af ugen i kridt. Har dagen en ret, står retten og prisen (og et tryk
        forudbestiller); ellers står hvad caféen gør den dag. Tom uge: tavlen tager hele ugen. */
     var tavle = $('[data-tavle]');
