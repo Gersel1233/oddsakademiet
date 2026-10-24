@@ -1,46 +1,65 @@
 # SMS til kunden – sådan slås det til
 
-Når en kunde bestiller på hjemmesiden, får de:
+Når en kunde bestiller på hjemmesiden, får de to sms'er fra **Spiis**:
 
-1. **En sms med det samme**: "Tak, Mikkel! Spiis har modtaget din bestilling: 2 x Boller i karry til afhentning mandag d. 26. oktober kl. 17:30. Vi sender en påmindelse 30 min før. Kan du ikke komme, så ring 93 99 58 58 senest 1 time før. Mvh Spiis"
-2. **En påmindelse ca. 30 min før**: "Hej Mikkel! Om ca. 30 min er din mad klar til afhentning hos Spiis (kl. 17:30). Kongens Enge 42, Karlslunde. Vi glæder os! Mvh Spiis"
+1. **Med det samme:** "Tak, Mikkel! Spiis har din bestilling: 2 x Boller i karry, afhentning man. 26/10 kl. 17:30. Påmindelse kommer 30 min før. Afbud: 93 99 58 58"
+2. **Ca. 30 min før:** "Hej Mikkel! Om ca. 30 min er din mad klar til afhentning hos Spiis (kl. 17:30). Kongens Enge 42, Karlslunde. Vi glæder os! Mvh Spiis"
 
-Afsenderen hedder **Spiis**. Kun bestillinger fra hjemmesiden får sms – ikke dem, køkkenet selv taster ind i admin. Bestiller man under en time før, kommer der kun bekræftelsen (den lover heller ikke en påmindelse).
+Hver besked er én sms, så en bestilling koster 2 sms'er. Kun bestillinger fra hjemmesiden får sms – ikke dem, køkkenet selv taster ind i admin. Bestiller man under en time før, kommer kun bekræftelsen.
 
-Hjemmesiden er ikke ændret for at få det her til at virke: alt sker i databasen, *efter* bestillingen er gemt. Går sms'en galt, er bestillingen der stadig.
+Sms'en sendes først, når bestillingen er gemt. Går noget galt med sms'en, er bestillingen der stadig.
 
-## Det kræver (ca. 20 minutter, én gang)
+Tid: ca. 20 minutter, én gang.
 
-### 1. En sms-konto hos GatewayAPI
-- Opret en konto på **gatewayapi.com** (dansk firma, betaling pr. sms).
-- Sæt penge ind på kontoen.
-- Gå til **API → API Keys** og kopiér **token**'et.
+---
 
-En bestilling bruger typisk 3 sms-dele (bekræftelsen fylder 2, påmindelsen 1).
+## Trin 1 – SMS-konto (GatewayAPI)
+1. Gå til **gatewayapi.com** → opret en konto, og bekræft e-mail og telefon.
+2. Sæt et beløb ind på kontoen (fx 100 kr.).
+3. Find **API → API Keys** → opret en nøgle → kopiér **Token**. Gem den et sted, du kan finde den igen om lidt.
 
-### 2. Funktionen i Supabase
-- Supabase → projektet → **Edge Functions → Deploy a new function** → navn: `send-sms`.
-- Indsæt hele indholdet af `supabase/send-sms.ts` → Deploy.
-- Under funktionens indstillinger: slå **Verify JWT** FRA.
-- **Edge Functions → Secrets**, tilføj:
-  - `GATEWAYAPI_TOKEN` = token'et fra trin 1
-  - `SMS_SECRET` = en lang tilfældig tekst (fx 40 tegn – find på noget, eller brug en adgangskode-generator)
-  - `SMS_AKTIV` = `nej` (til at starte med – så sendes intet, men funktionen skriver i loggen, hvad den *ville* sende)
-  - `SMS_KUN_TIL` = dit eget mobilnummer (så går sms'er kun til dig, mens du prøver)
+## Trin 2 – Lav en hemmelig kode (i Supabase)
+1. Log ind på **supabase.com** og åbn Spiis-projektet.
+2. Venstre menu: **SQL Editor** → **New query**.
+3. Skriv: `select encode(gen_random_bytes(24), 'hex');` → **Run**.
+4. Kopiér den lange kode, der kommer frem. Det er jeres **hemmelige kode** – den skal bruges to steder herunder.
 
-### 3. Databasen
-- Supabase → **SQL Editor**.
-- Kør først denne ene linje, med den SAMME tekst som `SMS_SECRET`:
-  `select vault.create_secret('DIN-LANGE-TILFAELDIGE-TEKST', 'spiis_sms_secret');`
-- Kør derefter hele `supabase/sms.sql`.
+## Trin 3 – Læg sms-funktionen op
+1. Venstre menu: **Edge Functions** → **Deploy a new function** → **Via Editor**.
+2. Navn: `send-sms` (præcis sådan).
+3. Slet eksempelkoden, og indsæt hele filen `supabase/send-sms.ts` (på GitHub: åbn filen → knappen **Copy raw file**).
+4. **Deploy**.
+5. Åbn funktionen → **Details** → slå **Enforce JWT verification** (Verify JWT) **FRA** → **Save**.
 
-### 4. Prøv det af
-- Sæt `SMS_AKTIV` = `ja` (`SMS_KUN_TIL` står stadig på dit nummer).
-- Bestil noget på hjemmesiden med dit eget nummer og "TEST" i beskeden – helst til mindst en time frem.
-- Du får bekræftelsen med det samme og påmindelsen ca. 30 min før. Slet testordren i admin bagefter.
+## Trin 4 – Fire hemmelige værdier
+**Edge Functions → Secrets** (Manage secrets) → tilføj:
 
-### 5. Tænd for alle
-- Slet `SMS_KUN_TIL` under Secrets. Nu får alle kunder sms.
+| Navn | Værdi |
+|---|---|
+| `GATEWAYAPI_TOKEN` | token'et fra trin 1 |
+| `SMS_SECRET` | den hemmelige kode fra trin 2 |
+| `SMS_AKTIV` | `ja` |
+| `SMS_KUN_TIL` | dit eget mobilnummer (fx `12345678`) |
+
+`SMS_KUN_TIL` gør, at sms'erne KUN går til dig, mens du prøver.
+
+## Trin 5 – Databasen
+1. **SQL Editor** → **New query** → indsæt (med jeres hemmelige kode i stedet for teksten):
+   `select vault.create_secret('JERES-HEMMELIGE-KODE', 'spiis_sms_secret');` → **Run**.
+2. **New query** → indsæt hele filen `supabase/sms.sql` → **Run**. Der skal stå *Success*.
+   Får du en fejl om `pg_cron` eller `pg_net`: gå til **Database → Extensions**, slå `pg_cron` og `pg_net` til, og kør filen igen.
+
+## Trin 6 – Prøv det
+1. Bestil noget på hjemmesiden med **dit eget nummer**, "TEST" i beskeden, og til et tidspunkt **mindst en time frem**.
+2. Du får bekræftelsen med det samme – og påmindelsen ca. 30 min før.
+3. Slet testbestillingen i admin bagefter.
+
+Kommer der ingen sms? Se **Edge Functions → send-sms → Logs**. Står der "ugyldigt nummer", "SMS_KUN_TIL" eller "sms fejlede", står grunden lige der.
+
+## Trin 7 – Tænd for alle kunder
+**Edge Functions → Secrets** → slet `SMS_KUN_TIL`. Færdig.
+
+---
 
 ## Sluk igen
-Sæt `SMS_AKTIV` til `nej` under Edge Functions → Secrets. Så sendes der ingenting, med det samme – og intet andet ændrer sig.
+Sæt `SMS_AKTIV` til `nej` under Edge Functions → Secrets. Så sendes der ingenting, med det samme, og intet andet ændrer sig.

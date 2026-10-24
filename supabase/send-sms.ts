@@ -1,7 +1,7 @@
 // ============================================================
 // SPIIS – Edge Function: send-sms
 // Sender kunden to sms'er fra "Spiis":
-//   1) en bekræftelse lige når bestillingen er lagt ind på hjemmesiden
+//   1) en bekræftelse lige når bestillingen er lagt ind på hjemmesiden (én sms)
 //   2) en påmindelse ca. 30 minutter før afhentning / bordet
 //
 // Kaldes af databasen selv (se supabase/sms.sql):
@@ -81,14 +81,23 @@ function hvad(o: Ordre) {
 }
 const erTapas = (o: Ordre) => (o.items || []).some((l) => l && l.kind === 'tapas');
 
+/* Bekræftelsen holdes på ÉN sms (højst 160 tegn) – så koster en bestilling 2 sms'er i alt.
+   Bliver retterne for lange, står der bare antallet ("3 retter"). */
 function bekraeftelse(o: Ordre) {
-  const hvor = o.type === 'spise' ? `ved bordet ${o.persons && !erTapas(o) ? `til ${o.persons} ` : ''}` : 'til afhentning ';
   /* påmindelsen kommer kun, når der er mindst en time til – så lover vi den kun dér */
   const nu = lokal(new Date());
   const afhent = tilMin(o.time);
   const faarPaamind = o.date > nu.iso || (o.date === nu.iso && afhent !== null && afhent - nu.min >= 60);
-  return `Tak, ${fornavn(o.name)}! Spiis har modtaget din bestilling: ${hvad(o)} ${hvor}${dagTekst(o.date)} kl. ${o.time}. `
-    + `${faarPaamind ? 'Vi sender en påmindelse 30 min før. ' : ''}Kan du ikke komme, så ring ${TELEFON} senest 1 time før. Mvh Spiis`;
+  const [, m, d] = o.date.split('-').map(Number);
+  const dag = UGEDAGE[new Date(o.date + 'T12:00:00Z').getUTCDay()].slice(0, 3);
+  const hvornaar = `${o.type === 'spise' ? 'spis her' : 'afhentning'} ${dag}. ${d}/${m} kl. ${o.time}`;
+  const navn = fornavn(o.name).slice(0, 14);
+  const lav = (hvad: string) => `Tak, ${navn}! Spiis har din bestilling: ${hvad}, ${hvornaar}.`
+    + `${faarPaamind ? ' Påmindelse kommer 30 min før.' : ''} Afbud: ${TELEFON}`;
+  const linjer = (o.items || []).filter((l) => l && l.qty > 0 && l.kind !== 'emballage' && l.kind !== 'genbrug');
+  const antal = erTapas(o) ? `tapas til ${o.persons || o.qty} pers.` : `${linjer.reduce((n, l) => n + l.qty, 0)} retter`;
+  const fuld = lav(hvad(o));
+  return fuld.length <= 160 ? fuld : lav(antal);
 }
 function paamindelse(o: Ordre) {
   const hvad2 = erTapas(o) ? 'jeres tapas' : 'din mad';
