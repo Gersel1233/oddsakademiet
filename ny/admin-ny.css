@@ -1,0 +1,45 @@
+/* ============================================================
+   Spiis admin – let opfriskning (24/10)
+   Mikkel: "juster udseendet derinde, men ikke for meget – de har vænnet sig til systemet".
+   Derfor flyttes INTET: samme faner, samme knapper, samme steder. Kun skriften og
+   fornemmelsen følger den nye forside: Lesregs Host Grotesk i stedet for serif-skriften,
+   Spiis' orange med en blød trykkant på knapperne, lidt rundere kort.
+   Lægges oven på css/admin.css – fjernes denne fil, står admin præcis som før.
+   ============================================================ */
+
+@font-face{font-family:"Host Grotesk";src:url(assets/fonts-spiis/host-grotesk-400.woff2) format("woff2");font-weight:400;font-display:swap}
+@font-face{font-family:"Host Grotesk";src:url(assets/fonts-spiis/host-grotesk-500.woff2) format("woff2");font-weight:500;font-display:swap}
+@font-face{font-family:"Host Grotesk";src:url(assets/fonts-spiis/host-grotesk-600.woff2) format("woff2");font-weight:600;font-display:swap}
+@font-face{font-family:"Host Grotesk";src:url(assets/fonts-spiis/host-grotesk-700.woff2) format("woff2");font-weight:700;font-display:swap}
+@font-face{font-family:"Baloo 2";src:url(assets/fonts-spiis/baloo-2-latin-800-normal.woff2) format("woff2");font-weight:800;font-display:swap}
+
+:root{
+  --font-display:"Host Grotesk",system-ui,sans-serif;
+  --font-body:"Host Grotesk",system-ui,sans-serif;
+  --ink:#1F1A16;
+  --ink-soft:#5E554C;
+  --radius:22px;
+  --shadow:0 1px 2px rgba(31,26,22,.04),0 22px 44px -26px rgba(31,26,22,.32);
+}
+body{-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+
+/* overskrifter og store tal: fast og tæt, som på forsiden */
+h1,h2,h3,.topbar__title{letter-spacing:-.03em}
+.topbar__title{font-weight:700;font-size:1.65rem}
+.stat__value{font-weight:700;letter-spacing:-.04em}
+
+/* knapperne: samme orange som forsiden og en blød kant forneden, så de trykkes ned */
+.abtn{box-shadow:inset 0 -2px 0 rgba(31,26,22,.06)}
+.abtn:active{transform:translateY(1px) scale(.98)}
+.abtn--accent{background:linear-gradient(180deg,#E58145 0%,#D96C2C 45%,#B85417 100%);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.3),inset 0 -3px 0 rgba(110,40,5,.26),0 10px 20px -10px rgba(184,84,23,.7)}
+.abtn--accent:hover{background:linear-gradient(180deg,#D9733A 0%,#C9601F 45%,#A9480F 100%)}
+.abtn--ghost{box-shadow:none}
+
+/* den valgte fane i menuen */
+.navitem.is-active{background:linear-gradient(180deg,#E58145 0%,#D96C2C 45%,#B85417 100%);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.25),inset 0 -3px 0 rgba(110,40,5,.25)}
+.stat--accent{background:linear-gradient(160deg,#E58145,#D96C2C 45%,#B85417)}
+
+/* login-kortet stak ud til højre på en telefon (94vw + sidens egen kant) */
+.login__card{width:min(400px,100%)}

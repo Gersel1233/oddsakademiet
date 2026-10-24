@@ -10,9 +10,9 @@
    hvis den er offline.
    ============================================================ */
 
-const SKAL = 'spiis-skal-v1';
+const SKAL = 'spiis-skal-v2';
 const SKALFILER = [
-  '/admin.html', '/css/admin.css', '/js/store.js', '/js/admin.js',
+  '/admin.html', '/css/admin.css', '/ny/admin-ny.css', '/js/store.js', '/js/admin.js',
   '/js/config.js', '/assets/icon-192.png',
 ];
 
