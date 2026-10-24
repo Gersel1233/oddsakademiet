@@ -1,8 +1,8 @@
-/* Spiis /ny/ — udkastets felter tegnes af Spiis' egen database (23/10).
-   Mikkel: "brug gerne rigtige priser osv i /ny". Samme datalag som den rigtige forside
-   (js/store.js → SpiisStore): dagens ret med pris og portioner tilbage, ugen, menukortet,
-   nyhederne og åbningstiderne. Intet tal står i HTML'en; står der intet i databasen, står
-   feltet ikke. SpiisStore.subscribe kalder igen, når databasen har svaret. */
+/* Spiis – det nye udtryk oven på Spiis' egne data (js/store.js → SpiisStore).
+   Tegner toppens status, dagens ret i dag og kridttavlen med resten af ugen, menukortet og
+   åbningstiderne. Selve bestillingen, nyhederne, tapas og vinduerne klarer js/main.js som
+   altid – denne fil rører dem ikke, den vælger kun dagen i formularen, når man trykker Bestil.
+   Står intet i databasen, står feltet ikke. SpiisStore.subscribe kalder igen ved ændringer. */
 (function () {
   'use strict';
   if (typeof SpiisStore === 'undefined') return;
@@ -16,9 +16,9 @@
 
   /* ---------- eksempel: "lad os lege det er mandag" (Mikkel 23/10) ----------
      /ny/ viser som standard en almindelig hverdag: vi lader som om det er førstkommende mandag
-     og låner Spiis' egne retter fra ugen før (de ligger i databasen). ?rigtig viser ugen,
-     som den står nu. Kun på udkastet – den rigtige forside kender ikke til det. */
-  var EKSEMPEL = !/[?&]rigtig/.test(location.search);
+     og låner Spiis' egne retter fra ugen før (de ligger i databasen). Kun med ?eksempel –
+     uden står siden præcis som databasen siger lige nu. */
+  var EKSEMPEL = /[?&]eksempel/.test(location.search);
   var mandag = function () { var d = S.todayISO(); while (S.weekdayIndex(d) !== 0) d = S.addDays(d, 1); return d; };
   var DAG = EKSEMPEL ? mandag() : S.todayISO();
   var paen = function (t) { t = String(t || '').trim().replace(/\.$/, ''); return t.charAt(0).toUpperCase() + t.slice(1); };
@@ -112,10 +112,10 @@
     if (stor) { stor.hidden = ingen; stor.innerHTML = ingen ? '' : idagKort(plan[0], plan); }
     var skilt = $('[data-eksempel]');
     if (skilt) {
-      skilt.hidden = false;
+      skilt.hidden = !EKSEMPEL;
       skilt.innerHTML = EKSEMPEL
-        ? '<b>Eksempel</b> Sådan ser en mandag ud – med Spiis\' egne retter fra sidste uge. <a href="?rigtig#dagens">Se ugen, som den står nu →</a>'
-        : '<b>Rigtige data</b> Ugen, som den står i databasen lige nu. <a href="./#dagens">Se eksemplet →</a>';
+        ? '<b>Eksempel</b> Sådan ser en mandag ud – med Spiis\' egne retter fra sidste uge. <a href="./#dagens">Se ugen, som den står nu →</a>'
+        : '';
     }
     /* tavlen: resten af ugen i kridt. Har dagen en ret, står retten og prisen (og et tryk
        forudbestiller); ellers står hvad caféen gør den dag. Tom uge: tavlen tager hele ugen. */
@@ -182,7 +182,6 @@
     menu();
   });
 
-  /* ---------- nyhederne: Spiis' egne opslag ---------- */
   function nyheder() {
     var raekke = $('[data-nyheder]'), afs = $('[data-nyheder-afsnit]');
     if (!raekke) return;
@@ -220,10 +219,23 @@
   }
 
   function alt() {
-    [top, dagens, menu, nyheder, tider].forEach(function (f) { try { f(); } catch (e) { console.error(e); } });
+    [top, dagens, menu, tider].forEach(function (f) { try { f(); } catch (e) { console.error(e); } });
   }
   alt();
   if (S.subscribe) S.subscribe(alt);
+
+  /* "Bestil" på et dagskort eller en ret på tavlen: vælg dagen i den rigtige formular (samme vej som
+     js/main.js' egen "Bestil til denne dag") og rul ned til den */
+  document.addEventListener('click', function (e) {
+    var a = e.target.closest && e.target.closest('[data-bestil-dag]');
+    if (!a) return;
+    var iso = a.getAttribute('data-bestil-dag');
+    var sel = document.getElementById('orderDate');
+    if (sel && [].some.call(sel.options, function (o) { return o.value === iso && !o.disabled; })) {
+      sel.value = iso;
+      sel.dispatchEvent(new Event('change', { bubbles: true }));
+    }
+  });
 
   /* ---------- billedrækken glider roligt og kan swipes ---------- */
   (function () {
