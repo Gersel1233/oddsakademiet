@@ -329,3 +329,65 @@
     return [val('tapasDate'), val('tapasTime'), spise ? 'Tapas hos Spiis' : 'Hent jeres tapas hos Spiis', spise ? 120 : 15];
   });
 })();
+
+/* ---------- swipe for at bestille (Mikkel 24/10: "en slide-knap ligesom MobilePay") ----------
+   I det sidste kig bekræfter man ved at trække knappen helt over. Det er js/main.js' egen
+   "Bekræft & send", der trykkes på til sidst – vi bygger kun glideren ovenpå den.
+   Tastatur: fokus på knappen og Enter/mellemrum bekræfter også. */
+(function () {
+  var vindue = document.getElementById('orderConfirmWrap');
+  var send = document.getElementById('confirmSend');
+  if (!vindue || !send) return;
+  var svip = document.createElement('div');
+  svip.className = 'svip';
+  svip.innerHTML = '<span class="svip-fyld" aria-hidden="true"></span>'
+    + '<span class="svip-tekst">Swipe for at bestille</span>'
+    + '<button type="button" class="svip-knop" aria-label="Bekræft og send bestillingen"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h13M13 6.5l5.5 5.5-5.5 5.5"/></svg></button>';
+  send.parentNode.insertBefore(svip, send);
+  send.classList.add('svip-gemt');
+  var knop = svip.querySelector('.svip-knop'), fyld = svip.querySelector('.svip-fyld'), tekst = svip.querySelector('.svip-tekst');
+  var x = 0, start = 0, max = 0, traek = false, faerdig = false;
+  var saet = function (v, glid) {
+    x = Math.max(0, Math.min(max, v));
+    knop.style.transition = fyld.style.transition = glid ? 'transform .35s cubic-bezier(.2,.9,.24,1), width .35s cubic-bezier(.2,.9,.24,1)' : 'none';
+    knop.style.transform = 'translateX(' + x + 'px)';
+    fyld.style.width = (x + knop.offsetWidth) + 'px';
+    tekst.style.opacity = String(Math.max(0, 1 - x / (max * .6 || 1)));
+  };
+  function nulstil() {
+    faerdig = false; svip.classList.remove('er-sendt');
+    tekst.textContent = 'Swipe for at bestille';
+    max = svip.clientWidth - knop.offsetWidth - 12;
+    saet(0, false);
+  }
+  function bekraeft() {
+    if (faerdig) return;
+    faerdig = true;
+    saet(max, true);
+    svip.classList.add('er-sendt');
+    tekst.textContent = 'Sender …'; tekst.style.opacity = '1';
+    if (navigator.vibrate) { try { navigator.vibrate(18); } catch (e) {} }
+    setTimeout(function () { send.click(); }, 280);
+  }
+  knop.addEventListener('pointerdown', function (e) {
+    if (faerdig) return;
+    traek = true; start = e.clientX - x; max = svip.clientWidth - knop.offsetWidth - 12;
+    knop.setPointerCapture(e.pointerId);
+  });
+  knop.addEventListener('pointermove', function (e) { if (traek) saet(e.clientX - start, false); });
+  var slip = function () {
+    if (!traek) return;
+    traek = false;
+    if (x >= max * .82) bekraeft(); else saet(0, true);
+  };
+  knop.addEventListener('pointerup', slip);
+  knop.addEventListener('pointercancel', slip);
+  knop.addEventListener('keydown', function (e) {
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); bekraeft(); }
+  });
+  /* nulstil, hver gang vinduet åbnes */
+  new MutationObserver(function () { if (!vindue.hidden) requestAnimationFrame(nulstil); })
+    .observe(vindue, { attributes: true, attributeFilter: ['hidden'] });
+  window.addEventListener('resize', function () { if (!vindue.hidden && !faerdig) nulstil(); });
+})();
+

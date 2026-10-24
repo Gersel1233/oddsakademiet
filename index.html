@@ -1,9 +1,9 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="da">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Spiis – Hjemmelavet mad i Karlslunde | Dagens ret &amp; catering</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Spiis – Hjemmelavet mad i Karlslunde | Dagens ret &amp; catering</title>
   <meta name="description" content="Spiis i Karlslunde laver hjemmelavet mad fra bunden. Se dagens ret, bestil takeaway eller spis her, prøv vores tapas – og lad os holde jeres næste selskab. Kongens Enge 42, 2690 Karlslunde." />
   <meta name="theme-color" content="#FAF6F0" />
   <meta property="og:title" content="Spiis – Hjemmelavet mad i Karlslunde" />
@@ -81,473 +81,899 @@
     ]
   }
   </script>
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link rel="preconnect" href="https://jhdlxexgrwvuoqetcgbt.supabase.co" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@800&family=Fraunces:ital,wght@0,500;0,600;0,700;1,500&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="css/style.css?v=__V__" />
-  <link rel="stylesheet" href="css/datepicker.css?v=__V__" />
+<link rel="preconnect" href="https://jhdlxexgrwvuoqetcgbt.supabase.co" crossorigin>
+<link rel="preload" href="ny/assets/fonts-spiis/host-grotesk-700.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="ny/motor.css?v=__V__">
+<!-- Forsiden (24/10): Spiis i sit eget udtryk – creme, orange, kokkehuen og plakaternes bordeaux –
+     sat i Lesregs Host Grotesk. Bestillingen er den samme som før: js/main.js og js/store.js står
+     uændret, så alt lander i admin præcis som det plejer. Kun udseendet er nyt.
+     Designet blev bygget afsnit for afsnit på /ny/; ny/ rummer dets filer (spiis-ny.js, motor.css,
+     billeder og skrifter). ?eksempel viser eksempel-mandagen. Den gamle forside ligger i git-historikken. -->
+<style>
+/* Lesregs tekstskrift — den samme som på Mosede Havnecafe. Ingen kursiv, ingen serif (Mikkel). */
+@font-face{font-family:"Host Grotesk";src:url(ny/assets/fonts-spiis/host-grotesk-400.woff2) format("woff2");font-weight:400;font-display:swap}
+@font-face{font-family:"Host Grotesk";src:url(ny/assets/fonts-spiis/host-grotesk-500.woff2) format("woff2");font-weight:500;font-display:swap}
+@font-face{font-family:"Host Grotesk";src:url(ny/assets/fonts-spiis/host-grotesk-600.woff2) format("woff2");font-weight:600;font-display:swap}
+@font-face{font-family:"Host Grotesk";src:url(ny/assets/fonts-spiis/host-grotesk-700.woff2) format("woff2");font-weight:700;font-display:swap}
+@font-face{font-family:"Baloo 2";src:url(ny/assets/fonts-spiis/baloo-2-latin-800-normal.woff2) format("woff2");font-weight:800;font-display:swap}
+
+:root{
+  --creme:#FAF6F0; --creme2:#F2EBDF; --papir:#FFFDF9;
+  --blaek:#1F1A16; --blaek2:#5E554C; --streg:rgba(31,26,22,.12);
+  --orange:#D96C2C; --orange-d:#B85417; --orange-l:#F7E3D3;
+  --bordeaux:#6B2226; --bordeaux-d:#4E1719; --guld:#D3AE68;
+  --pad:20px; --r:22px;
+  --vis:"Host Grotesk",system-ui,sans-serif; --krop:"Host Grotesk",system-ui,sans-serif; --logo:"Baloo 2",system-ui,sans-serif; --haand:"Host Grotesk",system-ui,sans-serif;
+  --skygge:0 1px 2px rgba(31,26,22,.05),0 18px 40px -22px rgba(31,26,22,.35);
+}
+*{box-sizing:border-box}
+[hidden]{display:none !important}
+html{scroll-behavior:smooth;-webkit-text-size-adjust:100%;overflow-x:clip}
+body{margin:0;background:var(--creme);color:var(--blaek);font:400 16px/1.55 var(--krop);overflow-x:clip}
+img{display:block;max-width:100%}
+a{color:inherit}
+h1,h2,h3{font-family:var(--vis);font-weight:600;letter-spacing:-.035em;margin:0;text-wrap:balance}
+.vis-i{color:var(--orange)}
+.wrap{max-width:1160px;margin:0 auto;padding:0 var(--pad)}
+
+/* de orange prikker — Spiis' egne */
+/* under overskrifterne: kokkehuen mellem to korte streger – Spiis' eget mærke, ikke prikker */
+.skille{display:flex;align-items:center;justify-content:center;gap:10px;margin:14px 0 0}
+.skille svg{width:24px;height:24px}
+.skille i{width:34px;height:2px;border-radius:2px;background:linear-gradient(90deg,rgba(217,108,44,0),var(--orange))}
+.skille i:last-child{background:linear-gradient(270deg,rgba(217,108,44,0),var(--orange))}
+.kicker{display:block;font:600 12.5px/1 var(--krop);letter-spacing:.22em;text-transform:uppercase;color:var(--orange-d)}
+.hoved{text-align:center;margin-bottom:28px}
+.hoved h2{font-size:clamp(34px,8.5vw,56px);line-height:1;margin-top:10px}
+.hoved p{max-width:44ch;margin:14px auto 0;color:var(--blaek2)}
+.haand{font:600 14px/1.2 var(--krop);color:var(--orange-d)}
+
+/* knapper: Spiis' egen knap – en pille med en lille rund "tallerken" i højre ende, der bærer
+   pilen (eller telefonen/brevet), og en blød kant forneden, så den trykkes ned som en rigtig knap. */
+.knap{--bobbel:#FFF4EA;--ikon:var(--orange-d);--form:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%23000%22%20stroke-width%3D%222.4%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M5%2012h13M13%206.5l5.5%205.5-5.5%205.5%22/%3E%3C/svg%3E");
+  position:relative;display:inline-flex;align-items:center;justify-content:center;gap:10px;height:56px;padding:0 64px;border-radius:999px;border:0;cursor:pointer;
+  font:650 16px/1 var(--krop);letter-spacing:-.01em;white-space:nowrap;text-decoration:none;-webkit-tap-highlight-color:transparent;
+  transition:transform .22s cubic-bezier(.2,.9,.24,1),box-shadow .22s ease,background-color .2s ease}
+.knap::after,.knap::before{content:"";position:absolute;top:7px;bottom:7px;right:7px;aspect-ratio:1;border-radius:50%;transition:transform .3s cubic-bezier(.2,.9,.24,1)}
+.knap::after{background:var(--bobbel);box-shadow:inset 0 -2px 0 rgba(0,0,0,.08)}
+.knap::before{z-index:1;background:var(--ikon);-webkit-mask:var(--form) center/20px no-repeat;mask:var(--form) center/20px no-repeat}
+.knap[href^="tel:"]{--form:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%23000%22%20stroke-width%3D%222.4%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M8.3%203.8%206%204.4C4.6%204.8%203.8%206.2%204.1%207.6c1.5%206.3%206%2010.8%2012.3%2012.3%201.4.3%202.8-.5%203.2-1.9l.6-2.3c.2-.7-.2-1.4-.9-1.7l-3-1.2c-.6-.2-1.2%200-1.6.4l-1.1%201.4c-2.2-1-4-2.8-5-5l1.4-1.1c.5-.4.6-1%20.4-1.6l-1.2-3c-.3-.7-1-1.1-1.7-.9z%22/%3E%3C/svg%3E")}
+.knap[href^="mailto:"]{--form:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%23000%22%20stroke-width%3D%222.4%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Crect%20x%3D%223.5%22%20y%3D%225.5%22%20width%3D%2217%22%20height%3D%2213%22%20rx%3D%222.5%22/%3E%3Cpath%20d%3D%22m4.5%207%207.5%206%207.5-6%22/%3E%3C/svg%3E")}
+@media (hover:hover){.knap:hover{transform:translateY(-2px)}.knap:hover::before,.knap:hover::after{transform:translateX(3px)}.knap[href^="tel:"]:hover::before{transform:rotate(-12deg)}.knap[href^="tel:"]:hover::after{transform:none}}
+.knap:active{transform:translateY(1px) scale(.985)}
+.knap:focus-visible{outline:3px solid var(--orange);outline-offset:3px}
+.knap--orange{color:#fff;background:linear-gradient(180deg,#E58145 0%,#D96C2C 45%,var(--orange-d) 100%);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.35),inset 0 -4px 0 rgba(110,40,5,.28),0 14px 26px -14px rgba(184,84,23,.85)}
+.knap--orange:active{box-shadow:inset 0 1px 0 rgba(255,255,255,.3),inset 0 -1px 0 rgba(110,40,5,.28),0 6px 14px -10px rgba(184,84,23,.8)}
+.knap--lys{--bobbel:var(--orange);--ikon:#fff;color:var(--blaek);background:var(--papir);box-shadow:inset 0 0 0 1.5px var(--streg),inset 0 -4px 0 rgba(31,26,22,.06),0 10px 22px -16px rgba(31,26,22,.5)}
+.knap--bordeaux{--bobbel:var(--guld);--ikon:var(--bordeaux);color:#fff;background:var(--bordeaux);box-shadow:inset 0 -4px 0 rgba(0,0,0,.25),0 12px 24px -12px rgba(78,23,25,.8)}
+.knap i{display:none}
+
+/* ---------- topbjælken ---------- */
+.top{position:fixed;inset:0 0 auto;z-index:50;display:flex;align-items:center;gap:10px;padding:10px 12px;padding-top:max(10px,env(safe-area-inset-top))}
+.logo{display:inline-flex;align-items:center;gap:6px;height:46px;padding:0 16px 0 10px;border-radius:999px;background:rgba(255,253,249,.92);
+  -webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);box-shadow:0 8px 20px -12px rgba(31,26,22,.45),inset 0 0 0 1px rgba(31,26,22,.06);text-decoration:none}
+.logo svg{width:30px;height:30px}
+.logo b{font:800 24px/1 var(--logo);color:var(--blaek);letter-spacing:-.01em;transform:translateY(2px)}
+.top .knap{height:46px;padding:0 50px 0 20px;margin-left:auto;font-size:15px}
+.top .knap::before{-webkit-mask-size:17px;mask-size:17px}
+.burger{width:46px;height:46px;border-radius:50%;border:0;background:rgba(255,253,249,.92);box-shadow:0 8px 20px -12px rgba(31,26,22,.45),inset 0 0 0 1px rgba(31,26,22,.06);display:grid;place-items:center}
+.burger i{display:block;width:18px;height:2px;border-radius:2px;background:var(--blaek);box-shadow:0 6px 0 var(--blaek),0 -6px 0 var(--orange)}
+
+/* ---------- 1. TOPPEN: videoen ---------- */
+.hero{position:relative;isolation:isolate;display:flex;flex-direction:column;justify-content:flex-end;min-height:min(92svh,820px);padding:120px 0 118px;color:var(--creme);overflow:hidden;background:#2A1C14}
+.hero-video{position:absolute;inset:0;z-index:-2;width:100%;height:100%;object-fit:cover}
+.hero-slor{position:absolute;inset:0;z-index:-1;background:
+  linear-gradient(180deg,rgba(31,20,13,.55) 0%,rgba(31,20,13,0) 22%,rgba(31,20,13,.15) 45%,rgba(31,20,13,.86) 82%,#24170F 100%)}
+.hero-ind{position:relative;width:100%}
+.hero-status{display:inline-flex;align-items:center;gap:9px;margin:0 0 16px;padding:8px 14px 8px 12px;border-radius:999px;background:rgba(250,246,240,.14);
+  -webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);box-shadow:inset 0 0 0 1px rgba(250,246,240,.22);font:600 13.5px/1 var(--krop)}
+.hero-status .prik{width:8px;height:8px;border-radius:50%;background:#5DD38C;box-shadow:0 0 0 4px rgba(93,211,140,.22)}
+.hero-status.lukket .prik{background:#F2A65A;box-shadow:0 0 0 4px rgba(242,166,90,.22)}
+.hero-kicker{display:block;font:600 12.5px/1 var(--krop);letter-spacing:.24em;text-transform:uppercase;color:#F4C9A6}
+.hero h1{margin-top:14px;font-size:clamp(44px,12.4vw,100px);line-height:.96;font-weight:700;letter-spacing:-.045em;color:var(--creme);text-wrap:balance;text-shadow:0 2px 30px rgba(0,0,0,.25)}
+/* "travl" — en hurtig frem-tilbage-frem streg i kridt sættes under, som når man har travlt */
+.hero h1 .travl{position:relative;display:inline-block;color:#F08A47}
+.hero h1 .kridt{position:absolute;left:-3%;bottom:-.3em;width:106%;height:.42em;overflow:visible;filter:url(#kridtfilter)}
+.hero h1 .kridt path{fill:none;stroke:#F6B385;stroke-width:7.5;stroke-linecap:round;stroke-linejoin:round;opacity:.92}
+@media (prefers-reduced-motion:no-preference){
+  .hero h1 .kridt path{stroke-dasharray:1;stroke-dashoffset:1;animation:kridt 1s .55s cubic-bezier(.45,.05,.3,1) forwards}
+  @keyframes kridt{to{stroke-dashoffset:0}}
+}
+.hero h1{padding-bottom:.22em}
+.hero-under{max-width:36ch;margin:18px 0 0;font-size:18px;line-height:1.5;color:rgba(250,246,240,.86)}
+.hero-idag{display:flex;align-items:center;gap:10px;max-width:440px;margin-top:20px;padding:12px 14px 12px 16px;border-radius:16px;text-decoration:none;color:var(--blaek);background:var(--papir);box-shadow:0 14px 30px -14px rgba(0,0,0,.6)}
+.hero-idag small{flex:none;padding:5px 8px;border-radius:999px;background:var(--orange);color:#fff;font:600 11px/1 var(--krop);letter-spacing:.12em;text-transform:uppercase}
+.hero-idag b{min-width:0;flex:1;font:600 17px/1.2 var(--vis);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hero-idag span{flex:none;font:600 17px/1 var(--vis);color:var(--orange-d)}
+.hero-idag i{font-style:normal;color:var(--orange-d)}
+.hero-knapper{display:flex;flex-wrap:wrap;gap:10px;max-width:560px;margin-top:22px}
+.hero-knapper .knap{flex:1 1 190px}
+.knap--glas{--bobbel:rgba(250,246,240,.92);--ikon:var(--blaek);color:var(--creme);background:rgba(250,246,240,.14);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);box-shadow:inset 0 0 0 1.5px rgba(250,246,240,.35)}
+.hero .stempel{position:absolute;right:14px;bottom:14px;z-index:3;width:92px;height:92px;transform:rotate(-12deg)}
+.stempel svg{width:100%;height:100%}
+@media (prefers-reduced-motion:no-preference){.stempel .ring{transform-origin:60px 60px;animation:drej 40s linear infinite}}
+@keyframes drej{to{transform:rotate(360deg)}}
+
+/* ---------- billedrækken under videoen ---------- */
+.raekke{position:relative;padding:38px 0 30px;background:linear-gradient(#24170F 0,#24170F 70px,var(--creme) 70px)}
+.raekke-spor{display:flex;gap:16px;overflow-x:auto;padding:4px 20px 18px;scrollbar-width:none;-webkit-overflow-scrolling:touch;scroll-behavior:auto}
+.raekke-spor::-webkit-scrollbar{display:none}
+.foto-kort{position:relative;flex:none;width:min(54vw,280px);padding:9px 9px 14px;border-radius:6px;background:#fff;text-decoration:none;color:var(--blaek);
+  box-shadow:0 22px 34px -22px rgba(31,26,22,.6),0 1px 2px rgba(31,26,22,.08);transition:transform .35s cubic-bezier(.2,.9,.24,1)}
+.foto-kort:nth-child(odd){transform:rotate(-1.6deg)}.foto-kort:nth-child(even){transform:rotate(1.4deg) translateY(10px)}
+.foto-kort:hover{transform:rotate(0) translateY(-4px)}
+.foto-kort img{width:100%;aspect-ratio:4/5;object-fit:cover;border-radius:3px}
+.foto-kort span{display:block;margin-top:10px;font:600 17px/1.15 var(--krop);letter-spacing:-.01em;color:var(--blaek)}
+.foto-kort em{display:block;margin-top:4px;font:600 13px/1 var(--krop);font-style:normal;color:var(--orange-d)}
+
+/* ---------- 2. NYHEDER: opslag sat op med tape ---------- */
+.sektion{padding:78px 0}
+.opslag-raekke{display:flex;gap:18px;overflow-x:auto;scroll-snap-type:x mandatory;padding:18px var(--pad) 26px;margin:0 calc(-1 * var(--pad));scrollbar-width:none}
+.opslag-raekke::-webkit-scrollbar{display:none}
+.opslag{position:relative;flex:none;width:78%;max-width:320px;scroll-snap-align:center;background:var(--papir);border-radius:20px;padding:10px 10px 18px;
+  box-shadow:inset 0 0 0 1px rgba(31,26,22,.06),0 18px 34px -22px rgba(31,26,22,.45)}
+
+.opslag img{width:100%;height:auto;max-height:440px;object-fit:contain;border-radius:12px;background:var(--creme2)}
+.opslag small{display:block;margin:14px 6px 0;font:600 12px/1 var(--krop);letter-spacing:.18em;text-transform:uppercase;color:var(--orange-d)}
+.opslag h3{margin:6px 6px 0;font-size:23px}
+.opslag p{margin:6px 6px 0;font-size:14.5px;color:var(--blaek2)}
+.fb{position:relative;overflow:hidden;display:grid;grid-template-columns:auto 1fr;gap:14px 14px;align-items:center;margin-top:10px;padding:20px;border-radius:24px;
+  color:#fff;text-decoration:none;background:linear-gradient(135deg,#1877F2,#0A5FD8);box-shadow:0 20px 40px -22px rgba(8,80,200,.75)}
+.fb-ikon{display:grid;place-items:center;width:52px;height:52px;border-radius:50%;background:#fff;box-shadow:0 6px 14px -6px rgba(0,0,0,.3)}
+.fb-ikon svg{width:30px;height:30px}
+.fb-tekst b{display:block;font:700 18px/1.15 var(--krop);letter-spacing:-.02em}
+.fb-tekst span{display:block;margin-top:4px;font-size:14.5px;line-height:1.4;color:rgba(255,255,255,.86)}
+.fb-knap{position:relative;grid-column:1/-1;display:flex;align-items:center;justify-content:center;gap:8px;height:56px;padding:0 64px;border-radius:999px;background:#fff;color:#0A5FD8;font:650 16px/1 var(--krop);box-shadow:inset 0 -4px 0 rgba(10,95,216,.14)}
+.fb-knap::after{content:"";position:absolute;top:7px;bottom:7px;right:7px;aspect-ratio:1;border-radius:50%;background:#0A5FD8 center/20px no-repeat;-webkit-mask:none;transition:transform .3s cubic-bezier(.2,.9,.24,1)}
+.fb-knap::before{content:"";position:absolute;z-index:1;top:7px;bottom:7px;right:7px;aspect-ratio:1;background:#fff;-webkit-mask:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%23000%22%20stroke-width%3D%222.4%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M5%2012h13M13%206.5l5.5%205.5-5.5%205.5%22/%3E%3C/svg%3E") center/20px no-repeat;mask:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%23000%22%20stroke-width%3D%222.4%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M5%2012h13M13%206.5l5.5%205.5-5.5%205.5%22/%3E%3C/svg%3E") center/20px no-repeat;transition:transform .3s cubic-bezier(.2,.9,.24,1)}
+.fb:hover .fb-knap::before,.fb:hover .fb-knap::after{transform:translateX(3px)}
+.fb-knap i{display:none}
+.fb-hue{position:absolute;right:-18px;top:-22px;width:120px;height:120px;opacity:.12;filter:brightness(0) invert(1)}
+@media (min-width:700px){.fb{grid-template-columns:auto 1fr auto}.fb-knap{grid-column:auto;padding:0 64px 0 26px}}
+
+/* ---------- 3. DAGENS RET: ugens dagskort ----------
+   I dag først og fremhævet; hver åben dag med ret, pris, portioner og sin egen Bestil.
+   Lukkede dage står smalle og dæmpede. Alt fra Dagens ret i admin (spiis-ny.js). */
+.dagens{background:var(--creme2)}
+.dagens-linje{margin:-10px auto 20px;text-align:center;color:var(--blaek2)}
+.dage{display:flex;gap:14px;overflow-x:auto;scroll-snap-type:x mandatory;padding:6px var(--pad) 24px;margin:0 calc(-1 * var(--pad));scrollbar-width:none;scroll-padding:0 var(--pad)}
+.dage::-webkit-scrollbar{display:none}
+.dret{flex:none;display:flex;flex-direction:column;width:min(80vw,330px);scroll-snap-align:start;border-radius:24px;background:var(--papir);overflow:hidden;
+  box-shadow:inset 0 0 0 1px rgba(31,26,22,.06),0 18px 34px -24px rgba(31,26,22,.5)}
+.dret-hoved{position:relative;display:flex;align-items:center;gap:10px;padding:16px 18px 14px;border-bottom:2px dashed rgba(31,26,22,.1)}
+.dret-hoved b{font:700 20px/1 var(--krop);letter-spacing:-.02em}
+.dret-hoved span{font:500 13.5px/1 var(--krop);color:var(--blaek2)}
+.dret-hoved .dret-hue{margin-left:auto;width:30px;height:30px;opacity:.9}
+.dret.idag{box-shadow:inset 0 0 0 2px var(--orange),0 22px 40px -22px rgba(184,84,23,.55)}
+.dret.idag .dret-hoved{background:var(--orange);color:#fff;border-bottom-color:rgba(255,255,255,.3)}
+.dret.idag .dret-hoved span{color:rgba(255,255,255,.85)}
+.dret.idag .dret-hue{filter:brightness(0) invert(1)}
+.dret-krop{flex:1;padding:18px 18px 6px}
+.dret h3{font:700 26px/1.08 var(--krop);letter-spacing:-.03em}
+.dret p{margin:8px 0 0;font-size:15px;color:var(--blaek2)}
+.dret .eller{font-weight:600;color:var(--blaek)}
+.dret-fod{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:14px 18px 18px}
+.dret-pris{font:700 28px/1 var(--krop);letter-spacing:-.03em;color:var(--orange-d)}
+.dret-tilbage{padding:6px 10px;border-radius:999px;background:var(--orange-l);font:600 12.5px/1 var(--krop);color:var(--orange-d)}
+.dret-tilbage.ude{background:#F1E5E3;color:#8C2B2B}
+.dret-fod .knap{margin-left:auto;height:46px;padding:0 20px;font-size:15px}
+.dret.lukket,.dret.tom{width:min(46vw,190px);background:transparent;box-shadow:inset 0 0 0 1.5px rgba(31,26,22,.12)}
+.dret.lukket .dret-hoved,.dret.tom .dret-hoved{flex-direction:column;align-items:flex-start;gap:6px;border-bottom:0}
+.dret.lukket .dret-hue,.dret.tom .dret-hue{display:none}
+.dret.lukket h3,.dret.tom h3{font-size:18px;color:var(--blaek2)}
+.dret.lukket p,.dret.tom p{font-size:13.5px}
+.dage-prik{display:flex;justify-content:center;gap:6px;margin-top:-6px}
+.dage-prik i{width:6px;height:6px;border-radius:50%;background:rgba(31,26,22,.18);transition:width .25s ease,background .25s ease}
+.dage-prik i.on{width:18px;border-radius:3px;background:var(--orange)}
+@media (min-width:900px){.dret{width:320px}.dage{padding-left:max(40px,calc(50% - 560px))}}
+/* når ugen ikke har en eneste ret endnu: ét kort, der siger det ordentligt, og ugen som en lille stribe */
+/* i dag: dagens ret står alene og stort, så ingen er i tvivl */
+.eksempel-skilt{max-width:620px;margin:0 auto 16px;padding:10px 14px;border-radius:14px;background:#FFF3C9;box-shadow:inset 0 0 0 1.5px #EBCB6B;font-size:13.5px;line-height:1.45;color:#5A4511;text-align:center}
+.eksempel-skilt b{margin-right:6px;padding:3px 7px;border-radius:6px;background:#5A4511;color:#FFF3C9;font-size:11px;letter-spacing:.12em;text-transform:uppercase}
+.eksempel-skilt a{color:inherit;font-weight:600;white-space:nowrap}
+.idag-plads{max-width:620px;margin:0 auto}
+.idag-kort{position:relative;overflow:hidden;border-radius:28px;background:var(--papir);box-shadow:inset 0 0 0 2px var(--orange),0 30px 50px -30px rgba(184,84,23,.6)}
+.idag-baand{display:flex;align-items:center;gap:10px;padding:14px 22px;background:var(--orange);color:#fff}
+.idag-baand b{font:700 15px/1 var(--krop);letter-spacing:.16em;text-transform:uppercase}
+.idag-baand span:last-child{margin-left:auto;font:500 14px/1 var(--krop);opacity:.9}
+.idag-prik{width:9px;height:9px;border-radius:50%;background:#fff;box-shadow:0 0 0 0 rgba(255,255,255,.7);animation:puls 2s ease-out infinite}
+@keyframes puls{70%{box-shadow:0 0 0 9px rgba(255,255,255,0)}100%{box-shadow:0 0 0 0 rgba(255,255,255,0)}}
+.idag-hue{position:absolute;right:-26px;top:58px;width:150px;height:150px;opacity:.07;pointer-events:none}
+.idag-krop{position:relative;padding:22px 22px 24px}
+.idag-kort h3{margin-top:8px;font:700 clamp(32px,9vw,44px)/1 var(--krop);letter-spacing:-.04em}
+.idag-beskriv{max-width:36ch;margin:12px 0 0;font-size:16.5px;line-height:1.5;color:var(--blaek2)}
+.idag-kort .eller{margin:10px 0 0;font-size:15px;color:var(--blaek2)}
+.idag-fakta{display:flex;align-items:flex-end;gap:18px;margin-top:20px;padding-top:18px;border-top:2px dashed rgba(31,26,22,.1)}
+.idag-pris{font:700 40px/1 var(--krop);letter-spacing:-.04em;color:var(--orange-d)}
+.idag-tid{margin-left:auto;text-align:right;font-size:13px;line-height:1.35;color:var(--blaek2)}
+.idag-tid b{font-size:17px;color:var(--blaek)}
+.idag-portioner{margin-top:16px}
+.idag-portioner div{display:flex;align-items:baseline;gap:6px;font-size:14px;color:var(--blaek2)}
+.idag-portioner div b{color:var(--orange-d);font-size:15px}
+.idag-portioner i{display:block;height:8px;margin-top:8px;border-radius:99px;background:var(--orange-l);overflow:hidden;position:relative}
+.idag-portioner i::after{content:"";position:absolute;inset:0;width:calc(var(--fyld) * 100%);border-radius:inherit;background:linear-gradient(90deg,#E27A3A,var(--orange-d))}
+.idag-portioner.ude div b{color:#8C2B2B}
+.idag-bestil{width:100%;margin-top:20px}
+.idag-kort.fri{box-shadow:inset 0 0 0 1.5px rgba(31,26,22,.12)}
+.idag-kort.fri .idag-baand{background:var(--blaek)}
+.idag-kort.fri h3{font-size:clamp(26px,7vw,32px)}
+.idag-naeste{margin:12px 0 0;color:var(--blaek2)}
+.resten{max-width:620px;margin:34px auto 12px;font:700 13px/1 var(--krop);letter-spacing:.2em;text-transform:uppercase;color:var(--blaek2)}
+@media (min-width:900px){.resten{text-align:center}}
+.dret-fod .knap--lys{margin-left:auto;height:42px;padding:0 16px;font-size:14px}
+/* i dag + tavlen hænger sammen: stablet på telefon, side om side på computer */
+.dagens-par{display:grid;gap:22px;max-width:620px;margin:0 auto}
+.dagens-par .idag-plads{max-width:none;margin:0;width:100%}
+.dagens-par .tavle{max-width:none;margin:0;width:100%}
+@media (min-width:980px){.dagens-par{max-width:1120px;grid-template-columns:1.05fr 1fr;align-items:start;gap:28px}.dagens-par.tom{max-width:620px;grid-template-columns:1fr}}
+.tavle-dage li.ret{display:block;padding:9px 0}
+.tavle-dage li.ret::after{display:none}
+.tavle-dage li.ret a{display:grid;grid-template-columns:1fr auto;align-items:baseline;column-gap:8px;color:inherit;text-decoration:none}
+.tavle-dage li.ret small{grid-column:1/-1;font:600 11.5px/1 var(--krop);letter-spacing:.18em;text-transform:uppercase;color:#F6B385;margin-bottom:6px}
+.tavle-dage li.ret em{display:flex;align-items:baseline;gap:8px;font:600 18px/1.25 var(--krop);font-style:normal;color:#F6F2EA}
+.tavle-dage li.ret em::after{content:"";flex:1;min-width:16px;border-bottom:2px dotted rgba(246,242,234,.3);transform:translateY(-4px)}
+.tavle-dage li.ret span{font:700 18px/1 var(--krop);color:#F6B385}
+.tavle-dage li.ret a:hover em,.tavle-dage li.ret a:focus-visible em{color:#fff;text-decoration:underline;text-decoration-color:rgba(246,183,133,.6);text-underline-offset:4px}
+.tavle-dage li b .dato{color:rgba(246,242,234,.55)}
+.tavle-dage li.ret small .dato{font:500 12px/1 var(--krop);letter-spacing:.04em;color:rgba(246,242,234,.55)}
+.tavle-dage li.ret .forud{grid-column:1/-1;margin-top:5px;font:500 13px/1 var(--krop);color:rgba(246,242,234,.6)}
+/* tom uge: en cafétavle i kridt – intet foto, for køkkenet fotograferer ikke dagens ret */
+.tavle{position:relative;max-width:620px;margin:0 auto 6px;padding:32px 30px 34px;border-radius:22px;color:#F3EFE6;text-align:center;
+  background:radial-gradient(120% 70% at 20% 10%,rgba(255,255,255,.07),transparent 60%),radial-gradient(90% 60% at 85% 90%,rgba(255,255,255,.05),transparent 60%),#24302B;
+  box-shadow:inset 0 0 0 9px #7A4E2D,inset 0 0 0 11px #5E3B21,inset 0 2px 30px 12px rgba(0,0,0,.35),0 26px 44px -28px rgba(31,26,22,.7)}
+.tavle::after{content:"";position:absolute;left:50%;bottom:4px;width:38%;height:6px;transform:translateX(-50%);border-radius:4px;background:#5E3B21;opacity:.7}
+.tavle-hue{width:50px;height:50px;margin:0 auto;display:block;filter:url(#kridttekst)}
+.tavle-hue path{fill:none;stroke:#F6B385;stroke-width:2.8;stroke-linecap:round;stroke-linejoin:round}
+.tavle-kicker{display:block;margin-top:8px;font:600 12px/1 var(--krop);letter-spacing:.24em;text-transform:uppercase;color:#F6B385;filter:url(#kridttekst)}
+.tavle h3{position:relative;display:inline-block;margin-top:12px;font:700 clamp(26px,7vw,34px)/1.05 var(--krop);letter-spacing:-.03em;color:#F6F2EA;filter:url(#kridttekst)}
+.tavle-streg{position:absolute;left:-3%;bottom:-.42em;width:106%;height:.4em;overflow:visible}
+.tavle-streg path{fill:none;stroke:#F6B385;stroke-width:5;stroke-linecap:round}
+.tavle-dage{list-style:none;margin:26px auto 0;padding:0;max-width:420px;text-align:left;filter:url(#kridttekst)}
+.tavle-dage li{display:flex;align-items:baseline;gap:8px;padding:7px 0;font:500 16px/1.3 var(--krop);color:rgba(246,242,234,.92)}
+.tavle-dage li::after{content:"";order:2;flex:1;border-bottom:2px dotted rgba(246,242,234,.3);transform:translateY(-4px)}
+.tavle-dage b{order:1;font-weight:700}
+.tavle-dage .dato{margin-left:7px;font:500 12.5px/1 var(--krop);letter-spacing:.02em;color:rgba(246,242,234,.55);text-transform:none}
+.tavle-dage span{order:3;color:rgba(246,242,234,.7)}
+.tavle-dage li.aaben span{color:#F6B385}
+.tavle-dage li.idag b::after{content:" · i dag";font-weight:500;color:#F6B385}
+.tavle-dage li.imorgen b::after{content:" · i morgen";font-weight:500;color:rgba(246,242,234,.6)}
+.tavle p{max-width:440px;margin:20px auto 0;color:rgba(246,242,234,.78);font-size:15.5px}
+.tavle-knapper{display:flex;flex-wrap:wrap;gap:10px;margin-top:22px}
+.tavle-knapper .knap{flex:1 1 100%}
+.tavle-ring{--bobbel:#F6B385;--ikon:#24302B;background:transparent;color:#F6F2EA;box-shadow:inset 0 0 0 2px rgba(246,242,234,.55)}
+@media (prefers-reduced-motion:no-preference){
+  .tavle .tavle-streg path{stroke-dasharray:1;stroke-dashoffset:1}
+  .tavle.vis .tavle-streg path{animation:kridt .8s .25s cubic-bezier(.55,.05,.35,1) forwards}
+  .tavle .tavle-dage li{opacity:0}
+  .tavle.vis .tavle-dage li{animation:skriv .45s ease forwards;animation-delay:calc(.5s + var(--n) * .11s)}
+  @keyframes skriv{from{opacity:0;clip-path:inset(0 100% 0 0)}to{opacity:1;clip-path:inset(0 0 0 0)}}
+}
+.dage.mini{justify-content:safe center;gap:8px;padding-bottom:10px}
+.dage.mini .dret{width:auto;min-width:96px;flex:none;border-radius:16px;background:var(--papir);box-shadow:inset 0 0 0 1.5px rgba(31,26,22,.08)}
+.dage.mini .dret-hoved{padding:10px 12px 4px;flex-direction:column;align-items:flex-start;gap:3px;border:0;background:none;color:inherit}
+.dage.mini .dret-hoved b{font-size:14px}.dage.mini .dret-hoved span{font-size:11.5px;color:var(--blaek2)}
+.dage.mini .dret-hue,.dage.mini .dret-krop p{display:none}
+.dage.mini .dret-krop{padding:0 12px 10px}
+.dage.mini .dret h3{font-size:13px;font-weight:600;letter-spacing:0;color:var(--blaek2)}
+.dage.mini .dret.lukket h3{color:#9C5B3B}
+.dage.mini .dret.idag{box-shadow:inset 0 0 0 2px var(--orange)}
+.dage.mini + .dage-prik{display:none}
+
+/* ---------- 4. BESTIL: køkkenbonen ---------- */
+.bon{position:relative;max-width:560px;margin:0 auto;padding:30px 22px 26px;background:var(--papir);box-shadow:var(--skygge);
+  --tak:radial-gradient(circle at 10px 0,transparent 9px,var(--papir) 9.5px) 0 0/20px 12px repeat-x}
+.bon::before,.bon::after{content:"";position:absolute;left:0;right:0;height:12px}
+.bon::before{top:-11px;background:radial-gradient(circle at 10px 12px,transparent 8px,var(--papir) 8.5px) 0 0/20px 12px repeat-x}
+.bon::after{bottom:-11px;background:radial-gradient(circle at 10px 0,transparent 8px,var(--papir) 8.5px) 0 0/20px 12px repeat-x}
+.bon-hoved{display:flex;align-items:center;justify-content:space-between;padding-bottom:16px;border-bottom:2px dashed var(--streg)}
+.bon-hoved b{font:800 26px/1 var(--logo)}
+.bon-hoved span{font:500 13px/1.3 var(--krop);color:var(--blaek2);text-align:right}
+.felt{margin-top:18px}
+.felt label{display:block;margin-bottom:8px;font:600 14px/1 var(--krop)}
+.felt input,.felt select{width:100%;height:52px;padding:0 16px;border:0;border-radius:14px;background:var(--creme);box-shadow:inset 0 0 0 1.5px var(--streg);font:500 16px var(--krop);color:var(--blaek)}
+.to{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.valg{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.valg button{display:flex;flex-direction:column;align-items:center;gap:6px;padding:14px 10px;border:0;border-radius:16px;background:var(--creme);box-shadow:inset 0 0 0 1.5px var(--streg);font:600 15px/1 var(--krop);color:var(--blaek);cursor:pointer}
+.valg button svg{width:40px;height:40px}
+.valg button.on{background:var(--orange-l);box-shadow:inset 0 0 0 2px var(--orange)}
+.valg button small{font:400 12.5px/1.2 var(--krop);color:var(--blaek2)}
+.groen{display:flex;gap:10px;align-items:flex-start;margin-top:16px;padding:12px 14px;border-radius:14px;background:#EAF4EC;color:#24553A;font-size:14px}
+.bon .knap{width:100%;margin-top:22px}
+.bon-fod{margin:12px 0 0;text-align:center;font-size:13.5px;color:var(--blaek2)}
+
+/* ---------- 5. MENUKORTET ---------- */
+.faner{display:flex;gap:8px;overflow-x:auto;padding:4px var(--pad) 14px;margin:0 calc(-1 * var(--pad));scrollbar-width:none}
+.faner::-webkit-scrollbar{display:none}
+.faner button{flex:none;height:42px;padding:0 18px;border:0;border-radius:999px;background:var(--papir);box-shadow:inset 0 0 0 1.5px var(--streg);font:600 15px/1 var(--krop);color:var(--blaek);cursor:pointer}
+.faner button.on{background:var(--blaek);color:#fff;box-shadow:none}
+.kort{max-width:720px;margin:0 auto;padding:10px 22px 22px;background:var(--papir);border-radius:var(--r);box-shadow:var(--skygge)}
+.ret{padding:16px 0;border-bottom:1.5px dotted rgba(31,26,22,.2)}
+.ret:last-child{border-bottom:0}
+.ret-top{display:flex;align-items:baseline;gap:10px}
+.ret-top b{font:600 20px/1.2 var(--vis)}
+.ret-top i{flex:1;border-bottom:2px dotted rgba(217,108,44,.4);transform:translateY(-4px)}
+.ret-top span{font:600 19px/1 var(--vis);color:var(--orange-d);white-space:nowrap}
+.ret p{margin:4px 0 0;font-size:14.5px;color:var(--blaek2)}
+.allergi{max-width:720px;margin:16px auto 0;text-align:center;font-size:14px;color:var(--blaek2)}
+
+/* ---------- 6. TAPAS: plakatens bordeaux ---------- */
+.tapas{position:relative;background:var(--bordeaux);color:#fff;overflow:hidden}
+.tapas::before{content:"";position:absolute;inset:0;background:radial-gradient(700px 400px at 100% 0,rgba(211,174,104,.22),transparent 60%);pointer-events:none}
+.tapas .kicker{color:var(--guld)}
+.tapas .hoved p{color:rgba(255,255,255,.8)}
+.tapas .skille i{background:linear-gradient(90deg,rgba(211,174,104,0),var(--guld))}.tapas .skille i:last-child{background:linear-gradient(270deg,rgba(211,174,104,0),var(--guld))}
+.tapas-grid{position:relative;display:grid;gap:22px}
+.tapas-foto{position:relative;margin:0}
+.tapas-foto img{width:100%;aspect-ratio:4/5;object-fit:cover;border-radius:18px;box-shadow:0 30px 60px -30px rgba(0,0,0,.7)}
+.tapas-foto figcaption{position:absolute;right:-6px;bottom:-14px;max-width:62%;padding:10px 14px;border-radius:12px;background:var(--papir);color:var(--blaek);font:600 14px/1.25 var(--krop);transform:rotate(-3deg);box-shadow:0 12px 22px -12px rgba(0,0,0,.6)}
+.priskort{padding:22px;border-radius:20px;background:rgba(255,255,255,.07);box-shadow:inset 0 0 0 1px rgba(255,255,255,.16)}
+.priskort .linje{display:flex;align-items:baseline;gap:10px;padding:12px 0;border-bottom:1px dashed rgba(255,255,255,.22)}
+.priskort .linje:last-of-type{border-bottom:0}
+.priskort .linje b{flex:none;font:600 36px/1 var(--vis);color:var(--guld);white-space:nowrap}
+.priskort .linje span{color:rgba(255,255,255,.85)}
+.priskort ul{margin:14px 0 0;padding:0;list-style:none;display:grid;gap:8px;font-size:15px;color:rgba(255,255,255,.85)}
+.priskort ul li::before{content:"✦";margin-right:10px;color:var(--guld)}
+.priskort .knap{--bobbel:var(--bordeaux);--ikon:var(--guld);width:100%;margin-top:20px;background:var(--guld);color:var(--bordeaux-d);box-shadow:inset 0 -4px 0 rgba(78,23,25,.22)}
+
+/* ---------- 7. OM SPIIS: Kiffen i Karlslunde IF ---------- */
+.om-grid{display:grid;gap:26px}
+.om-foto{position:relative}
+.om-foto img{width:100%;aspect-ratio:4/3;object-fit:cover;border-radius:var(--r)}
+.om-foto .haand{position:absolute;left:14px;bottom:-16px;padding:8px 14px;border-radius:12px;background:var(--papir);box-shadow:var(--skygge);transform:rotate(-3deg)}
+.om h2{font-size:clamp(34px,8.5vw,54px);line-height:1.02}
+.om p{color:var(--blaek2)}
+.vaerdier{display:grid;gap:12px;margin-top:20px}
+.vaerdi{display:flex;gap:14px;align-items:flex-start;padding:16px;border-radius:18px;background:var(--papir);box-shadow:inset 0 0 0 1.5px var(--streg)}
+.vaerdi svg{flex:none;width:42px;height:42px}
+.vaerdi b{display:block;font:600 19px/1.1 var(--vis)}
+.vaerdi span{font-size:14.5px;color:var(--blaek2)}
+.signatur{margin-top:20px;font:600 20px/1.2 var(--krop);color:var(--orange-d)}
+
+/* ---------- 8. SELSKABER ---------- */
+.selskab{background:var(--creme2)}
+.mosaik{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.mosaik img{width:100%;height:100%;object-fit:cover;border-radius:16px}
+.mosaik img:first-child{grid-row:span 2}
+.anledninger{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin:22px 0 0}
+.anledninger span{padding:9px 14px;border-radius:999px;background:var(--papir);box-shadow:inset 0 0 0 1.5px var(--streg);font:600 14px/1 var(--krop)}
+.snak{margin-top:26px;padding:26px 22px;border-radius:var(--r);background:var(--blaek);color:#fff;text-align:center}
+.snak h3{font-size:32px}
+.snak p{color:rgba(255,255,255,.78)}
+.snak .knap{width:100%;max-width:380px}
+.snak small{display:block;margin-top:14px;color:rgba(255,255,255,.7)}
+.snak small a{color:#fff;font-weight:600}
+.stjerner{display:flex;align-items:center;justify-content:center;gap:10px;margin-top:20px;font-weight:600}
+.stjerner b{color:var(--orange);letter-spacing:2px;font-size:18px}
+
+/* ---------- 9. KONTAKT ---------- */
+.kontakt-grid{display:grid;gap:16px}
+.kort-hvid{padding:22px;border-radius:var(--r);background:var(--papir);box-shadow:var(--skygge)}
+.kort-hvid h3{font-size:26px;margin-bottom:10px}
+.tid{display:flex;align-items:baseline;gap:10px;padding:9px 0}
+.tid i{flex:1;border-bottom:2px dotted var(--streg);transform:translateY(-4px)}
+.tid b{font:600 18px/1 var(--vis)}
+.tid.idag{margin:0 -10px;padding:9px 10px;border-radius:10px;background:var(--orange-l);color:var(--orange-d)}
+.adr{font:600 20px/1.3 var(--vis)}
+.kontakt-knapper{display:grid;gap:10px;margin-top:16px}
+.kontakt-knapper .knap{width:100%}
+
+/* ---------- 10. BUNDEN ---------- */
+.bund{padding:56px 0 110px;background:var(--blaek);color:rgba(255,255,255,.78);text-align:center}
+.bund .stempel-lille{width:110px;height:110px;margin:0 auto}
+.bund h3{margin-top:16px;font-size:32px;color:#fff}
+.bund p{margin:8px 0 0}
+.bund small{display:block;margin-top:26px;color:rgba(255,255,255,.5)}
+
+/* den faste bestil-knap på telefonen */
+.pille{position:fixed;left:14px;right:14px;bottom:max(14px,env(safe-area-inset-bottom));z-index:40;display:flex;transition:transform .35s cubic-bezier(.2,.9,.24,1),opacity .25s ease}
+/* pillen venter, til videoen er rullet forbi — toppen har sine egne knapper */
+.pille.skjult{transform:translateY(140%);opacity:0;pointer-events:none}
+.pille .knap{width:100%;height:58px;font-size:17px}
+
+/* udkast-mærket */
+.udkast{position:absolute;left:50%;top:max(66px,calc(env(safe-area-inset-top) + 60px));z-index:60;transform:translateX(-50%);padding:6px 12px;border-radius:999px;background:var(--bordeaux);color:#fff;font:600 12px/1 var(--krop);letter-spacing:.12em;text-transform:uppercase;opacity:.9}
+
+/* ---------- computeren ---------- */
+@media (min-width:900px){
+  :root{--pad:40px}
+  .top{padding:16px 28px}
+  .hero{padding-bottom:90px}
+  .hero-ind{max-width:1160px}
+  .hero .stempel{right:max(40px,calc(50% - 560px));bottom:40px;width:150px;height:150px}
+  .raekke-spor{padding-left:max(40px,calc(50% - 560px));gap:22px}
+  .foto-kort{width:270px}
+  .opslag{width:300px}
+  .opslag-raekke{justify-content:center;overflow:visible}
+  .tapas-grid,.om-grid{grid-template-columns:1fr 1fr;gap:44px;align-items:center}
+  .kontakt-grid{grid-template-columns:1fr 1fr}
+  .pille{display:none}
+  .mosaik{grid-template-columns:2fr 1fr 1fr}
+}
+
+/* ---------- MOTOREN: Spiis' rigtige bestilling (js/main.js) i det nye udtryk ----------
+   motor.css er den gamle sides stil, lagt ind under .motor (genereret af css/style.css),
+   så alle dele main.js tegner har en stil. Her får de det nye udseende. */
+.motor{--font-display:"Host Grotesk",system-ui,sans-serif;--font-body:"Host Grotesk",system-ui,sans-serif;--cream:var(--creme);--ink:var(--blaek);--ink-soft:var(--blaek2);--accent:var(--orange);--accent-deep:var(--orange-d);--accent-soft:var(--orange-l);
+  background:none;color:var(--blaek);font-size:16px;line-height:1.5;padding-bottom:0!important;overflow:visible}
+.motor em,.motor i{font-style:normal}
+.bestil-motor,.tapas-motor{max-width:720px;margin:0 auto}
+.motor .card{background:var(--papir);border:0;border-radius:28px;box-shadow:0 1px 2px rgba(31,26,22,.04),0 26px 50px -30px rgba(31,26,22,.45)}
+.motor .form{padding:26px 22px}
+@media (min-width:700px){.motor .form{padding:34px}}
+.motor .field > span{font:600 14px/1.2 var(--krop);letter-spacing:.01em;color:var(--blaek)}
+.motor .field input,.motor .field select,.motor .field textarea{border-radius:16px;background:var(--creme);border:1.5px solid rgba(31,26,22,.1);font:500 16px/1.2 var(--krop);color:var(--blaek)}
+.motor .field input:focus,.motor .field select:focus{border-color:var(--orange);box-shadow:0 0 0 4px rgba(217,108,44,.15)}
+.motor .field__hint{font-size:13.5px;color:var(--blaek2)}
+/* to-go / spis her som to kort med Spiis' egne tegninger */
+.motor .spisevalg{grid-template-columns:1fr 1fr;gap:10px}
+.motor .spisevalg span{flex-direction:column;justify-content:center;gap:4px;min-height:132px;padding:16px 10px;border-radius:20px;background:var(--creme);border:0;box-shadow:inset 0 0 0 1.5px rgba(31,26,22,.1);color:var(--blaek);text-align:center;font:600 16px/1.15 var(--krop)}
+.motor .spisevalg svg{width:46px;height:46px;margin:0 auto 4px}
+.motor .spisevalg b{font-weight:700}
+.motor .spisevalg small{font:400 12.5px/1.25 var(--krop);color:var(--blaek2)}
+.motor .spisevalg input:checked + span{background:var(--orange-l);color:var(--blaek);box-shadow:inset 0 0 0 2px var(--orange)}
+.motor .spisevalg input:focus-visible + span{outline:3px solid var(--orange);outline-offset:3px}
+/* retterne */
+.motor .builder__dagens{border-radius:20px;border:2px solid var(--orange);background:#fff}
+.motor .bitem__info strong{font:700 17px/1.25 var(--krop);letter-spacing:-.01em}
+.motor .bitem__info em{font:700 17px/1 var(--krop);color:var(--orange-d)}
+.motor .bitem__info small{font-size:14px;color:var(--blaek2)}
+.motor .menuline__badge{font-family:var(--krop)}
+.motor .bcat{border-radius:18px;background:var(--creme);border:0;box-shadow:inset 0 0 0 1.5px rgba(31,26,22,.08)}
+.motor .bcat summary{font:600 17px/1 var(--krop)}
+.motor .bcat__hint{color:var(--orange-d);font-weight:600}
+.motor .stepper{background:#fff}
+.motor .basketbar{border-radius:18px;background:var(--blaek);color:var(--creme);font-family:var(--krop)}
+.motor .form__submit{width:100%;margin-top:22px}
+.motor .form__note{font-size:13.5px;color:var(--blaek2);text-align:center;margin-top:12px}
+.motor .success{text-align:center}
+.motor .success h3{font:700 28px/1.1 var(--krop);letter-spacing:-.03em}
+.motor .success .knap{margin-top:18px}
+/* vinduerne */
+.motor .confirm__card{border-radius:28px;background:var(--papir);font-family:var(--krop)}
+.motor .confirm__title{font:700 26px/1.1 var(--krop);letter-spacing:-.03em}
+.motor .confirm__kicker{font:600 12px/1 var(--krop);letter-spacing:.2em;text-transform:uppercase;color:var(--orange-d)}
+.motor .confirm__btns{display:grid;grid-template-columns:1fr;gap:10px}
+@media (min-width:560px){.motor .confirm__btns{grid-template-columns:auto 1fr}}
+.motor .confirm__btns .knap{padding:0 58px 0 24px}
+#confirmBack{padding:0 24px 0 58px}#confirmBack::before,#confirmBack::after{right:auto;left:7px}#confirmBack::before{transform:scaleX(-1)}
+@media (hover:hover){#confirmBack:hover::before{transform:scaleX(-1) translateX(3px)}#confirmBack:hover::after{transform:translateX(-3px)}}
+.motor .daycard__cta,#newsOrderSend{width:100%;margin-top:16px}
+/* nyhederne */
+.motor .news{border-radius:24px;background:var(--papir);overflow:hidden;box-shadow:0 22px 40px -28px rgba(31,26,22,.5)}
+.motor .news__title{font:700 22px/1.15 var(--krop);letter-spacing:-.02em}
+.motor .news__date{font:600 12px/1 var(--krop);letter-spacing:.14em;text-transform:uppercase;color:var(--orange-d)}
+.motor .news__text{color:var(--blaek2)}
+.motor .news .btn--accent{color:#fff;background:linear-gradient(180deg,#E58145,var(--orange-d));border-radius:999px;font:650 15px/1 var(--krop)}
+.fb-plads{margin-top:-40px;margin-bottom:10px}
+#nyheder[hidden] + .fb-plads{margin-top:40px}
+/* ferie / lukkedage */
+.motor .closurebanner{padding:28px 0 0}
+.motor .closurebanner .container{width:min(720px,calc(100% - 2 * var(--pad)))}
+.motor .feriekort{border-radius:26px;font-family:var(--krop)}
+.motor .feriekort .btn{border-radius:999px;font:650 15px/1 var(--krop)}
+/* tapas: indholdet og formularen på bordeaux */
+.tapas-faar{margin:18px 0 10px;font:700 18px/1 var(--krop);color:var(--creme)}
+.tapas .priskort .motor .tapas__items{margin:0 0 6px;padding:0;background:none}
+.tapas .priskort .motor .tapas__items li{color:rgba(250,246,240,.85);font-size:14.5px}
+.tapas .priskort .motor .tapas__items li::before{content:"✦";color:var(--guld)}
+.tapas-motor{margin-top:24px}
+.tapas-motor .card{background:var(--papir)}
+.motor .tapas__cavacard{border-radius:18px;background:var(--creme);border:0;box-shadow:inset 0 0 0 1.5px rgba(31,26,22,.08)}
+.motor .tapas__sum{border-radius:16px;font-family:var(--krop)}
+.motor .tapasvilkaar{border-radius:18px}
+.motor .tapasvilkaar__tlf{font:700 18px/1 var(--krop)}
+.tapas-send{--bobbel:var(--bordeaux);--ikon:var(--guld);color:var(--bordeaux-d);background:var(--guld);box-shadow:inset 0 -4px 0 rgba(78,23,25,.22),0 14px 26px -16px rgba(78,23,25,.7)}
+/* swipe for at bestille */
+.motor .svip-gemt{position:absolute!important;width:1px!important;height:1px!important;overflow:hidden!important;clip:rect(0 0 0 0)!important;padding:0!important;border:0!important}
+.motor .svip{position:relative;height:64px;margin-top:4px;border-radius:999px;overflow:hidden;user-select:none;-webkit-user-select:none;
+  background:linear-gradient(180deg,#E58145,var(--orange-d));box-shadow:inset 0 1px 0 rgba(255,255,255,.3),inset 0 -4px 0 rgba(110,40,5,.28),0 14px 26px -14px rgba(184,84,23,.85)}
+.motor .svip-fyld{position:absolute;left:0;top:0;bottom:0;width:64px;border-radius:999px;background:rgba(110,40,5,.28)}
+.motor .svip-tekst{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding-left:48px;color:#fff;font:650 16.5px/1 var(--krop);letter-spacing:-.01em;pointer-events:none}
+.motor .svip-tekst::after{content:"";width:46px;height:2px;margin-left:12px;border-radius:2px;background:linear-gradient(90deg,rgba(255,255,255,.7),rgba(255,255,255,0));animation:svipglans 1.8s ease-in-out infinite}
+@keyframes svipglans{0%,100%{transform:translateX(-6px);opacity:.4}50%{transform:translateX(6px);opacity:1}}
+.motor .svip-knop{position:absolute;left:6px;top:6px;width:52px;height:52px;border:0;border-radius:50%;background:#FFF4EA;box-shadow:0 6px 14px -6px rgba(78,30,0,.6),inset 0 -2px 0 rgba(0,0,0,.08);display:grid;place-items:center;cursor:grab;touch-action:none}
+.motor .svip-knop:active{cursor:grabbing}
+.motor .svip-knop:focus-visible{outline:3px solid #fff;outline-offset:2px}
+.motor .svip-knop svg{width:24px;height:24px;fill:none;stroke:var(--orange-d);stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}
+.motor .svip.er-sendt .svip-tekst::after{display:none}
+.motor .svip.er-sendt .svip-tekst{padding-left:0}
+.motor .confirm__btns{grid-template-columns:1fr!important}
+.motor .confirm__btns #confirmBack{order:2;background:none;box-shadow:none;height:auto;padding:10px!important;color:var(--blaek2);font-size:15px}
+.motor .confirm__btns #confirmBack::before,.motor .confirm__btns #confirmBack::after{display:none}
+@media (prefers-reduced-motion:reduce){.motor .svip-tekst::after{animation:none}}
+/* påmindelsen på tak-kortet */
+.motor .paamind{margin:22px auto 0;max-width:440px;padding:18px;border-radius:20px;background:var(--orange-l);text-align:center}
+.motor .paamind p{margin:0 0 14px;font-size:14.5px;line-height:1.45;color:var(--blaek2)}
+.motor .paamind p b{display:block;margin-bottom:2px;font-size:16.5px;color:var(--blaek)}
+.motor .paamind .knap{width:100%}
+.motor .paamind-google{display:inline-block;margin-top:12px;font:600 13.5px/1.3 var(--krop);color:var(--orange-d)}
+.motor .paamind .knap{--form:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='4' y='5' width='16' height='15' rx='3'/%3E%3Cpath d='M4 10h16M9 3v4M15 3v4M12 13v4M10 15h4'/%3E%3C/svg%3E")}
+/* køkkenets egne linjer under åbningstiderne */
+.hele-kortet{margin:22px 0 0;text-align:center}
+.anker{display:block;position:relative;top:-80px;height:0}
+.kokken-note{margin:12px 0 0;font-size:14px;color:var(--blaek2)}
+.kokken-note:empty{display:none}
+/* menuen fra burgeren */
+.menu-ark{position:absolute;top:calc(100% + 8px);right:12px;display:none;flex-direction:column;min-width:230px;padding:8px;border-radius:22px;background:var(--papir);box-shadow:0 24px 50px -20px rgba(31,26,22,.5),inset 0 0 0 1px rgba(31,26,22,.06)}
+.menu-ark.is-open{display:flex}
+.menu-ark a{padding:13px 14px;border-radius:14px;color:var(--blaek);text-decoration:none;font:600 16px/1 var(--krop)}
+.menu-ark a:hover{background:var(--orange-l)}
+/* main.js gemmer bestil-knapperne, når der er lukket eller pause på online-bestilling */
+.pille.is-hidden{transform:translateY(140%);opacity:0;pointer-events:none}
+body.site-closed #mobileCta,body.site-closed .top > .knap,body.orders-paused #mobileCta,body.orders-paused .top > .knap{display:none!important}
+</style>
 </head>
 <body>
 
-  <!-- ====== NAVIGATION ====== -->
-  <header class="nav" id="nav">
-    <div class="nav__inner">
-      <a href="#top" class="logo" aria-label="Spiis – forside">
-        <svg class="logo__hat" viewBox="0 0 48 48" aria-hidden="true">
-          <path d="M15 30v7c0 1.7 1.3 3 3 3h12c1.7 0 3-1.3 3-3v-7" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>
-          <path d="M14.5 31c-4.7-.6-8.5-4.6-8.5-9.4 0-4.6 3.4-8.4 7.9-9.3C15.2 8.5 19.2 6 24 6s8.8 2.5 10.1 6.3c4.5.9 7.9 4.7 7.9 9.3 0 4.8-3.8 8.8-8.5 9.4" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>
-          <path d="M20 30v4M24 30v4M28 30v4" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/>
-        </svg>
-        <span class="logo__word">Spiis<span class="logo__dots" aria-hidden="true"></span></span>
-      </a>
-      <nav class="nav__links" id="navLinks" aria-label="Hovedmenu">
-        <a href="#dagensret">Dagens ret</a>
-        <a href="menu.html">Menukort</a>
-        <a href="#tapas">Tapas</a>
-        <a href="#om">Om Spiis</a>
-        <a href="#selskaber">Selskab &amp; catering</a>
-        <a href="#kontakt">Kontakt</a>
-        <a href="#bestil" class="btn btn--small btn--accent nav__cta">Bestil dagens ret</a>
-      </nav>
-      <button class="nav__burger" id="navBurger" aria-label="Åbn menu" aria-expanded="false">
-        <span></span><span></span><span></span>
-      </button>
-    </div>
-  </header>
 
-  <!-- ====== HERO ====== -->
-  <section class="hero" id="top">
-    <div class="hero__media">
-      <!-- src sættes af js: straks på desktop, dovent på mobil så teksten lander først -->
-      <!-- poster = et skarpt billede fra selve videoen. Det ligger bag som
-           baggrund, så der ALDRIG er et mørkt hul mens videoen loader – og
-           så siden ser rigtig ud, selv hvis telefonen nægter at afspille. -->
-      <video id="heroVideo" autoplay muted loop playsinline preload="auto"
-             poster="assets/hero-poster.jpg" src="assets/hero.mp4" data-src="assets/hero.mp4"></video>
-      <div class="hero__overlay"></div>
-    </div>
-    <div class="hero__content">
-      <p class="hero__kicker" data-hero="1">Hjemmelavet · Friskt · Karlslunde</p>
-      <h1 class="hero__title">
-        <span class="hero__line" data-hero="2"><span>Hjemmelavet mad,</span></span>
-        <span class="hero__line" data-hero="3"><span>når hverdagen er <em>travl</em></span></span>
-      </h1>
-      <p class="hero__sub" data-hero="4">Velsmag og kvalitet i hver en bid – nemt, hurtigt og altid en fornøjelse!</p>
-      <div class="hero__cta" data-hero="5">
-        <a href="#dagensret" class="btn btn--accent">Se dagens ret</a>
-        <a href="#selskaber" class="btn btn--ghost">Selskab &amp; catering</a>
-      </div>
-    </div>
-    <a href="#dagensret" class="hero__scroll" aria-label="Scroll ned">
-      <span class="hero__scroll-dot"></span>
-    </a>
-  </section>
+<!-- kokkehuen fra Spiis' favicon, genbrugt overalt -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="hue" viewBox="0 0 48 48">
+      <g fill="none" stroke="#D96C2C" stroke-linecap="round" stroke-linejoin="round" transform="translate(24 24) scale(1.16) translate(-24 -23.5)">
+        <path d="M16.4 30.2v6.2c0 1.6 1.3 2.9 2.9 2.9h9.4c1.6 0 2.9-1.3 2.9-2.9v-6.2" stroke-width="3.6"/>
+        <path d="M15.4 31.1c-4.4-.6-7.9-4.3-7.9-8.8 0-4.3 3.1-7.9 7.4-8.7C16.1 10.4 19.7 8.1 24 8.1s7.9 2.3 9.1 5.5c4.3.8 7.4 4.4 7.4 8.7 0 4.5-3.5 8.2-7.9 8.8" stroke-width="3.6"/>
+        <path d="M20.6 30.2v3.4M24 30.2v3.4M27.4 30.2v3.4" stroke-width="2.7"/>
+      </g>
+    </symbol>
+    <!-- kridt til tekst: samme korn, mindre ru, så bogstaverne kan læses -->
+    <filter id="kridttekst" x="-2%" y="-20%" width="104%" height="140%">
+      <feTurbulence type="fractalNoise" baseFrequency="1.1" numOctaves="2" seed="7" result="stoej"/>
+      <feDisplacementMap in="SourceGraphic" in2="stoej" scale="1.4" xChannelSelector="R" yChannelSelector="G" result="ru"/>
+      <feTurbulence type="fractalNoise" baseFrequency="1.8" numOctaves="1" seed="3" result="korn"/>
+      <feColorMatrix in="korn" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 -1.5 1.55" result="hul"/>
+      <feComposite in="ru" in2="hul" operator="in"/>
+    </filter>
+    <!-- kridt: ru kant (forskydning) og korn (støj som maske) -->
+    <filter id="kridtfilter" x="-5%" y="-40%" width="110%" height="180%">
+      <feTurbulence type="fractalNoise" baseFrequency=".9" numOctaves="2" seed="4" result="stoej"/>
+      <feDisplacementMap in="SourceGraphic" in2="stoej" scale="3.2" xChannelSelector="R" yChannelSelector="G" result="ru"/>
+      <feTurbulence type="fractalNoise" baseFrequency="1.6" numOctaves="1" seed="9" result="korn"/>
+      <feColorMatrix in="korn" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 -1.9 1.62" result="hul"/>
+      <feComposite in="ru" in2="hul" operator="in"/>
+    </filter>
+    <path id="ringsti" d="M60 60m-44 0a44 44 0 1 1 88 0a44 44 0 1 1 -88 0"/>
+  </defs>
+</svg>
 
-  <!-- ====== MARQUEE ====== -->
-  <div class="marquee" aria-hidden="true">
-    <div class="marquee__track">
-      <span>Hjemmelavet mad</span><i>✦</i><span>Frisk hver dag</span><i>✦</i><span>Ingen stress</span><i>✦</i><span>Ingen opvask</span><i>✦</i><span>Bare god mad</span><i>✦</i><span>Perfekt til børnefamilien</span><i>✦</i>
-      <span>Hjemmelavet mad</span><i>✦</i><span>Frisk hver dag</span><i>✦</i><span>Ingen stress</span><i>✦</i><span>Ingen opvask</span><i>✦</i><span>Bare god mad</span><i>✦</i><span>Perfekt til børnefamilien</span><i>✦</i>
+<header class="top" id="nav">
+  <a class="logo" href="#top" aria-label="Spiis – til toppen"><svg><use href="#hue"/></svg><b>Spiis</b></a>
+  <a class="knap knap--orange" href="#bestil">Bestil</a>
+  <button class="burger" id="navBurger" aria-label="Åbn menu" aria-expanded="false" aria-controls="navLinks"><i></i></button>
+  <nav class="menu-ark" id="navLinks" aria-label="Hovedmenu">
+    <a href="#dagens">Dagens ret</a>
+    <a href="#bestil">Bestil</a>
+    <a href="#menukort">Menukort</a>
+    <a href="#tapas">Tapas</a>
+    <a href="#selskaber">Selskab &amp; catering</a>
+    <a href="#kontakt">Åbningstider &amp; kontakt</a>
+  </nav>
+</header>
+
+<!-- ============ 1. TOPPEN: videoen og billedrækken (23/10) ============
+     Mikkel: "vi rykker tilbage til videoen, også bedre tekst og skrift — og lige nedenunder
+     kunne jeg godt lide billederne, der gled hen til siden". Videoen er Spiis' egen
+     (festbuffeten med dannebrog); teksten er deres eget slogan, sat i Lesregs Host Grotesk (som Mosede). Status og
+     dagens ret kommer fra databasen (spiis-ny.js) — står intet, står linjen ikke. -->
+<section class="hero" id="top">
+  <video class="hero-video" id="heroVideo" autoplay muted loop playsinline preload="metadata" poster="assets/hero-poster.jpg" src="assets/hero.mp4" data-src="assets/hero.mp4" aria-hidden="true"></video>
+  <div class="hero-slor" aria-hidden="true"></div>
+  <div class="wrap hero-ind">
+    <p class="hero-status" data-status hidden><span class="prik"></span><span data-status-tekst></span></p>
+    <span class="hero-kicker">Café · Take away · Catering</span>
+    <h1>Hjemmelavet mad, <br>når hverdagen er <span class="travl">travl<svg class="kridt" viewBox="0 0 220 36" preserveAspectRatio="none" aria-hidden="true">
+      <path pathLength="1" d="M8 17C64 10 140 8 212 12L40 26C98 22 152 21 206 24"/>
+    </svg></span></h1>
+    <p class="hero-under">Lavet fra bunden hver dag i Karlslunde Idrætsforening – til at tage med eller spise her.</p>
+    <a class="hero-idag" href="#dagens" data-hero-idag hidden><small>I dag</small><b data-hero-ret></b><span data-hero-pris></span><i aria-hidden="true">→</i></a>
+    <div class="hero-knapper">
+      <a class="knap knap--orange" href="#bestil">Bestil dagens ret</a>
+      <a class="knap knap--glas" href="#menukort">Se menukortet</a>
     </div>
   </div>
+  <div class="stempel" aria-hidden="true">
+    <svg viewBox="0 0 120 120">
+      <circle cx="60" cy="60" r="57" fill="#6B2226"/>
+      <circle cx="60" cy="60" r="52" fill="none" stroke="#D3AE68" stroke-width="1" stroke-dasharray="2 3"/>
+      <g class="ring"><text font-family="Host Grotesk" font-weight="600" font-size="10.5" letter-spacing="3.2" fill="#FAF6F0"><textPath href="#ringsti">SPIIS · CAFÉ · TAKE AWAY · CATERING ·</textPath></text></g>
+      <circle cx="60" cy="60" r="27" fill="#FAF6F0"/>
+      <use href="#hue" x="40" y="39" width="40" height="40"/>
+    </svg>
+  </div>
+</section>
 
-  <main>
-    <!-- ====== NOMINERING (Greve Business Awards) – auto-skjules efter udløbsdato ====== -->
-    <div class="award" id="awardBanner" hidden>
-      <span class="award__badge" aria-hidden="true">🏆</span>
-      <span class="award__text">
-        <strong>Spiis er nomineret ved Greve Business Awards 2026</strong>
-        <span>Giv os din stemme – det tager under et minut 🙏</span>
-      </span>
-      <a class="award__cta" href="https://erhvervscentret.greve.dk/nyheder/2026/greve-ivaerksaetterpris-2026" target="_blank" rel="noopener">Stem på os →</a>
-      <button class="award__close" type="button" id="awardClose" aria-label="Skjul">✕</button>
+<!-- Billedrækken glider roligt af sig selv og kan swipes; hvert billede fører til sit afsnit -->
+<div class="raekke marquee" aria-label="Fra køkkenet hos Spiis">
+  <div class="raekke-spor" data-raekke>
+    <a class="foto-kort" href="#dagens"><img src="ny/assets/foto/bowls-640.webp" alt="Bowls anrettet i hånden" loading="eager"><span>Hjemmelavet fra bunden</span><em>Dagens ret →</em></a>
+    <a class="foto-kort" href="#menukort"><img src="ny/assets/foto/brod-640.webp" alt="Hjemmebagt surdejsbrød"><span>Bagt her i huset</span><em>Menukortet →</em></a>
+    <a class="foto-kort" href="#bestil"><img src="ny/assets/foto/vitrine-640.webp" alt="Burgere og salater i vitrinen"><span>Spis her eller tag med</span><em>Bestil →</em></a>
+    <a class="foto-kort" href="#tapas"><img src="ny/assets/foto/tapas-640.webp" alt="Tapasfade"><span>Tapas til hyggen</span><em>Spiis Tapas →</em></a>
+    <a class="foto-kort" href="#selskaber"><img src="ny/assets/foto/buffet-640.webp" alt="Lange fade til et selskab"><span>Selskaber og catering</span><em>Holder I fest? →</em></a>
+  </div>
+</div>
+
+<!-- ============ 2. NYHEDER ============
+     Tegnes af js/main.js – præcis som på den gamle forside: kun når køkkenet har lagt noget op,
+     og et opslag med pris kan bestilles direkte (vinduet nederst på siden). -->
+<section class="sektion" id="nyheder" hidden>
+  <div class="wrap">
+    <div class="hoved"><span class="kicker">Nyt fra køkkenet</span><h2>Det sker i <span class="vis-i">Kiffen</span></h2><div class="skille" aria-hidden="true"><i></i><svg><use href="#hue"/></svg><i></i></div></div>
+    <div class="motor"><div class="newsgrid" id="newsGrid"></div></div>
+  </div>
+</section>
+
+<div class="wrap fb-plads">
+    <a class="fb" href="https://www.facebook.com/groups/733369805293695" target="_blank" rel="noopener">
+      <span class="fb-ikon" aria-hidden="true"><svg viewBox="0 0 24 24"><path fill="#0866FF" d="M9.1 23.7v-8H6.6V12h2.5v-1.6c0-4.1 1.8-6 5.9-6 .8 0 2.1.2 2.7.3v3.3h-1.4c-1.4 0-2 .5-2 2V12h3.3l-.6 3.7h-2.7v8.2C19.4 23.1 24 18.2 24 12 24 5.4 18.6 0 12 0S0 5.4 0 12c0 5.7 3.9 10.4 9.1 11.7z"/></svg></span>
+      <span class="fb-tekst"><b>Bliv medlem af Spiis på Facebook</b><span>Opslag, dagens retter og livet i Spiis – vi ses i gruppen.</span></span>
+      <span class="fb-knap">Bliv medlem <i aria-hidden="true">→</i></span>
+      <svg class="fb-hue" aria-hidden="true"><use href="#hue"/></svg>
+    </a>
+</div>
+
+<!-- ferie og lukkedage – vises kun, når køkkenet har sat en periode i admin -->
+<div class="motor"><div id="closureBanner" class="closurebanner" hidden></div></div>
+
+<span id="dagensret" class="anker" aria-hidden="true"></span>
+<!-- ============ 3. DAGENS RET ============ -->
+<section class="sektion dagens" id="dagens">
+  <div class="wrap">
+    <div class="hoved"><span class="kicker">Frisklavet hver dag</span><h2>Dagens <span class="vis-i">ret</span></h2><div class="skille" aria-hidden="true"><i></i><svg><use href="#hue"/></svg><i></i></div></div>
+    <p class="eksempel-skilt" data-eksempel hidden></p>
+    <div class="dagens-par" data-dagens-par>
+      <div class="idag-plads" data-dagens-idag></div>
+      <div class="tavle" data-tavle hidden>
+        <svg class="tavle-hue" viewBox="0 0 48 48" aria-hidden="true"><g transform="translate(24 24) scale(1.16) translate(-24 -23.5)"><path d="M16.4 30.2v6.2c0 1.6 1.3 2.9 2.9 2.9h9.4c1.6 0 2.9-1.3 2.9-2.9v-6.2"/><path d="M15.4 31.1c-4.4-.6-7.9-4.3-7.9-8.8 0-4.3 3.1-7.9 7.4-8.7C16.1 10.4 19.7 8.1 24 8.1s7.9 2.3 9.1 5.5c4.3.8 7.4 4.4 7.4 8.7 0 4.5-3.5 8.2-7.9 8.8"/><path d="M20.6 30.2v3.4M24 30.2v3.4M27.4 30.2v3.4"/></g></svg>
+        <span class="tavle-kicker" data-tavle-kicker>Ugens tavle</span>
+        <h3><span data-tavle-titel>Resten af ugen</span><svg class="tavle-streg" viewBox="0 0 220 14" preserveAspectRatio="none" aria-hidden="true"><path pathLength="1" d="M4 9C50 4 120 3 216 7"/></svg></h3>
+        <ul class="tavle-dage" data-tavle-dage></ul>
+        <p data-tavle-tekst></p>
+        <div class="tavle-knapper" data-tavle-knapper></div>
+      </div>
     </div>
+  </div>
+</section>
 
-    <!-- ====== FACEBOOK-GRUPPEN – kun knappen er klikbar ====== -->
-    <div class="fbjoin">
-      <span class="fbjoin__badge" aria-hidden="true">
-        <svg viewBox="0 0 24 24" width="26" height="26" fill="currentColor" focusable="false" aria-hidden="true"><path d="M24 12.07C24 5.4 18.63 0 12 0S0 5.4 0 12.07c0 6.02 4.39 11.02 10.13 11.93v-8.44H7.08v-3.49h3.05V9.41c0-3.02 1.79-4.7 4.53-4.7 1.31 0 2.68.24 2.68.24v2.97h-1.51c-1.49 0-1.95.93-1.95 1.89v2.26h3.32l-.53 3.49h-2.79V24C19.61 23.09 24 18.09 24 12.07Z"/></svg>
-      </span>
-      <span class="fbjoin__text">
-        <strong>Bliv medlem af Spiis</strong>
-        <span>Følg med i opslag, dagens retter og livet i Spiis – vi ses i gruppen 💛</span>
-      </span>
-      <a class="fbjoin__cta" href="https://www.facebook.com/groups/733369805293695" target="_blank" rel="noopener">Bliv medlem →</a>
+<!-- ============ 4. BESTIL ============ -->
+<section class="sektion" id="bestil">
+  <div class="wrap">
+    <div class="hoved"><span class="kicker">Nemt og hurtigt</span><h2>Bestil, så står den <span class="vis-i">klar</span></h2><div class="skille" aria-hidden="true"><i></i><svg><use href="#hue"/></svg><i></i></div></div>
+    <!-- Den rigtige bestilling: samme felter og samme js/main.js som før, så alt lander i
+         køkkenets admin præcis som det plejer. Kun udseendet er nyt. -->
+    <div class="motor bestil-motor">
+      <form class="card form" id="orderForm" novalidate>
+        <div class="form__grid">
+          <label class="field field--full">
+            <span>Dato</span>
+            <select id="orderDate" required></select>
+            <small class="field__hint" id="orderDishHint"></small>
+            <small class="field__hint field__hint--besked" id="dayMsgNote" hidden></small>
+          </label>
+          <div class="field field--full">
+            <span>Vælg jeres retter</span>
+            <div class="builder" id="builder"></div>
+            <div class="basketbar" id="basketBar" hidden></div>
+          </div>
+          <div class="field field--full">
+            <span>Hvordan vil I spise?</span>
+            <div class="segmented spisevalg" role="radiogroup" aria-label="Takeaway eller spis her">
+              <label><input type="radio" name="orderType" value="togo" checked><span><svg viewBox="0 0 48 48" aria-hidden="true"><path d="M12 15h24l-2 27H14z" fill="#F2D2B6" stroke="#6B4A32" stroke-width="2" stroke-linejoin="round"/><path d="M18 15v-3a6 6 0 0 1 12 0v3" fill="none" stroke="#6B4A32" stroke-width="2"/><use href="#hue" x="16" y="22" width="16" height="16"/></svg><b>To-go</b><small>Hent ved disken</small></span></label>
+              <label><input type="radio" name="orderType" value="spise"><span><svg viewBox="0 0 48 48" aria-hidden="true"><circle cx="24" cy="26" r="13" fill="#fff" stroke="#6B4A32" stroke-width="2"/><circle cx="24" cy="26" r="8.5" fill="#F2D2B6" stroke="#6B4A32" stroke-width="1.4" opacity=".9"/><use href="#hue" x="17" y="19" width="14" height="14"/><path d="M4.5 11v6.5M7 11v6.5M9.5 11v6.5M4.5 17.5c0 2.2 1.1 3.3 2.5 3.3s2.5-1.1 2.5-3.3M7 20.8V41" fill="none" stroke="#6B4A32" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M42.5 11c-2.8 2.4-3.6 7.6-3.6 12.2h3.6M42.5 11v30" fill="#F2D2B6" stroke="#6B4A32" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><b>Spis her</b><small>Ved bordene i Kiffen</small></span></label>
+            </div>
+            <small class="field__hint field__hint--lukket" id="typeLukketNote" hidden></small>
+            <small class="field__hint" id="packHint" hidden></small>
+            <label class="reuse" id="reuseWrap" hidden>
+              <input type="checkbox" id="reuseBox">
+              <span><strong>Vi tager vores tidligere emballage med til dagens ret</strong><br>
+              <em>Så er emballagen til dagens ret gratis – tak fordi I er med på den grønne omstilling!</em></span>
+            </label>
+          </div>
+          <label class="field">
+            <span>Tidspunkt</span>
+            <select id="orderTime" required></select>
+          </label>
+          <label class="field" id="personsField">
+            <span>Antal personer <em>(så vi kan dække bord)</em></span>
+            <input type="number" id="orderPersons" min="0" max="100" value="0">
+            <small class="field__hint" id="personsHint"></small>
+          </label>
+          <label class="field">
+            <span>Navn</span>
+            <input type="text" id="orderName" placeholder="Dit fulde navn" autocomplete="name" required>
+          </label>
+          <label class="field">
+            <span>Telefonnummer</span>
+            <input type="tel" id="orderPhone" placeholder="12 34 56 78" autocomplete="tel" required>
+          </label>
+          <label class="field field--full">
+            <span>Besked <em>(valgfrit)</em></span>
+            <input type="text" id="orderNote" placeholder="Fx allergier eller særlige ønsker">
+          </label>
+        </div>
+        <p class="form__error" id="orderError" hidden></p>
+        <p class="form__error" id="orderOffline" hidden></p>
+        <div class="noed" id="orderNoedudgang" hidden></div>
+        <p class="pausenote" id="orderPausedNote" hidden></p>
+        <button type="submit" class="knap knap--orange form__submit">Send bestilling</button>
+        <p class="form__note form__note--allergi">Allergi? Spørg personalet ift. allergener – vi hjælper gerne.</p>
+      </form>
+
+      <div class="card success" id="orderSuccess" hidden>
+        <div class="success__check" aria-hidden="true">
+          <svg viewBox="0 0 52 52"><circle cx="26" cy="26" r="24" fill="none"/><path fill="none" d="M14 27l8 8 16-17"/></svg>
+        </div>
+        <h3>Tak for din bestilling!</h3>
+        <p id="orderSuccessText"></p>
+        <button class="knap knap--lys" id="orderAgainBtn" type="button">Lav en ny bestilling</button>
+      </div>
     </div>
+  </div>
+</section>
 
-    <!-- ====== FERIE/LUK-BANNER (vises kun i en luk-periode) ====== -->
-    <div id="closureBanner" class="closurebanner" hidden></div>
+<!-- ============ 5. MENUKORTET ============ -->
+<section class="sektion" id="menukort" style="padding-top:20px">
+  <div class="wrap">
+    <div class="hoved"><span class="kicker">Altid noget godt</span><h2>Menu<span class="vis-i">kortet</span></h2><div class="skille" aria-hidden="true"><i></i><svg><use href="#hue"/></svg><i></i></div></div>
+    <div class="faner" data-faner role="tablist" aria-label="Menukortets kategorier"></div>
+    <div class="kort" data-kort><p class="note-eks">Henter menukortet …</p></div>
+    <p class="allergi">Allergi? Spørg personalet ift. allergener – vi hjælper gerne.</p>
+    <p class="hele-kortet"><a class="knap knap--lys" href="menu.html">Se hele menukortet</a></p>
+  </div>
+</section>
 
-    <!-- ====== NYHEDER (vises kun, når køkkenet har lagt noget op) ====== -->
-    <section class="section section--news" id="nyheder" hidden>
-      <div class="container">
-        <div class="section__head">
-          <p class="eyebrow">Nyt fra køkkenet</p>
-          <h2>Nyheder</h2>
-          <span class="dotline" aria-hidden="true"></span>
-        </div>
-        <div class="newsgrid" id="newsGrid"><!-- js --></div>
+<!-- ============ 6. TAPAS ============ -->
+<section class="sektion tapas" id="tapas">
+  <div class="wrap">
+    <div class="hoved"><span class="kicker">Nyhed · bestilles dagen før</span><h2>Spiis <span style="font-weight:500;color:var(--guld)">Tapas</span></h2><div class="skille" aria-hidden="true"><i></i><svg><use href="#hue"/></svg><i></i></div><p>Vores nye stolthed. En overdådig tapas med alt det gode – til hyggeaftener, gæster eller bare fordi I fortjener det.</p></div>
+    <div class="tapas-grid">
+      <figure class="tapas-foto"><img src="ny/assets/foto/tapas-640.webp" alt="Tapasfade med pølser, oste, oliven og dip"><figcaption>alt anrettes i hånden på dagen</figcaption></figure>
+      <div class="priskort">
+        <div class="linje"><b id="tapasPriceLabel">199 kr.</b><span>pr. person</span></div>
+        <div class="linje"><b id="tapasDuoLabel">548 kr.</b><span>for 2 personer inkl. en flaske Cava Brut Nature – anbefalet af vores vinmand</span></div>
+        <h3 class="tapas-faar">Det får I</h3>
+        <div class="motor"><ul class="tapas__items" id="tapasItems"></ul></div>
+        <ul><li>Skal bestilles senest dagen før</li><li>Kan anrettes på porcelænsfade, klar til servering</li></ul>
+        <a class="knap" href="#tapasForm">Bestil tapas</a>
       </div>
-    </section>
-
-    <!-- ====== DAGENS RET ====== -->
-    <section class="section" id="dagensret">
-      <div class="container">
-        <div class="section__head" data-reveal>
-          <p class="eyebrow">Frisklavet hver dag</p>
-          <h2>Dagens ret</h2>
-          <span class="dotline" aria-hidden="true"></span>
-        </div>
-
-        <div class="today" data-reveal>
-          <div class="today__badge">
-            <svg viewBox="0 0 64 40" class="steam" aria-hidden="true">
-              <path class="steam__line steam__line--1" d="M20 34c-3-4 3-7 0-11" />
-              <path class="steam__line steam__line--2" d="M32 36c-3-5 3-8 0-13" />
-              <path class="steam__line steam__line--3" d="M44 34c-3-4 3-7 0-11" />
-            </svg>
-            <span id="todayLabel">I dag</span>
+    </div>
+    <div class="motor tapas-motor">
+      <form class="card form tapas__form" id="tapasForm" novalidate>
+        <h3>Bestil tapas</h3>
+        <div class="form__grid">
+          <label class="field"><span>Dato <em>(tidligst i morgen)</em></span>
+            <select id="tapasDate"></select></label>
+          <label class="field"><span>Tidspunkt</span>
+            <select id="tapasTime"></select></label>
+          <label class="field"><span>Antal personer</span>
+            <input type="number" id="tapasPersons" min="0" max="60" value="0"></label>
+          <label class="field"><span>Hvordan?</span>
+            <select id="tapasType"><option value="togo">To-go</option><option value="spise">Spis her</option></select></label>
+          <small class="field__hint field__hint--lukket field--full" id="tapasTypeNote" hidden></small>
+          <div class="tapas__cavacard field--full" id="tapasCavaCard">
+            <span class="tapas__cavatxt"><strong>Cava Brut Nature</strong><em>Anbefalet af vores vinmand · <b id="tapasCavaPrice">150 kr.</b> pr. flaske</em></span>
+            <span class="tapas__cavaqty">
+              <button type="button" class="cavabtn" data-cava="-1" aria-label="Én flaske mindre">−</button>
+              <input type="number" id="tapasCava" min="0" max="20" value="0" readonly aria-label="Antal flasker">
+              <button type="button" class="cavabtn" data-cava="1" aria-label="Én flaske mere">+</button>
+            </span>
           </div>
-          <div class="today__body">
-            <h3 class="today__dish" id="todayDish">Indlæser…</h3>
-            <p class="today__desc" id="todayDesc"></p>
-            <!-- er der FLERE dagens retter samme dag, får hver ret sin egen
-                 linje her – med navn, pris, beskrivelse og eget udsolgt-mærke.
-                 Med én ret står feltet tomt, og kortet er præcis som før. -->
-            <div class="today__retter" id="todayRetter" hidden></div>
-            <div class="today__meta">
-              <span class="today__price" id="todayPrice"></span>
-              <span class="today__stock" id="todayStock"></span>
-              <a href="#bestil" class="btn btn--accent" id="todayOrderBtn">Bestil dagens ret</a>
-            </div>
-          </div>
-          <!-- valgfrit billede af dagens ret. Er der intet, er feltet
-               helt væk, og kortet ser ud præcis som det plejer. -->
-          <figure class="today__foto" id="todayFoto" hidden><img id="todayFotoImg" alt="" /></figure>
+          <label class="field"><span>Navn</span>
+            <input type="text" id="tapasName" placeholder="Dit fulde navn" autocomplete="name"></label>
+          <label class="field"><span>Telefonnummer</span>
+            <input type="tel" id="tapasPhone" placeholder="12 34 56 78" autocomplete="tel"></label>
+          <label class="field field--full"><span>Besked <em>(valgfrit)</em></span>
+            <input type="text" id="tapasNote" placeholder="Fx allergier eller særlige ønsker"></label>
         </div>
+        <div class="tapas__sum" id="tapasSum" aria-live="polite"></div>
+        <div class="tapasvilkaar">
+          <b class="tapasvilkaar__top">Ønsker I noget til eller fra fadet?</b>
+          <p>Ring til os, <b>når bestillingen er sendt</b> – så finder vi den frem og skriver ønskerne på. Ellers får I det klassiske tapasbord.</p>
+          <a class="tapasvilkaar__tlf" href="tel:+4593995858" data-spiistel><span>93 99 58 58</span></a>
+        </div>
+        <p class="pausenote" id="tapasPausedNote" hidden></p>
+        <p class="form__error" id="tapasError" hidden></p>
+        <button type="submit" class="knap form__submit tapas-send">Bestil tapas</button>
+      </form>
 
-        <div class="weekplan" data-reveal>
-          <h3 class="weekplan__title">Dagens ret – ugen der kommer</h3>
-          <div class="weekplan__grid" id="weekPlan"><!-- js --></div>
+      <div class="card success tapas__success" id="tapasSuccess" hidden>
+        <div class="success__check" aria-hidden="true">
+          <svg viewBox="0 0 52 52"><circle cx="26" cy="26" r="24" fill="none"/><path fill="none" d="M14 27l8 8 16-17"/></svg>
         </div>
+        <h3>Tak for jeres bestilling!</h3>
+        <p id="tapasSuccessText"></p>
+        <p class="tapas__ring">Ønsker I noget til eller fra fadet? Ring til os nu på
+          <a href="tel:+4593995858" data-spiistel><span>93 99 58 58</span></a> – så skriver vi det på jeres bestilling.</p>
       </div>
-    </section>
+    </div>
+  </div>
+</section>
 
-    <!-- ====== BESTIL DAGENS RET ====== -->
-    <section class="section section--tint" id="bestil">
-      <div class="container container--narrow">
-        <div class="section__head" data-reveal>
-          <p class="eyebrow">Nemt og hurtigt</p>
-          <h2>Bestil dagens ret</h2>
-          <span class="dotline" aria-hidden="true"></span>
-          <p class="section__lead">Udfyld formularen, så står maden klar til dig – som takeaway eller ved bordet.</p>
-        </div>
+<!-- ============ 7. OM SPIIS ============ -->
+<section class="sektion om" id="om">
+  <div class="wrap om-grid">
+    <div class="om-foto"><img src="ny/assets/foto/buffet-640.webp" alt="Lange fade med pålæg, ost og pickles i køkkenet"><span class="haand">lavet fra bunden</span></div>
+    <div>
+      <span class="kicker">Hvem er vi?</span>
+      <h2 style="margin-top:10px">Mad med nærvær, <span class="vis-i">lavet fra bunden</span></h2>
+      <p>Hos Spiis i Karlslunde laver vi smagfulde, hjemmelavede måltider til dig, der ikke altid har tid til at lave mad fra bunden. Menuen skifter løbende, så du altid får varieret og frisk mad lavet med kærlighed.</p>
+      <p>Du finder os i cafeteriet i Karlslunde Idrætsforening – for alle i og omkring Karlslunde, Greve og Solrød.</p>
+      <div class="vaerdier">
+        <div class="vaerdi"><svg viewBox="0 0 48 48" aria-hidden="true"><path d="M8 26h32a16 14 0 0 1-32 0z" fill="#F2D2B6" stroke="#6B4A32" stroke-width="2"/><path d="M18 18c0-3 3-3 3-6M25 18c0-3 3-3 3-6" fill="none" stroke="#D96C2C" stroke-width="2" stroke-linecap="round"/></svg><div><b>Kvalitet</b><span>Alt laves fra bunden af gode råvarer – hver eneste dag.</span></div></div>
+        <div class="vaerdi"><svg viewBox="0 0 48 48" aria-hidden="true"><path d="M24 40s-14-8.5-14-18a8 8 0 0 1 14-5 8 8 0 0 1 14 5c0 9.5-14 18-14 18z" fill="#F7E3D3" stroke="#D96C2C" stroke-width="2.2" stroke-linejoin="round"/></svg><div><b>Nærvær</b><span>Vi kender vores gæster, og du er altid velkommen til en snak.</span></div></div>
+        <div class="vaerdi"><svg viewBox="0 0 48 48" aria-hidden="true"><circle cx="24" cy="24" r="16" fill="#FFF3D9" stroke="#6B4A32" stroke-width="2"/><circle cx="18.5" cy="21" r="2" fill="#6B4A32"/><circle cx="29.5" cy="21" r="2" fill="#6B4A32"/><path d="M16 28c3.5 5 12.5 5 16 0" fill="none" stroke="#D96C2C" stroke-width="2.4" stroke-linecap="round"/></svg><div><b>God smag</b><span>Ingen stress. Ingen opvask. Bare god mad.</span></div></div>
+      </div>
+      <p class="signatur">Velbekomme – fra hele holdet hos Spiis</p>
+    </div>
+  </div>
+</section>
 
-        <form class="card form" id="orderForm" data-reveal novalidate>
-          <div class="form__grid">
-            <label class="field field--full">
-              <span>Dato</span>
-              <select id="orderDate" required></select>
-              <small class="field__hint" id="orderDishHint"></small>
-              <!-- køkkenets egen besked på netop denne dag (fx "kun take-away i dag") -->
-              <small class="field__hint field__hint--besked" id="dayMsgNote" hidden></small>
-            </label>
-            <div class="field field--full">
-              <span>Vælg jeres retter</span>
-              <div class="builder" id="builder"><!-- js --></div>
-              <div class="basketbar" id="basketBar" hidden></div>
-            </div>
-            <label class="field">
-              <span>Tidspunkt</span>
-              <select id="orderTime" required></select>
-            </label>
-            <!-- Antal personer siger kun noget, når man spiser her: så skal
-                 der dækkes bord. Ved to-go er det ligegyldigt, og et felt
-                 man ikke kan svare rigtigt på koster bestillinger. Det
-                 vises og kræves derfor kun ved "Spis her" (styres i js). -->
-            <label class="field" id="personsField">
-              <span>Antal personer <em>(så vi kan dække bord)</em></span>
-              <input type="number" id="orderPersons" min="0" max="100" value="0" />
-              <small class="field__hint" id="personsHint"></small>
-            </label>
-            <div class="field field--full">
-              <span>Hvordan vil I spise?</span>
-              <div class="segmented" role="radiogroup" aria-label="Takeaway eller spis her">
-                <label><input type="radio" name="orderType" value="togo" checked /><span>🥡 To-go</span></label>
-                <label><input type="radio" name="orderType" value="spise" /><span>🍽️ Spis her</span></label>
-              </div>
-              <!-- nogle dage er kun den ene måde mulig – så står grunden her -->
-              <small class="field__hint field__hint--lukket" id="typeLukketNote" hidden></small>
-              <small class="field__hint" id="packHint" hidden></small>
-              <label class="reuse" id="reuseWrap" hidden>
-                <input type="checkbox" id="reuseBox" />
-                <span><strong>♻️ Vi tager vores tidligere emballage med til dagens ret</strong><br/>
-                <em>Så er emballagen til dagens ret gratis – tak fordi I er med på den grønne omstilling!</em></span>
-              </label>
-            </div>
-            <label class="field">
-              <span>Navn</span>
-              <input type="text" id="orderName" placeholder="Dit fulde navn" autocomplete="name" required />
-            </label>
-            <label class="field">
-              <span>Telefonnummer</span>
-              <input type="tel" id="orderPhone" placeholder="12 34 56 78" autocomplete="tel" required />
-            </label>
-            <label class="field field--full">
-              <span>Besked <em>(valgfrit)</em></span>
-              <input type="text" id="orderNote" placeholder="Fx allergier eller særlige ønsker" />
-            </label>
-          </div>
-          <p class="form__error" id="orderError" hidden></p>
-          <p class="form__error" id="orderOffline" hidden></p>
-          <!-- nettet svigtede midt i afsendelsen: bestillingen står stadig,
-               og der er en vej igennem som ikke kræver internet -->
-          <div class="noed" id="orderNoedudgang" hidden></div>
-          <p class="pausenote" id="orderPausedNote" hidden></p>
-          <button type="submit" class="btn btn--accent btn--big form__submit">Send bestilling</button>
-          <p class="form__note">Din bestilling ryger direkte ind i vores køkken-overblik – ingen mails, ingen ventetid.</p>
-          <p class="form__note form__note--allergi">Allergi? Spørg personalet ift. allergener.</p>
-        </form>
+<span id="booking" class="anker" aria-hidden="true"></span>
+<!-- ============ 8. SELSKABER ============ -->
+<section class="sektion selskab" id="selskaber">
+  <div class="wrap">
+    <div class="hoved"><span class="kicker">Selskab &amp; catering</span><h2>Lad os holde jeres <span class="vis-i">næste fest</span></h2><div class="skille" aria-hidden="true"><i></i><svg><use href="#hue"/></svg><i></i></div><p>Vi ELSKER at holde arrangementer. Vi sørger for maden, opdækningen og de små detaljer – så I kan være sammen med jeres gæster.</p></div>
+    <div class="mosaik">
+      <img src="ny/assets/foto/selskab-4.webp" alt="Wraps anrettet på fade">
+      <img src="ny/assets/foto/selskab-2.webp" alt="Små burgere">
+      <img src="ny/assets/foto/selskab-640.webp" alt="Desserter i glas">
+    </div>
+    <div class="anledninger"><span>Fødselsdag</span><span>Konfirmation</span><span>Mindestund</span><span>Firmafest</span></div>
+    <div class="stjerner"><b>★★★★★</b><span>Vores gæster giver os 5 stjerner på Google</span></div>
+    <div class="snak">
+      <h3>Skal vi tage snakken?</h3>
+      <p>Fortæl os om jeres arrangement – dato, antal og ønsker. Vi glæder os allerede.</p>
+      <a class="knap knap--orange" id="selskabMail" href="mailto:spiis.bestilling@gmail.com">Book jeres selskab</a>
+      <small>…eller ring til os på <a id="contactPhone" href="tel:+4593995858"><span>93 99 58 58</span></a></small>
+    </div>
+  </div>
+</section>
 
-        <div class="card success" id="orderSuccess" hidden>
-          <div class="success__check" aria-hidden="true">
-            <svg viewBox="0 0 52 52"><circle cx="26" cy="26" r="24" fill="none"/><path fill="none" d="M14 27l8 8 16-17"/></svg>
-          </div>
-          <h3>Tak for din bestilling!</h3>
-          <p id="orderSuccessText"></p>
-          <button class="btn btn--ghost-dark" id="orderAgainBtn" type="button">Lav en ny bestilling</button>
+<!-- ============ 9. KONTAKT ============ -->
+<section class="sektion" id="kontakt">
+  <div class="wrap">
+    <div class="hoved"><span class="kicker">Kom forbi</span><h2>Åbningstider &amp; <span class="vis-i">kontakt</span></h2><div class="skille" aria-hidden="true"><i></i><svg><use href="#hue"/></svg><i></i></div></div>
+    <div class="kontakt-grid">
+      <div class="kort-hvid">
+        <h3>Åbningstider</h3>
+        <div data-tider></div>
+        <p class="kokken-note" id="kitchenNote"></p>
+        <p class="kokken-note" id="orderCutoff" hidden></p>
+      </div>
+      <div class="kort-hvid">
+        <h3>Her finder du os</h3>
+        <p class="adr">Karlslunde Idrætsforening<br>Kongens Enge 42<br>2690 Karlslunde</p>
+        <p style="color:var(--blaek2)">Cafeteriet i idrætsforeningen – gratis parkering lige uden for døren.</p>
+        <div class="kontakt-knapper">
+          <a class="knap knap--orange" href="https://maps.google.com/?q=Kongens+Enge+42,+2690+Karlslunde" target="_blank" rel="noopener">Vis rute</a>
+          <a class="knap knap--lys" href="tel:+4593995858" data-spiistel>Ring 93 99 58 58</a>
+          <a class="knap knap--lys" href="mailto:spiis.bestilling@gmail.com">Skriv til os</a>
         </div>
       </div>
-    </section>
+    </div>
+  </div>
+</section>
 
-    <!-- ====== MENUKORT ====== -->
-    <!-- ====== MENUKORT-TEASER (hele kortet ligger på sin egen side) ====== -->
-    <section class="section" id="menukort">
-      <div class="container">
-        <div class="section__head" data-reveal>
-          <p class="eyebrow">Altid noget godt</p>
-          <h2>Menukort</h2>
-          <span class="dotline" aria-hidden="true"></span>
-          <p class="section__lead">Dagens retter for hele ugen og vores faste sortiment – burgere, salater, panini og sandwich, nachos og friturens klassikere. Samlet ét sted, nemt at bladre i.</p>
-        </div>
-        <div class="menuteaser card" data-reveal>
-          <div class="menuteaser__icons" aria-hidden="true"><span>🍲</span><span>🍔</span><span>🥗</span><span>🥤</span></div>
-          <a href="menu.html" class="btn btn--accent btn--big">📖 Se hele menukortet</a>
-          <p class="menuteaser__note">🥜 Allergi? Spørg personalet ift. allergener – vi hjælper gerne.</p>
-        </div>
-      </div>
-    </section>
+<footer class="bund">
+  <div class="stempel-lille"><svg viewBox="0 0 120 120"><circle cx="60" cy="60" r="57" fill="#6B2226"/><circle cx="60" cy="60" r="52" fill="none" stroke="#D3AE68" stroke-width="1" stroke-dasharray="2 3"/><text font-family="Host Grotesk" font-weight="600" font-size="10.5" letter-spacing="3.2" fill="#FAF6F0"><textPath href="#ringsti">SPIIS · CAFÉ · TAKE AWAY · CATERING ·</textPath></text><circle cx="60" cy="60" r="27" fill="#FAF6F0"/><use href="#hue" x="40" y="39" width="40" height="40"/></svg></div>
+  <h3>Velbekomme!</h3>
+  <p>Karlslunde Idrætsforening · Kongens Enge 42 · 2690 Karlslunde</p>
+  <p>93 99 58 58 · spiis.bestilling@gmail.com</p>
+  <small>© <span id="year"></span> Spiis · <a href="admin.html">Personale-login</a> · Lavet af Lesreg</small>
+</footer>
 
-    <!-- ====== SPIIS TAPAS – bestilles senest dagen før ====== -->
-    <section class="section section--tint" id="tapas">
-      <div class="container">
-        <div class="section__head" data-reveal>
-          <p class="eyebrow">Nyhed · bestilles senest dagen før</p>
-          <h2>Spiis Tapas</h2>
-          <span class="dotline" aria-hidden="true"></span>
-          <p class="section__lead">Vores nye stolthed 🧀 En overdådig tapas med alt det gode – perfekt til hyggeaftener, gæster eller bare fordi I fortjener det.</p>
-        </div>
+<div class="pille skjult" id="mobileCta" data-pille><a class="knap knap--orange" href="#bestil">Bestil dagens ret</a></div>
 
-        <figure class="tapasfoto" data-reveal>
-          <img src="assets/tapas-1.jpg" width="810" height="1080" loading="lazy" decoding="async"
-               alt="Tre tapasfade fra Spiis med ost, spegepølse, serranoskinke, hummus, pesto, oliven, druer og friske krydderurter" />
-          <figcaption>Sådan ser et Spiis-tapasfad ud – alt er anrettet i hånden på dagen 🧀</figcaption>
-        </figure>
-
-        <div class="tapas">
-          <div class="card tapas__info" data-reveal>
-            <h3>Det får I</h3>
-            <ul class="tapas__items" id="tapasItems"><!-- js --></ul>
-            <div class="tapas__prices">
-              <div class="tapas__price"><strong id="tapasPriceLabel">199 kr.</strong><span>pr. person</span></div>
-              <div class="tapas__price"><strong id="tapasDuoLabel">548 kr.</strong><span>for 2 personer inkl. en flaske Cava Brut Nature<br/>– anbefalet af vores vinmand 🥂</span></div>
-            </div>
-            <ul class="tapas__facts">
-              <li>📅 Skal bestilles senest dagen før</li>
-              <li>🍽️ Kan anrettes på porcelænsfade, så det hele er klar til servering</li>
-            </ul>
-          </div>
-
-          <form class="card form tapas__form" id="tapasForm" novalidate data-reveal>
-            <h3>Bestil tapas</h3>
-            <div class="form__grid">
-              <label class="field"><span>Dato <em>(tidligst i morgen)</em></span>
-                <select id="tapasDate"></select></label>
-              <label class="field"><span>Tidspunkt</span>
-                <select id="tapasTime"></select></label>
-              <label class="field"><span>Antal personer</span>
-                <input type="number" id="tapasPersons" min="0" max="60" value="0" /></label>
-              <label class="field"><span>Hvordan?</span>
-                <select id="tapasType"><option value="togo">🥡 To-go</option><option value="spise">🍽️ Spis her</option></select></label>
-              <!-- nogle dage er kun den ene måde mulig – så står grunden her -->
-              <small class="field__hint field__hint--lukket field--full" id="tapasTypeNote" hidden></small>
-              <div class="tapas__cavacard field--full" id="tapasCavaCard">
-                <span class="tapas__cavatxt"><strong>🥂 Cava Brut Nature</strong><em>Anbefalet af vores vinmand · <b id="tapasCavaPrice">150 kr.</b> pr. flaske</em></span>
-                <span class="tapas__cavaqty">
-                  <button type="button" class="cavabtn" data-cava="-1" aria-label="Én flaske mindre">−</button>
-                  <input type="number" id="tapasCava" min="0" max="20" value="0" readonly aria-label="Antal flasker" />
-                  <button type="button" class="cavabtn" data-cava="1" aria-label="Én flaske mere">+</button>
-                </span>
-              </div>
-              <label class="field"><span>Navn</span>
-                <input type="text" id="tapasName" placeholder="Dit fulde navn" autocomplete="name" /></label>
-              <label class="field"><span>Telefonnummer</span>
-                <input type="tel" id="tapasPhone" placeholder="12 34 56 78" autocomplete="tel" /></label>
-              <label class="field field--full"><span>Besked <em>(valgfrit)</em></span>
-                <input type="text" id="tapasNote" placeholder="Fx allergier eller særlige ønsker" /></label>
-            </div>
-            <div class="tapas__sum" id="tapasSum" aria-live="polite"></div>
-            <!-- Kun ÉT sted står der, at bestillingen er bindende: på
-                 bekræftelsen, lige inden man trykker send. Her står bare
-                 det, man ikke kan gætte – at man må ringe bagefter. -->
-            <div class="tapasvilkaar">
-              <b class="tapasvilkaar__top">💬 Ønsker I noget til eller fra fadet?</b>
-              <p>Ring til os, <b>når bestillingen er sendt</b> – så finder vi den frem og skriver ønskerne på. Ellers får I det klassiske tapasbord.</p>
-              <a class="tapasvilkaar__tlf" href="tel:+4593995858" data-spiistel>📞 <span>93 99 58 58</span></a>
-            </div>
-            <p class="pausenote" id="tapasPausedNote" hidden></p>
-            <p class="form__error" id="tapasError" hidden></p>
-            <button type="submit" class="btn btn--accent btn--big form__submit">🧀 Bestil tapas</button>
-            <p class="form__note">Ryger direkte ind i køkkenets overblik – vi har det klar til jer.</p>
-          </form>
-
-          <div class="card success tapas__success" id="tapasSuccess" hidden>
-            <div class="success__check" aria-hidden="true">
-              <svg viewBox="0 0 52 52"><circle cx="26" cy="26" r="24" fill="none"/><path fill="none" d="M14 27l8 8 16-17"/></svg>
-            </div>
-            <h3>Tak for jeres bestilling! 🧀</h3>
-            <p id="tapasSuccessText"></p>
-            <!-- nummeret kan trykkes: på en telefon ringer den med det samme -->
-            <p class="tapas__ring">Ønsker I noget til eller fra fadet? Ring til os nu på
-              <a href="tel:+4593995858" data-spiistel><span>93 99 58 58</span></a> – så skriver vi det på jeres bestilling. 📞</p>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- ====== OM SPIIS ====== -->
-    <section class="section section--dark" id="om">
-      <div class="container">
-        <div class="about">
-          <div class="about__text" data-reveal>
-            <p class="eyebrow eyebrow--light">Hvem er vi?</p>
-            <h2>Mad med nærvær,<br/>lavet fra bunden</h2>
-            <span class="dotline dotline--light" aria-hidden="true"></span>
-            <p>Hos Spiis i Karlslunde laver vi smagfulde, hjemmelavede måltider til dig, der ikke altid har tid til at lave mad fra bunden. Vi tror på kvalitet, nærvær og god smag – og vores menu skifter løbende, så du altid får varieret og frisk mad lavet med kærlighed.</p>
-            <p>Du finder os i Karlslunde Idrætsforening på Kongens Enge 42, hvor vi hver dag serverer dagens ret, takeaway, tapas og mad til selskaber – for alle i og omkring Karlslunde, Greve og Solrød.</p>
-            <p>Perfekt til børnefamilien, den travle hverdag – eller bare når du vil forkæles lidt ekstra.</p>
-            <p class="about__sign">Velbekomme – fra hele holdet hos Spiis! 👋</p>
-          </div>
-          <div class="about__values">
-            <div class="value card--dark" data-reveal>
-              <span class="value__icon">🥘</span>
-              <h3>Kvalitet</h3>
-              <p>Alt laves fra bunden af gode råvarer – hver eneste dag.</p>
-            </div>
-            <div class="value card--dark" data-reveal>
-              <span class="value__icon">🤝</span>
-              <h3>Nærvær</h3>
-              <p>Vi kender vores gæster, og du er altid velkommen til en snak.</p>
-            </div>
-            <div class="value card--dark" data-reveal>
-              <span class="value__icon">😋</span>
-              <h3>God smag</h3>
-              <p>Ingen stress. Ingen opvask. Bare god mad.</p>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- ====== SELSKABER & CATERING ====== -->
-    <span id="booking" class="anchor-alias" aria-hidden="true"></span>
-    <section class="section section--tint" id="selskaber">
-      <div class="container">
-        <div class="section__head" data-reveal>
-          <p class="eyebrow">Selskab &amp; catering</p>
-          <h2>Lad os holde jeres næste arrangement</h2>
-          <span class="dotline" aria-hidden="true"></span>
-          <p class="section__lead">Her hos Spiis ELSKER vi at holde arrangementer – det er noget af det, vi er allermest stolte af.</p>
-        </div>
-
-        <div class="selsk" data-reveal>
-          <div class="selsk__text">
-            <h3>Vi gør os umage – hver eneste gang</h3>
-            <p>Fødselsdag, konfirmation, mindestund eller firmafest – uanset hvad jeres dag går på, lægger vi hjertet i den. Vores dygtige personale sørger for maden, opdækningen og de små detaljer, så I kan læne jer tilbage og være sammen med jeres gæster. Det er dét, vi brænder for.</p>
-            <ul class="selsk__points">
-              <li>🍲 <strong>Hjemmelavet fra bunden</strong> – vi går aldrig på kompromis med maden</li>
-              <li>👩‍🍳 <strong>Et dygtigt personale</strong> – der elsker det, de laver</li>
-              <li>💛 <strong>Store som små arrangementer</strong> – vi skræddersyr menu og opdækning til jer</li>
-            </ul>
-            <a class="selsk__stars" href="https://www.google.com/search?sa=X&amp;sca_esv=d8473d4d0eaf6e64&amp;rlz=1C5CHFA_enDK1008DK1008&amp;sxsrf=APpeQnvAz4lMK0mFnziXNnTvVAKSOTh60w:1786057574545&amp;q=Spiis+ApS+Anmeldelser&amp;rflfq=1&amp;num=20&amp;stick=H4sIAAAAAAAAAONgkxIxNDA2Nzc2NDczMzAwMDIyNTE1M9nAyPiKUTS4IDOzWMGxIFjBMS83NSclNac4tWgRK3ZxADLDrLJLAAAA&amp;rldimm=10377317660002254564&amp;tbm=lcl&amp;hl=da-DK&amp;ved=2ahUKEwjzs536jo2WAxVhAtsEHUuGIqQQ9fQKegQITxAG&amp;biw=1440&amp;bih=900&amp;dpr=2#lkt=LocalPoiReviews" target="_blank" rel="noopener" aria-label="5 ud af 5 stjerner – læs vores anmeldelser på Google">
-              <span class="selsk__starrow" aria-hidden="true">⭐⭐⭐⭐⭐</span>
-              <span class="selsk__starstxt">Vores gæster giver os 5 stjerner <em>Læs anmeldelserne på Google →</em></span>
-            </a>
-          </div>
-          <div class="selsk__fotos" aria-hidden="true">
-            <!-- NÅR BILLEDERNE ER KLAR: erstat hvert emoji-felt med
-                 <img src="assets/selskab-1.jpg" alt="" loading="lazy" /> -->
-            <div class="selsk__foto selsk__foto--a">🎂</div>
-            <div class="selsk__foto">🥂</div>
-            <div class="selsk__foto">🍲</div>
-          </div>
-        </div>
-
-        <div class="card selsk__cta" data-reveal>
-          <h3>Skal vi tage snakken?</h3>
-          <p>Klik på knappen herunder og fortæl os om jeres arrangement – dato, antal og ønsker. Vi glæder os allerede til at høre fra jer.</p>
-          <a class="btn btn--accent btn--big" id="selskabMail" href="mailto:spiis.bestilling@gmail.com">✉️ Book jeres selskab</a>
-          <p class="selsk__ring">…eller ring til os på <a id="contactPhone" href="tel:+4593995858"><span>93 99 58 58</span></a> 📞</p>
-        </div>
-      </div>
-    </section>
-
-    <!-- ====== ÅBNINGSTIDER & KONTAKT ====== -->
-    <section class="section" id="kontakt">
-      <div class="container">
-        <div class="section__head" data-reveal>
-          <p class="eyebrow">Kom forbi</p>
-          <h2>Åbningstider & kontakt</h2>
-          <span class="dotline" aria-hidden="true"></span>
-        </div>
-        <div class="contact">
-          <div class="card hourscard" data-reveal>
-            <h3>Åbningstider</h3>
-            <table class="hours" id="hoursTable"><!-- js --></table>
-            <p class="hours__kitchen" id="kitchenNote"></p>
-            <p class="hours__cutoff" id="orderCutoff" hidden></p>
-            <p class="hours__status" id="openStatus"></p>
-          </div>
-          <div class="card infocard" data-reveal>
-            <h3>Her finder du os</h3>
-            <p class="infocard__address" id="addressText">
-              Karlslunde Idrætsforening<br/>Kongens Enge 42<br/>2690 Karlslunde
-            </p>
-            <p class="infocard__where">Vi holder til i cafeteriet i Karlslunde Idrætsforening – der er gratis parkering lige uden for døren, og der er kun få minutters kørsel fra Greve, Solrød og Mosede.</p>
-            <a class="btn btn--ghost-dark" href="https://maps.google.com/?q=Kongens+Enge+42,+2690+Karlslunde" target="_blank" rel="noopener">Åbn i Google Maps</a>
-            <div class="infocard__contact">
-              <a href="tel:+4593995858">📞 93 99 58 58</a>
-              <a href="mailto:spiis.bestilling@gmail.com">✉️ spiis.bestilling@gmail.com</a>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-  </main>
-
-  <!-- fast bestil-knap i bunden på mobil -->
-  <a href="#bestil" class="mobilecta" id="mobileCta">🍲 Bestil dagens ret</a>
-
-  <!-- bestil en special direkte fra en nyhed (fx juleplatter) -->
-  <!-- hele dagen i et vindue: alle retter med fuld beskrivelse -->
+<!-- vinduerne fra den rigtige forside: hele dagen, bestil fra en nyhed, og det sidste kig før afsendelse -->
+<div class="motor">
   <div class="confirm" id="dayInfoWrap" hidden>
     <div class="confirm__card daycard" role="dialog" aria-modal="true" aria-labelledby="dayInfoTitle">
       <button type="button" class="confirm__x" id="dayInfoClose" aria-label="Luk">✕</button>
       <p class="confirm__kicker" id="dayInfoKicker">Dagens ret</p>
       <h3 class="confirm__title" id="dayInfoTitle">Dagen</h3>
       <div id="dayInfoBody"></div>
-      <button type="button" class="btn btn--accent btn--big daycard__cta" id="dayInfoOrder" hidden>🍲 Bestil til denne dag</button>
+      <button type="button" class="knap knap--orange daycard__cta" id="dayInfoOrder" hidden>Bestil til denne dag</button>
     </div>
   </div>
 
@@ -559,87 +985,63 @@
       <p class="confirm__sub" id="newsOrderSub"></p>
       <form id="newsOrderForm" novalidate>
         <label class="nof">Hvornår vil du hente/modtage det?
-          <input type="date" id="newsOrderDate" required />
+          <input type="date" id="newsOrderDate" required>
         </label>
         <label class="nof">Antal
-          <input type="number" id="newsOrderQty" min="1" max="100" value="1" required />
+          <input type="number" id="newsOrderQty" min="1" max="100" value="1" required>
         </label>
         <label class="nof">Navn
-          <input type="text" id="newsOrderName" autocomplete="name" required />
+          <input type="text" id="newsOrderName" autocomplete="name" required>
         </label>
         <label class="nof">Telefon
-          <input type="tel" id="newsOrderPhone" inputmode="tel" autocomplete="tel" required />
+          <input type="tel" id="newsOrderPhone" inputmode="tel" autocomplete="tel" required>
         </label>
         <p class="nof__total" id="newsOrderTotal"></p>
-        <p class="confirm__policy">🔔 Bestillingen er <b>bindende</b>. Kan du ikke komme, så ring og afbestil <b>senest 1 time før</b> – ellers opkræves beløbet, da maden allerede er forberedt.</p>
+        <p class="confirm__policy">Bestillingen er <b>bindende</b>. Kan du ikke komme, så ring og afbestil <b>senest 1 time før</b> – ellers opkræves beløbet, da maden allerede er forberedt.</p>
         <p class="form__error" id="newsOrderError" hidden></p>
-        <button type="submit" class="btn btn--accent btn--big" id="newsOrderSend">Send bestilling</button>
+        <button type="submit" class="knap knap--orange" id="newsOrderSend">Send bestilling</button>
       </form>
       <div class="nof__done" id="newsOrderDone" hidden>
         <div class="nof__check">✓</div>
         <h3>Tak for din bestilling!</h3>
         <p id="newsOrderDoneText">Vi har modtaget din bestilling og glæder os til at lave den til dig.</p>
-        <button type="button" class="btn btn--ghost-dark" id="newsOrderDoneClose">Luk</button>
+        <button type="button" class="knap knap--lys" id="newsOrderDoneClose">Luk</button>
       </div>
     </div>
   </div>
 
-  <!-- bekræft bestilling: kvittering inden afsendelse -->
   <div class="confirm" id="orderConfirmWrap" hidden>
     <div class="confirm__card" role="dialog" aria-modal="true" aria-labelledby="confirmTitle">
       <p class="confirm__kicker">Ét sidste kig</p>
       <h3 class="confirm__title" id="confirmTitle">Tjek jeres bestilling</h3>
       <div class="confirm__lines" id="confirmLines"></div>
       <div class="confirm__meta" id="confirmMeta"></div>
-      <!-- teksten skiftes af js: tapas har en anden frist end dagens ret,
-           fordi der købes ind og anrettes dagen i forvejen -->
-      <p class="confirm__policy" id="confirmPolicy">🔔 Bestillingen er <b>bindende</b>. Kan du ikke komme, så ring og afbestil <b>senest 1 time før</b> – ellers opkræves beløbet, da maden allerede er forberedt og gjort klar.</p>
+      <p class="confirm__policy" id="confirmPolicy">Bestillingen er <b>bindende</b>. Kan du ikke komme, så ring og afbestil <b>senest 1 time før</b> – ellers opkræves beløbet, da maden allerede er forberedt og gjort klar.</p>
       <div class="confirm__btns">
-        <button type="button" class="btn btn--ghost-dark" id="confirmBack">← Ret noget</button>
-        <button type="button" class="btn btn--accent" id="confirmSend">✓ Bekræft &amp; send</button>
+        <button type="button" class="knap knap--lys" id="confirmBack">← Ret noget</button>
+        <button type="button" class="knap knap--orange" id="confirmSend">Bekræft &amp; send</button>
       </div>
     </div>
   </div>
+</div>
 
-  <!-- ====== FOOTER ====== -->
-  <footer class="footer">
-    <div class="container footer__inner">
-      <div class="footer__brand">
-        <span class="logo logo--footer">
-          <svg class="logo__hat" viewBox="0 0 48 48" aria-hidden="true">
-            <path d="M15 30v7c0 1.7 1.3 3 3 3h12c1.7 0 3-1.3 3-3v-7" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>
-            <path d="M14.5 31c-4.7-.6-8.5-4.6-8.5-9.4 0-4.6 3.4-8.4 7.9-9.3C15.2 8.5 19.2 6 24 6s8.8 2.5 10.1 6.3c4.5.9 7.9 4.7 7.9 9.3 0 4.8-3.8 8.8-8.5 9.4" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>
-            <path d="M20 30v4M24 30v4M28 30v4" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/>
-          </svg>
-          <span class="logo__word">Spiis<span class="logo__dots"></span></span>
-        </span>
-        <p>Velsmag og kvalitet i hver en bid.</p>
-      </div>
-      <nav class="footer__links" aria-label="Sidefod">
-        <a href="#dagensret">Dagens ret</a>
-        <a href="menu.html">Menukort</a>
-        <a href="#tapas">Tapas</a>
-        <a href="#selskaber">Selskab &amp; catering</a>
-        <a href="#kontakt">Kontakt</a>
-      </nav>
-      <div class="footer__meta">
-        <a class="smileybadge" href="https://findsmiley.dk/Sider/Search.aspx?k=spiis" target="_blank" rel="noopener" aria-label="Se vores smiley-rapport hos Fødevarestyrelsen">
-          <span class="smileybadge__face" aria-hidden="true">😊</span>
-          <span class="smileybadge__text">Kontrolleret af Fødevarestyrelsen<em>Se vores smiley-rapport</em></span>
-        </a>
-        <p class="footer__nap">Spiis · Kongens Enge 42, 2690 Karlslunde · <a href="tel:+4593995858">93 99 58 58</a></p>
-        <p>© <span id="year"></span> Spiis · Karlslunde</p>
-        <p class="footer__lesreg">made by Lesreg</p>
-        <a href="admin.html" class="footer__admin">Personale-login</a>
-      </div>
-    </div>
-  </footer>
+<!-- Felter som js/main.js også skriver i, men som det nye design viser på sin egen måde
+     (dagens ret-kortet, tavlen og åbningstiderne tegnes af spiis-ny.js fra de samme data). -->
+<div class="motor" hidden aria-hidden="true">
+  <span id="todayLabel"></span><h3 id="todayDish"></h3><p id="todayDesc"></p><div id="todayRetter" hidden></div>
+  <span id="todayPrice"></span><span id="todayStock"></span><a href="#bestil" id="todayOrderBtn"></a>
+  <figure id="todayFoto" hidden><img id="todayFotoImg" alt=""></figure>
+  <div id="weekPlan"></div>
+  <table id="hoursTable"></table><p id="openStatus"></p>
+  <a id="contactEmail" href="mailto:spiis.bestilling@gmail.com"><span>spiis.bestilling@gmail.com</span></a>
+</div>
 
-  <!-- realtime: ændringer fra køkkenet slår igennem med det samme -->
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-  <script src="js/config.js?v=__V__"></script>
-  <script src="js/store.js?v=__V__"></script>
-  <script src="js/datepicker.js?v=__V__"></script>
-  <script src="js/main.js?v=__V__"></script>
+<!-- Spiis' egen motor – de samme filer som den gamle forside: database (config + store) og
+     bestillingen (main.js). spiis-ny.js tegner kun det nye udtryk oven på de samme data. -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script src="js/config.js?v=__V__"></script>
+<script src="js/store.js?v=__V__"></script>
+<script src="js/main.js?v=__V__"></script>
+<script src="ny/spiis-ny.js?v=__V__"></script>
 </body>
 </html>
