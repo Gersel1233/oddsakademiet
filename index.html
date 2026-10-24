@@ -706,6 +706,13 @@ html{background:#24170F}
 .logo-i{position:relative;display:inline-block}
 .logo-i::after{content:"";position:absolute;left:50%;top:.06em;width:.18em;height:.18em;border-radius:50%;background:var(--orange);transform:translateX(-50%)}
 .top.over-lys .logo b{color:var(--blaek);text-shadow:none}
+
+/* ---------- ingen svævende knap i bunden (24/10) ----------
+   Nye iPhones farver Safaris bundbjælke efter det, der ligger fast i bunden af skærmen – den
+   svævende "Bestil dagens ret" gav derfor et lyst bånd nederst. "Bestil mad" står altid i toppen,
+   så knappen i bunden er væk, og bjælken bliver gennemsigtig over siden. (#mobileCta bliver
+   stående i koden, fordi js/main.js holder øje med den.) */
+.pille{display:none!important}
 </style>
 </head>
 <body>
