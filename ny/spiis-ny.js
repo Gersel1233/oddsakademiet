@@ -237,27 +237,46 @@
     }
   });
 
-  /* ---------- billedrækken glider roligt og kan swipes ---------- */
+  /* ---------- billedrækken glider roligt og kan swipes ----------
+     Den glider med transform (GPU), ikke ved at skubbe scrollbaren: en telefon runder scrollLeft af
+     til hele pixels, og 0,35 px pr. billede blev til små ryk. Rører man rækken, overtager den
+     almindelige swipe – og 2½ sekund efter sidste berøring glider den videre derfra. */
   (function () {
     var spor = document.querySelector('[data-raekke]');
     if (!spor || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-    [].slice.call(spor.children).forEach(function (k) {
-      var kopi = k.cloneNode(true); kopi.setAttribute('aria-hidden', 'true'); kopi.tabIndex = -1; spor.appendChild(kopi);
+    var kort = [].slice.call(spor.children);
+    var baand = document.createElement('div');
+    baand.className = 'raekke-baand';
+    kort.forEach(function (k) { baand.appendChild(k); });
+    kort.forEach(function (k) {
+      var kopi = k.cloneNode(true); kopi.setAttribute('aria-hidden', 'true'); kopi.tabIndex = -1; baand.appendChild(kopi);
     });
-    var hvil = 0, synlig = true, x = 0;
-    var pause = function () { hvil = performance.now() + 2600; };
-    ['pointerdown', 'touchstart', 'wheel', 'focusin'].forEach(function (h) { spor.addEventListener(h, pause, { passive: true }); });
+    spor.appendChild(baand);
+    var FART = 24; /* px pr. sekund */
+    var off = 0, hvil = 0, synlig = true, sidst = 0, styrer = false;
+    var periode = function () { return baand.children[kort.length].offsetLeft - baand.children[0].offsetLeft; };
+    var tegn = function () { baand.style.transform = off ? 'translate3d(' + (-off).toFixed(2) + 'px,0,0)' : ''; };
+    /* berøring: læg den glidende del over i scrollbaren, så swipe starter præcis hvor billedet står */
+    var overtag = function () {
+      hvil = performance.now() + 2600;
+      if (!styrer && off) { var p = spor.scrollLeft + off; off = 0; tegn(); spor.scrollLeft = Math.round(p); }
+      styrer = true;
+    };
+    ['pointerdown', 'touchstart', 'wheel', 'focusin'].forEach(function (h) { spor.addEventListener(h, overtag, { passive: true }); });
+    spor.addEventListener('scroll', function () { if (styrer) hvil = performance.now() + 2600; }, { passive: true });
     new IntersectionObserver(function (p) { synlig = p[0].isIntersecting; }).observe(spor);
     (function gaa(t) {
+      var dt = sidst ? Math.min(50, t - sidst) : 0;
+      sidst = t;
       if (synlig && t > hvil) {
-        x = x || spor.scrollLeft;
-        x += 0.35;
-        var halv = spor.scrollWidth / 2;
-        if (x >= halv) x -= halv;
-        spor.scrollLeft = x;
-      } else x = spor.scrollLeft;
+        styrer = false;
+        off += FART * dt / 1000;
+        var per = periode();
+        if (per > 0 && spor.scrollLeft + off >= per) off -= per;
+        tegn();
+      }
       requestAnimationFrame(gaa);
-    })(0);
+    })(performance.now());
   })();
 })();
 
