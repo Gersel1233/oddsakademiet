@@ -896,6 +896,17 @@ const SpiisStore = (() => {
             if (res.status < 500) break;
           } catch { res = null; }
         }
+        /* databasens eget værn (supabase/kun-en-maade.sql, 25/10): en fane,
+           der ikke har set, at admin skiftede til "kun take-away" / "kun
+           spis her", får den rigtige besked – ikke nødudgangen */
+        if (res && !res.ok && res.status < 500) {
+          const tekst = await res.text().catch(() => '');
+          if (/type-lukket/.test(tekst)) {
+            lastPublicSnap = '';
+            refreshPublic();
+            return { ok: false, reason: 'type-lukket', type: normType(order.type) };
+          }
+        }
         if (!res || !res.ok) throw new Error();
         const out = await res.json();
         if (out.ok) {
@@ -1330,10 +1341,31 @@ const SpiisStore = (() => {
      ============================================================ */
   const ORDER_TYPES = ['togo', 'spise'];
   const normType = (t) => (t === 'togo' ? 'togo' : 'spise');
-  const getClosedTypes = (iso) => {
+  /* ============================================================
+     KUN TAKE-AWAY / KUN SPIS HER / BEGGE DELE – FAST  (25/10)
+     Mikkel: "gør det nemmere at slå fra, om den kun kan bestilles
+     enten take-away eller spis her eller begge dele – og virke ende
+     til ende". Valget står øverst under Åbningstider i admin og
+     gemmes i settings.orderTypes ('begge' | 'togo' | 'spise').
+     Det lægges oven i dagens egne lukninger herunder, så ALT, der
+     spørger isTypeClosed/openTypesFor (formularen, tapas, fristerne,
+     admin og selve bestillingen) følger med af sig selv. Alt andet
+     end 'togo'/'spise' er "begge" – aldrig "intet".
+     ============================================================ */
+  const getOrderTypesChoice = () => {
+    const v = (data.settings || {}).orderTypes;
+    return v === 'togo' || v === 'spise' ? v : 'begge';
+  };
+  const getAlwaysClosedTypes = () => {
+    const v = getOrderTypesChoice();
+    return v === 'togo' ? ['spise'] : v === 'spise' ? ['togo'] : [];
+  };
+  /* kun dagens egne lukninger – det, kalenderen i admin slår til og fra */
+  const getDayClosedTypes = (iso) => {
     const liste = (data.closedTypes || {})[iso];
     return Array.isArray(liste) ? liste.filter((t) => ORDER_TYPES.includes(t)) : [];
   };
+  const getClosedTypes = (iso) => [...new Set([...getDayClosedTypes(iso), ...getAlwaysClosedTypes()])];
   const isTypeClosed = (iso, type) => getClosedTypes(iso).includes(normType(type));
   /* hvad kan man overhovedet bestille denne dag? tom liste = ingenting */
   const openTypesFor = (iso) => (isOrderingClosed(iso)
@@ -1341,7 +1373,7 @@ const SpiisStore = (() => {
   function setTypeClosed(iso, type, lukket) {
     if (!data.closedTypes) data.closedTypes = {};
     const t = normType(type);
-    const nu = new Set(getClosedTypes(iso));
+    const nu = new Set(getDayClosedTypes(iso));
     if (lukket) nu.add(t); else nu.delete(t);
     if (nu.size) data.closedTypes[iso] = [...nu];
     else delete data.closedTypes[iso];
@@ -1748,6 +1780,7 @@ const SpiisStore = (() => {
     getBlockedDates, getArrangementDates, isOrderingClosed, blockDate, unblockDate, isDateAvailable,
     getDayMark, setDayMark, getDayMsg, setDayMsg, DEFAULT_TAPAS_ITEMS,
     getClosedTypes, setTypeClosed, isTypeClosed, openTypesFor,
+    getOrderTypesChoice, getAlwaysClosedTypes, getDayClosedTypes,
     getDayTimes, setDayTimes, harEgneTider, orderFromFor,
     getClosure, setClosure, isClosureNow, isInClosure,
     timeslotsFor, orderSlots, orderToFor,

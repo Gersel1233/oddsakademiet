@@ -777,8 +777,22 @@
     /* er dagen helt lukket, rører vi ikke ved knapperne – den besked
        hører til datoen, ikke til måden man vil spise på */
     const kunHelDagLukket = iso && !aabneTyperFor(iso).length;
+    /* ⚠️ LUKKET FAST I ADMIN (25/10): "Kun take-away" / "Kun spis her".
+       Så er den anden måde ikke "ikke muligt denne dag" – den findes
+       ikke. Knappen skjules, og den eneste står i fuld bredde. */
+    const fast = S.getAlwaysClosedTypes ? S.getAlwaysClosedTypes() : [];
+    const gruppe = knapper[0].closest('.spisevalg');
+    if (gruppe) gruppe.style.gridTemplateColumns = fast.length ? '1fr' : '';
     const grunde = {};
     knapper.forEach((r) => {
+      const label0 = r.closest('label');
+      if (label0) label0.hidden = fast.includes(r.value);
+      if (fast.includes(r.value)) {
+        grunde[r.value] = 'fast';
+        r.disabled = true;
+        if (label0) { label0.classList.remove('is-lukket'); label0.title = ''; }
+        return;
+      }
       const grund = kunHelDagLukket ? '' : typeSpaerret(iso, r.value);
       grunde[r.value] = grund;
       r.disabled = !!grund;
@@ -802,7 +816,7 @@
 
     const note = $('#typeLukketNote');
     if (!note) return;
-    const spaerrede = knapper.filter((r) => r.disabled);
+    const spaerrede = knapper.filter((r) => r.disabled && grunde[r.value] !== 'fast');
     const aabneKnapper = knapper.filter((r) => !r.disabled);
     note.hidden = !spaerrede.length;
     if (!spaerrede.length) { note.textContent = ''; return; }
@@ -823,6 +837,8 @@
   function onOrderDateChange() {
     const iso = orderDate.value;
     if (!iso) {
+      /* også uden dag: en måde, der er lukket fast i admin, må ikke stå */
+      syncOrderTypes('');
       orderTime.innerHTML = '<option value="">–</option>';
       orderDishHint.textContent = '';
       builderEl.innerHTML = '';
@@ -1374,8 +1390,12 @@
         error.textContent = `Denne dag er netop blevet lukket for bestillinger (${lukketTekst(o.iso).replace(/^\S+\s/, '').toLowerCase()}) – vælg venligst en anden dag.`;
         if (S.isCloud()) S.refreshPublic();
       } else if (result.reason === 'type-lukket') {
-        /* køkkenet har lukket netop den måde, mens kunden sad og skrev */
-        error.textContent = `${TYPENAVN[result.type] || 'Den valgte måde'} er desværre ikke muligt denne dag. Vælg den anden mulighed, eller en anden dag.`;
+        /* køkkenet har lukket netop den måde, mens kunden sad og skrev –
+           fast i admin (25/10) eller kun den dag */
+        const fastLukket = (S.getAlwaysClosedTypes ? S.getAlwaysClosedTypes() : []).includes(result.type);
+        error.textContent = fastLukket
+          ? `Lige nu kan der kun bestilles ${result.type === 'togo' ? 'til at spise her' : 'take-away'}. Vi har skiftet det, så du kan sende igen.`
+          : `${TYPENAVN[result.type] || 'Den valgte måde'} er desværre ikke muligt denne dag. Vælg den anden mulighed, eller en anden dag.`;
         if (S.isCloud()) S.refreshPublic();
         syncOrderTypes(o.iso);
       } else if (result.reason === 'tid') {
@@ -1485,8 +1505,11 @@
       const iso = dateSel.value;
       const aabne = iso && S.openTypesFor ? S.openTypesFor(iso) : ['togo', 'spise'];
       let flyttet = false;
+      /* lukket fast i admin (25/10): muligheden findes slet ikke */
+      const fast = S.getAlwaysClosedTypes ? S.getAlwaysClosedTypes() : [];
       [...typeSel.options].forEach((o) => {
-        const lukket = iso ? !aabne.includes(o.value) : false;
+        o.hidden = fast.includes(o.value);
+        const lukket = fast.includes(o.value) || (iso ? !aabne.includes(o.value) : false);
         o.disabled = lukket;
         o.textContent = `${o.value === 'togo' ? '🥡 To-go' : '🍽️ Spis her'}${lukket ? ' – lukket denne dag' : ''}`;
         if (lukket && typeSel.value === o.value) flyttet = true;
@@ -1497,7 +1520,7 @@
       }
       const note = $('#tapasTypeNote');
       if (note) {
-        const lukkede = [...typeSel.options].filter((o) => o.disabled)
+        const lukkede = [...typeSel.options].filter((o) => o.disabled && !o.hidden)
           .map((o) => (o.value === 'togo' ? 'Take-away' : 'Spis her'));
         note.hidden = !lukkede.length;
         note.textContent = lukkede.length
@@ -2026,6 +2049,9 @@
     tegn('kontakt', renderContact);
     tegn('forbindelse', renderCloudNotice);
     tegn('datoliste', refreshOrderDatesPreserving);
+    /* "kun take-away" / "kun spis her" skiftet i admin (25/10): en åben
+       fane skal følge med med det samme – også midt i en udfyldning */
+    tegn('måder', () => syncOrderTypes(orderDate.value));
   });
 
   /* genopfrisk datolisten uden at smide brugerens valg væk,

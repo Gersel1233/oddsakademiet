@@ -1397,14 +1397,17 @@
         <div class="typelukning__raekke">
           ${TYPER.map((t) => {
             const lukket = lukkede.includes(t.id);
+            /* lukket fast under Åbningstider (25/10) – det åbnes dér, ikke dag for dag */
+            const fast = (S.getAlwaysClosedTypes ? S.getAlwaysClosedTypes() : []).includes(t.id);
             return `
             <div class="typekort ${lukket ? 'typekort--lukket' : ''}">
               <span class="typekort__navn">${t.navn}</span>
-              <span class="typekort__stand">${lukket ? '🚫 Lukket' : '✅ Åben'}</span>
+              <span class="typekort__stand">${fast ? '🚫 Lukket fast' : lukket ? '🚫 Lukket' : '✅ Åben'}</span>
+              ${fast ? `<button type="button" class="abtn abtn--ghost" data-goto="tider">Skift under Åbningstider</button>` : `
               <button type="button" class="abtn ${lukket ? 'abtn--green' : 'abtn--ghost'}"
                       data-act="type-toggle" data-iso="${iso}" data-type="${t.id}">
                 ${lukket ? 'Åbn igen' : 'Luk'}
-              </button>
+              </button>`}
             </div>`;
           }).join('')}
         </div>
@@ -3395,6 +3398,18 @@
         </button>
       </div>
 
+      <div class="acard maadecard">
+        <div class="acard__head">
+          <h2>🍽️ Hvad kan kunderne bestille?</h2>
+          <span class="sub">gælder hver dag på spiis.dk – med det samme</span>
+        </div>
+        <div class="maadevalg" role="group" aria-label="Hvad kunderne kan bestille" id="maadeValg">
+          ${[['begge', 'Begge dele', 'Take-away og spis her'], ['togo', 'Kun take-away', 'Ingen bestillinger til at spise her'], ['spise', 'Kun spis her', 'Ingen take-away']]
+            .map(([v, navn, under]) => `<button type="button" class="maadevalg__knap" data-maade="${v}" aria-pressed="${S.getOrderTypesChoice() === v}"><strong>${navn}</strong><small>${under}</small></button>`).join('')}
+        </div>
+        <p class="sub" style="color:var(--ink-soft);margin-top:10px;">Den lukkede måde forsvinder fra bestillingen og tapas på hjemmesiden. Vil I kun lukke den ene måde én bestemt dag, gør I det i kalenderen.</p>
+      </div>
+
       <div class="acard">
         <div class="acard__head">
           <h2>🌴 Ferie / luk for bestillinger</h2>
@@ -3504,6 +3519,19 @@
     $('#closureFrom').addEventListener('change', saveClosure);
     $('#closureReopen').addEventListener('change', saveClosure);
     $('#closureMessage').addEventListener('input', debounce(saveClosure, 800));
+
+    /* hvad kan kunderne bestille – tre knapper (25/10) */
+    $('#maadeValg')?.addEventListener('click', (e) => {
+      const knap = e.target.closest('[data-maade]');
+      if (!knap) return;
+      const v = knap.dataset.maade;
+      if (v === S.getOrderTypesChoice()) return;
+      S.updateSettings({ orderTypes: v });
+      renderHoursEditor();
+      toast(v === 'togo' ? '🥡 Nu kan der kun bestilles take-away'
+        : v === 'spise' ? '🍽️ Nu kan der kun bestilles til at spise her'
+        : '✅ Kunderne kan vælge både take-away og spis her');
+    });
 
     /* nødbremsen – med en bekræftelse, så den aldrig rammes ved et uheld */
     $('#pausedMsg')?.addEventListener('input', debounce(() => {
