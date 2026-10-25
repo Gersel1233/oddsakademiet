@@ -1397,17 +1397,14 @@
         <div class="typelukning__raekke">
           ${TYPER.map((t) => {
             const lukket = lukkede.includes(t.id);
-            /* lukket fast under Åbningstider (25/10) – det åbnes dér, ikke dag for dag */
-            const fast = (S.getAlwaysClosedTypes ? S.getAlwaysClosedTypes() : []).includes(t.id);
             return `
             <div class="typekort ${lukket ? 'typekort--lukket' : ''}">
               <span class="typekort__navn">${t.navn}</span>
-              <span class="typekort__stand">${fast ? '🚫 Lukket fast' : lukket ? '🚫 Lukket' : '✅ Åben'}</span>
-              ${fast ? `<button type="button" class="abtn abtn--ghost" data-goto="tider">Skift under Åbningstider</button>` : `
+              <span class="typekort__stand">${lukket ? '🚫 Lukket' : '✅ Åben'}</span>
               <button type="button" class="abtn ${lukket ? 'abtn--green' : 'abtn--ghost'}"
                       data-act="type-toggle" data-iso="${iso}" data-type="${t.id}">
                 ${lukket ? 'Åbn igen' : 'Luk'}
-              </button>`}
+              </button>
             </div>`;
           }).join('')}
         </div>
@@ -3374,6 +3371,43 @@
   }
 
   /* ============================================================
+     HVAD KAN KUNDERNE BESTILLE I DAG?  (25/10)
+     Mikkel: "gør det nemmere at slå fra, om den kun kan bestilles
+     enten take-away eller spis her eller begge dele" – og bagefter:
+     "det skal kun gælde denne dag, det er forvirrende med alt hverdag".
+     Tre knapper, der styrer I DAG og intet andet: de sætter dagens egen
+     lukning (closedTypes – den samme, kalenderen bruger, og som
+     databasen selv håndhæver). I morgen er begge dele åbne igen af sig
+     selv. Andre dage lukkes stadig i kalenderen.
+     ============================================================ */
+  function iDagValg() {
+    const lukket = S.getClosedTypes(S.todayISO());
+    if (lukket.includes('togo') && !lukket.includes('spise')) return 'spise';
+    if (lukket.includes('spise') && !lukket.includes('togo')) return 'togo';
+    if (!lukket.length) return 'begge';
+    return 'ingen';
+  }
+  function iDagMaadeHtml() {
+    const iso = S.todayISO();
+    const lukketDag = !S.isOpenDay(iso) || S.isInClosure(iso) || S.isOrderingClosed(iso);
+    const valg = iDagValg();
+    return `
+      <div class="acard maadecard">
+        <div class="acard__head">
+          <h2>🍽️ Hvad kan kunderne bestille i dag?</h2>
+          <span class="sub">${esc(S.formatDate(iso))} · kun i dag – i morgen er begge dele åbne igen</span>
+        </div>
+        ${lukketDag ? `<p class="sub" style="color:var(--ink-soft);">Der tages ikke imod bestillinger i dag, så der er intet at vælge.</p>` : `
+        <div class="maadevalg" role="group" aria-label="Hvad kunderne kan bestille i dag" id="maadeValg">
+          ${[['begge', 'Begge dele', 'Take-away og spis her'], ['togo', 'Kun take-away', 'Ingen spis her i dag'], ['spise', 'Kun spis her', 'Ingen take-away i dag']]
+            .map(([v, navn, under]) => `<button type="button" class="maadevalg__knap" data-maade="${v}" aria-pressed="${valg === v}"><strong>${navn}</strong><small>${under}</small></button>`).join('')}
+        </div>
+        ${valg === 'ingen' ? `<p class="sub" style="color:var(--red);margin-top:10px;">⚠️ Begge måder er lukket i dag – vælg én af knapperne for at åbne igen.</p>` : ''}
+        <p class="sub" style="color:var(--ink-soft);margin-top:10px;">Den lukkede måde kan ikke vælges på hjemmesiden i dag. Skal det gælde en anden dag, lukker I den i kalenderen.</p>`}
+      </div>`;
+  }
+
+  /* ============================================================
      ÅBNINGSTIDER
      ============================================================ */
   function renderHoursEditor() {
@@ -3398,17 +3432,7 @@
         </button>
       </div>
 
-      <div class="acard maadecard">
-        <div class="acard__head">
-          <h2>🍽️ Hvad kan kunderne bestille?</h2>
-          <span class="sub">gælder hver dag på spiis.dk – med det samme</span>
-        </div>
-        <div class="maadevalg" role="group" aria-label="Hvad kunderne kan bestille" id="maadeValg">
-          ${[['begge', 'Begge dele', 'Take-away og spis her'], ['togo', 'Kun take-away', 'Ingen bestillinger til at spise her'], ['spise', 'Kun spis her', 'Ingen take-away']]
-            .map(([v, navn, under]) => `<button type="button" class="maadevalg__knap" data-maade="${v}" aria-pressed="${S.getOrderTypesChoice() === v}"><strong>${navn}</strong><small>${under}</small></button>`).join('')}
-        </div>
-        <p class="sub" style="color:var(--ink-soft);margin-top:10px;">Den lukkede måde forsvinder fra bestillingen og tapas på hjemmesiden. Vil I kun lukke den ene måde én bestemt dag, gør I det i kalenderen.</p>
-      </div>
+      ${iDagMaadeHtml()}
 
       <div class="acard">
         <div class="acard__head">
@@ -3520,17 +3544,21 @@
     $('#closureReopen').addEventListener('change', saveClosure);
     $('#closureMessage').addEventListener('input', debounce(saveClosure, 800));
 
-    /* hvad kan kunderne bestille – tre knapper (25/10) */
+    /* hvad kan kunderne bestille I DAG – tre knapper (25/10) */
     $('#maadeValg')?.addEventListener('click', (e) => {
       const knap = e.target.closest('[data-maade]');
       if (!knap) return;
       const v = knap.dataset.maade;
-      if (v === S.getOrderTypesChoice()) return;
-      S.updateSettings({ orderTypes: v });
+      if (v === iDagValg()) return;
+      const iso = S.todayISO();
+      /* den der åbner, sættes først – så står begge aldrig lukket et øjeblik */
+      if (v === 'begge') { S.setTypeClosed(iso, 'togo', false); S.setTypeClosed(iso, 'spise', false); }
+      if (v === 'togo') { S.setTypeClosed(iso, 'togo', false); S.setTypeClosed(iso, 'spise', true); }
+      if (v === 'spise') { S.setTypeClosed(iso, 'spise', false); S.setTypeClosed(iso, 'togo', true); }
       renderHoursEditor();
-      toast(v === 'togo' ? '🥡 Nu kan der kun bestilles take-away'
-        : v === 'spise' ? '🍽️ Nu kan der kun bestilles til at spise her'
-        : '✅ Kunderne kan vælge både take-away og spis her');
+      toast(v === 'togo' ? '🥡 I dag kan der kun bestilles take-away'
+        : v === 'spise' ? '🍽️ I dag kan der kun bestilles til at spise her'
+        : '✅ I dag kan kunderne vælge både take-away og spis her');
     });
 
     /* nødbremsen – med en bekræftelse, så den aldrig rammes ved et uheld */

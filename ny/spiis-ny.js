@@ -191,19 +191,8 @@
     }).join('');
   }
 
-  /* ---------- "kun take-away" / "kun spis her" (admin → Åbningstider, 25/10) ----------
-     Teksterne, der lover begge dele, skifter med valget: data-maade-tekst="begge|togo|spise". */
-  function maadeTekster() {
-    var v = S.getOrderTypesChoice ? S.getOrderTypesChoice() : 'begge';
-    var i = v === 'togo' ? 1 : v === 'spise' ? 2 : 0;
-    Array.prototype.forEach.call(document.querySelectorAll('[data-maade-tekst]'), function (el) {
-      var t = el.getAttribute('data-maade-tekst').split('|');
-      el.textContent = t[i] || t[0];
-    });
-  }
-
   function alt() {
-    [top, dagens, menu, tider, maadeTekster].forEach(function (f) { try { f(); } catch (e) { console.error(e); } });
+    [top, dagens, menu, tider].forEach(function (f) { try { f(); } catch (e) { console.error(e); } });
   }
   alt();
   if (S.subscribe) S.subscribe(alt);
