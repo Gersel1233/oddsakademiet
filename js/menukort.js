@@ -117,6 +117,7 @@
     if (mark && mark.e) return `${mark.e} ${mark.t || 'Lukket'}`;
     if (S.isInClosure && S.isInClosure(iso)) return '🌴 Ferielukket';
     if ((S.getArrangementDates() || []).includes(iso)) return '🎉 Privat arrangement';
+    if (S.ingenOnlineBestilling && S.isOpenDay(iso) && S.ingenOnlineBestilling(iso)) return '☕ Ingen online bestilling';
     return '🚫 Lukket';
   }
 

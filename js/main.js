@@ -402,6 +402,8 @@
     if (mark && mark.e) return `${mark.e} ${mark.t || 'Lukket'}`;
     if (S.isInClosure(iso)) return '🌴 Ferielukket';
     if ((S.getArrangementDates() || []).includes(iso)) return '🎉 Privat arrangement';
+    /* caféen kan have åbent uden online bestilling (fx weekenden, 10/11) */
+    if (S.ingenOnlineBestilling && S.isOpenDay(iso) && S.ingenOnlineBestilling(iso)) return '☕ Ingen online bestilling';
     return '🚫 Lukket';
   }
 
@@ -429,7 +431,7 @@
           <span class="dayplan__day">${day.weekday}${isToday ? ' · i dag' : ''}</span>
           <span class="dayplan__date">${esc(S.formatDate(day.iso, false))}</span>
           <span class="dayplan__dish">${esc(lukketTekst(day.iso))}</span>
-          <span class="dayplan__desc">Lukket for bestillinger denne dag.</span>
+          <span class="dayplan__desc">${S.ingenOnlineBestilling && S.isOpenDay(day.iso) && S.ingenOnlineBestilling(day.iso) ? 'Kom forbi caféen – der kan ikke bestilles online denne dag.' : 'Lukket for bestillinger denne dag.'}</span>
           ${dagsBeskedHtml(day.iso)}
         </button>`;
       }
@@ -1397,7 +1399,10 @@
         error.textContent = 'Tidspunktet er nået, mens siden stod åben – vælg venligst en ny tid eller en kommende dag.';
         renderOrderDates();
       } else if (result.reason === 'tapas-dato') {
-        error.textContent = 'Tapas skal bestilles senest dagen før – vælg en dato fra i morgen.';
+        const n = S.tapasRegler ? S.tapasRegler().forud : 1;
+        error.textContent = n <= 1
+          ? 'Tapas skal bestilles senest dagen før – vælg en dato fra i morgen.'
+          : `Tapas skal bestilles senest ${n} dage før – vælg en af de datoer, der står i listen.`;
       } else if (result.reason === 'dag') {
         error.textContent = 'Køkkenet holder lukket den ugedag – vælg en anden dag.';
       } else if (result.reason === 'pauset') {
@@ -1508,7 +1513,7 @@
     function fillTimes() {
       const iso = dateSel.value;
       syncTapasType();
-      const slots = iso ? S.orderSlots(iso, 30, typeSel.value) : [];
+      const slots = iso ? (S.tapasSlots ? S.tapasSlots(iso, 30, typeSel.value) : S.orderSlots(iso, 30, typeSel.value)) : [];
       const prev = timeSel.value;
       timeSel.innerHTML = slots.length
         ? slots.map((t) => `<option value="${t}">kl. ${t}</option>`).join('')
@@ -1517,15 +1522,27 @@
     }
     function fillDates() {
       const opts = [];
-      for (let i = 1; i <= 14; i++) {
+      /* Tapas følger sine egne regler fra admin (10/11): ugedage, tidsrum
+         og hvor mange dage før — og altid åbningstider og lukkedage. */
+      const forud = S.tapasRegler ? S.tapasRegler().forud : 1;
+      for (let i = forud; i <= forud + 20; i++) {
         const iso = S.addDays(S.todayISO(), i);
-        if (!S.isOpenDay(iso) || S.isOrderingClosed(iso)) continue;
+        const ok = S.kanBestilleTapas ? S.kanBestilleTapas(iso) : (S.isOpenDay(iso) && !S.isOrderingClosed(iso));
+        if (!ok) continue;
         opts.push(`<option value="${iso}">${esc(S.formatDate(iso))}</option>`);
+        if (opts.length >= 14) break;
       }
+      tapasForudTekst();
       const prev = dateSel.value;
       dateSel.innerHTML = opts.join('') || '<option value="">Ingen ledige dage lige nu</option>';
       if (prev && [...dateSel.options].some((o) => o.value === prev)) dateSel.value = prev;
       fillTimes();
+    }
+    /* "bestilles dagen før" følger indstillingen i admin */
+    function tapasForudTekst() {
+      const n = S.tapasRegler ? S.tapasRegler().forud : 1;
+      const tekst = n <= 1 ? 'dagen før' : `${n} dage før`;
+      document.querySelectorAll('[data-tapas-forud]').forEach((el) => { el.textContent = tekst; });
     }
     function updTotal() {
       const n = Math.max(0, Number($('#tapasPersons').value) || 0);

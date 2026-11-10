@@ -3489,9 +3489,36 @@
               <input class="inline-input" data-f="open" type="time" value="${h.open || '11:00'}" ${h.closed ? 'disabled' : ''} />
               <span class="dash">–</span>
               <input class="inline-input" data-f="close" type="time" value="${h.close || '19:00'}" ${h.closed ? 'disabled' : ''} />
-              <span></span>
+              <label class="switch" title="Kan kunderne bestille mad på hjemmesiden til denne dag?">
+                <input type="checkbox" data-f="order-toggle" ${S.ugedagUdenBestilling && S.ugedagUdenBestilling(i) ? '' : 'checked'} ${h.closed ? 'disabled' : ''} />
+                <i></i>
+                <span data-f="order-label">${S.ugedagUdenBestilling && S.ugedagUdenBestilling(i) ? 'Ingen online bestilling' : 'Online bestilling'}</span>
+              </label>
             </div>`).join('')}
         </div>
+        <p class="sub" style="color:var(--ink-soft);margin-top:12px;">💡 <strong>Online bestilling</strong> styrer, om hjemmesiden tager imod madbestillinger til den ugedag. I kan godt have åbent i caféen (fx i weekenden) uden at man kan bestille online.</p>
+      </div>
+
+      <div class="acard" id="tapasRegelKort">
+        <div class="acard__head">
+          <h2>🧀 Hvornår kan tapas bestilles?</h2>
+          <span class="sub">gemmes automatisk – følger altid åbningstider og lukkedage i kalenderen</span>
+        </div>
+        ${(() => {
+          const r = S.tapasRegler ? S.tapasRegler() : { dage: null, fra: '', til: '', forud: 1 };
+          const valgt = (i) => (r.dage ? r.dage.includes(i) : !(S.ugedagUdenBestilling && S.ugedagUdenBestilling(i)));
+          return `
+          <div class="tapasdage" role="group" aria-label="Ugedage tapas kan bestilles til">
+            ${S.WEEKDAYS.map((d, i) => `<label class="tapasdag"><input type="checkbox" data-f="tapas-dag" value="${i}" ${valgt(i) ? 'checked' : ''} /><span>${esc(d.slice(0, 3))}</span></label>`).join('')}
+          </div>
+          <div class="tapasfelter">
+            <label class="afield"><span>Afhentning / servering fra kl.</span><input class="inline-input" id="tapasFra" type="time" value="${esc(r.fra || S.getSettings().orderFrom || '16:00')}" /></label>
+            <label class="afield"><span>til kl.</span><input class="inline-input" id="tapasTil" type="time" value="${esc(r.til || S.getSettings().orderToDine || '20:30')}" /></label>
+            <label class="afield"><span>Skal bestilles mindst</span>
+              <select class="inline-input" id="tapasForud">${[1, 2, 3, 4, 5, 6, 7].map((n) => `<option value="${n}" ${r.forud === n ? 'selected' : ''}>${n === 1 ? '1 dag før (dagen før)' : `${n} dage før`}</option>`).join('')}</select></label>
+          </div>
+          <p class="sub" style="color:var(--ink-soft);margin-top:8px;">Kunderne kan kun vælge de dage og tider, der står her – og kun dage, hvor I har åbent og ikke har lukket i kalenderen. Tapas-tiderne ligger altid inden for jeres almindelige bestillingstider ovenfor (to-go / spis her).</p>`;
+        })()}
       </div>`;
 
     $$('#view-tider [data-f="open-toggle"]').forEach((toggle) => {
@@ -3502,6 +3529,14 @@
         $('[data-f="open"]', row).disabled = closed;
         $('[data-f="close"]', row).disabled = closed;
         $('[data-f="toggle-label"]', row).textContent = closed ? 'Lukket' : 'Åben';
+        const ot = $('[data-f="order-toggle"]', row);
+        if (ot) ot.disabled = closed;
+      });
+    });
+    $$('#view-tider [data-f="order-toggle"]').forEach((t) => {
+      t.addEventListener('change', () => {
+        const lbl = $('[data-f="order-label"]', t.closest('.switch'));
+        if (lbl) lbl.textContent = t.checked ? 'Online bestilling' : 'Ingen online bestilling';
       });
     });
 
@@ -3510,17 +3545,25 @@
       /* kun dag-rækkerne i .hoursgrid – de faste rækker ovenfor har ingen kontakt */
       const newHours = $$('#view-tider .hoursgrid .hoursrow').map((row) => {
         const closed = !$('[data-f="open-toggle"]', row).checked;
+        const ot = $('[data-f="order-toggle"]', row);
         return {
           closed,
           open: closed ? '' : $('[data-f="open"]', row).value,
           close: closed ? '' : $('[data-f="close"]', row).value,
+          /* online bestilling pr. ugedag (10/11) — gemmes altid eksplicit */
+          noOrder: ot ? !ot.checked : false,
         };
       });
       S.setHours(newHours);
+      const tapasDage = $$('#view-tider [data-f="tapas-dag"]').filter((c) => c.checked).map((c) => Number(c.value));
       S.updateSettings({
         orderFrom: $('#orderFrom').value || '16:00',
         orderToTogo: $('#orderToTogo').value || '19:00',
         orderToDine: $('#orderToDine').value || '20:30',
+        tapasDage,
+        tapasFra: ($('#tapasFra') && $('#tapasFra').value) || '',
+        tapasTil: ($('#tapasTil') && $('#tapasTil').value) || '',
+        tapasForud: Number(($('#tapasForud') && $('#tapasForud').value) || 1),
       });
       savedToast();
     }

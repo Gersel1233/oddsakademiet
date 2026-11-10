@@ -825,20 +825,24 @@ const SpiisStore = (() => {
     /* Spiis Tapas skal bestilles senest dagen FØR – aldrig samme dag.
        Tjekkes tidligt, så kunden får DEN forklaring og ikke bare
        "tidspunktet er passeret", som ikke hjælper nogen. */
-    if ((order.items || []).some((l) => l && l.kind === 'tapas') && order.date <= todayISO()) {
+    const erTapas = (order.items || []).some((l) => l && l.kind === 'tapas');
+    if (erTapas && (!order.date || order.date < tapasFoersteDato())) {
       return { ok: false, reason: 'tapas-dato' };
     }
-    /* dage med privat arrangement (eller lukkede dage) tager ikke imod bestillinger */
-    if (isOrderingClosed(order.date)) return { ok: false, reason: 'lukket' };
+    /* dage med privat arrangement (eller lukkede dage) tager ikke imod bestillinger.
+       Tapas har sine egne ugedage (10/11), maden følger ugedagens "online bestilling". */
+    if (erTapas ? !kanBestilleTapas(order.date) : isOrderingClosed(order.date)) return { ok: false, reason: 'lukket' };
     /* … og en dag kan være lukket for KUN den ene måde at spise på */
     if (isTypeClosed(order.date, order.type)) {
       return { ok: false, reason: 'type-lukket', type: normType(order.type) };
     }
     /* bestillingsvinduet er forskelligt pr. type: to-go til kl. 19,
        spis her til kl. 20:30 (kan ændres i admin) */
-    const oFrom = orderFromFor(order.date);
-    const oTo = orderToFor(order.type, order.date);
-    if (order.time && (order.time < oFrom || order.time > oTo)) return { ok: false, reason: 'tid' };
+    /* tiden skal være en af dem, kunden kunne vælge (og før lukketid) */
+    if (order.time) {
+      const muligt = erTapas ? tapasSlots(order.date, 30, order.type) : orderSlots(order.date, 30, order.type);
+      if (!muligt.includes(order.time)) return { ok: false, reason: 'tid' };
+    }
     /* datoen må ikke være passeret – og til i dag skal tiden være mindst
        20 min. ude i fremtiden (fanger fx en fane, der har stået åben i timevis) */
     const tToday = todayISO();
@@ -1317,8 +1321,26 @@ const SpiisStore = (() => {
     'Vores hjemmelavede langtidshævede Spiis-brød',
   ];
 
-  const isOrderingClosed = (iso) =>
+  /* ============================================================
+     ONLINE BESTILLING PR. UGEDAG  (10/11)
+     Mikkel: "i weekenderne vil de ikke have, at man kan bestille mad
+     … men den indstilling skal vi give muligheden for at lave om".
+     Caféen kan godt have ÅBENT en dag (folk kan komme forbi), uden
+     at hjemmesiden tager imod bestillinger den dag. Det er feltet
+     `noOrder` på ugedagens åbningstid (admin → Åbningstider).
+     Står feltet ikke (gamle data), er lørdag og søndag lukket for
+     online bestilling og resten åbent — Spiis' eget ønske.
+     ============================================================ */
+  const WEEKEND_UDEN_BESTILLING = [5, 6];
+  function ugedagUdenBestilling(w) {
+    const h = data.hours[w] || {};
+    return typeof h.noOrder === 'boolean' ? h.noOrder : WEEKEND_UDEN_BESTILLING.includes(w);
+  }
+  const ingenOnlineBestilling = (iso) => ugedagUdenBestilling(weekdayIndex(iso));
+  /* dage lukket af kalenderen (blokeret, arrangement, ferie) — uden ugedagsreglen */
+  const kalenderLukket = (iso) =>
     data.blockedDates.includes(iso) || (data.orderClosedDates || []).includes(iso) || isInClosure(iso);
+  const isOrderingClosed = (iso) => kalenderLukket(iso) || ingenOnlineBestilling(iso);
 
   /* ============================================================
      LUK KUN DEN ENE MÅDE
@@ -1466,19 +1488,68 @@ const SpiisStore = (() => {
       ? (egen.toDine || data.settings.orderToDine || '20:30')
       : (egen.toTogo || data.settings.orderToTogo || '19:00');
   }
-  function orderSlots(iso, stepMinutes = 30, type = 'spise') {
+  /* ⚠️ EN TID SKAL LIGGE FØR LUKKETID  (10/11). Lørdag og søndag har Spiis
+     åbent 09:30–16:00, og bestillingsvinduet hedder 16:00–21:00. Det, de
+     to havde til fælles, var PRÆCIS kl. 16:00 — så man kunne bestille mad
+     og tapas til lukketid i weekenden. Nu skal tiden ligge før lukketid. */
+  function vindueSlots(iso, from, to, stepMinutes) {
     const h = hoursFor(iso);
-    if (h.closed || !h.open || !h.close) return [];
+    if (h.closed || !h.open || !h.close || !erKlokkeslet(from) || !erKlokkeslet(to)) return [];
     const toMin = (hhmm) => { const [a, b] = hhmm.split(':').map(Number); return a * 60 + b; };
-    const from = orderFromFor(iso);
-    const to = orderToFor(type, iso);
     const start = Math.max(toMin(from), toMin(h.open));
-    const end = Math.min(toMin(to), toMin(h.close));
+    const end = Math.min(toMin(to), toMin(h.close) - 1);
     const slots = [];
     for (let t = start; t <= end; t += stepMinutes) {
       slots.push(`${pad(Math.floor(t / 60))}:${pad(t % 60)}`);
     }
     return slots;
+  }
+  function orderSlots(iso, stepMinutes = 30, type = 'spise') {
+    return vindueSlots(iso, orderFromFor(iso), orderToFor(type, iso), stepMinutes);
+  }
+
+  /* ============================================================
+     TAPAS HAR SINE EGNE REGLER  (10/11)
+     Mikkel: tapas "følger ikke åbningstiderne, hvornår de er åbne, og
+     hvornår det kan bestilles fra". Nu kan chefen i admin sætte:
+     · hvilke ugedage tapas kan bestilles til (tom = samme dage som maden)
+     · tidsrummet (tomt = samme tider som maden)
+     · hvor mange dage før, den skal bestilles (1 = dagen før, som altid)
+     Og den følger ALTID åbningstiderne og kalenderens lukkedage.
+     ============================================================ */
+  function tapasRegler() {
+    const st = data.settings || {};
+    const dage = Array.isArray(st.tapasDage) ? st.tapasDage.filter((d) => Number.isInteger(d) && d >= 0 && d <= 6) : null;
+    const forud = Math.max(1, Math.min(14, Number(st.tapasForud) || 1));
+    return {
+      dage: dage && dage.length ? dage : null,
+      fra: erKlokkeslet(st.tapasFra) ? st.tapasFra : '',
+      til: erKlokkeslet(st.tapasTil) ? st.tapasTil : '',
+      forud,
+    };
+  }
+  /* første dato tapas kan bestilles til */
+  const tapasFoersteDato = () => addDays(todayISO(), tapasRegler().forud);
+  /* ⚠️ TAPAS-TIDEN LIGGER INDEN FOR DE ALMINDELIGE BESTILLINGSTIDER.
+     Databasen (place_order) godkender kun tider i det almindelige vindue;
+     en tapas kl. 12 ville blive afvist, efter kunden havde trykket bestil.
+     Derfor kan tapas' tidsrum kun gøre vinduet MINDRE, ikke større. */
+  function tapasSlots(iso, stepMinutes = 30, type = 'spise') {
+    const r = tapasRegler();
+    const almFra = orderFromFor(iso);
+    const almTil = orderToFor(type, iso);
+    const fra = r.fra && r.fra > almFra ? r.fra : almFra;
+    const til = r.til && r.til < almTil ? r.til : almTil;
+    return vindueSlots(iso, fra, til, stepMinutes);
+  }
+  /* kan tapas overhovedet bestilles til den dag? */
+  function kanBestilleTapas(iso) {
+    if (!iso || iso < tapasFoersteDato()) return false;
+    if (!isOpenDay(iso) || kalenderLukket(iso)) return false;
+    const r = tapasRegler();
+    const w = weekdayIndex(iso);
+    if (r.dage ? !r.dage.includes(w) : ugedagUdenBestilling(w)) return false;
+    return ORDER_TYPES.some((t) => !isTypeClosed(iso, t) && tapasSlots(iso, 30, t).length > 0);
   }
 
   /* ---------- chefens dagsnoter ---------- */
@@ -1745,7 +1816,8 @@ const SpiisStore = (() => {
     addOrder, getOrders, updateOrder, deleteOrder, getOrderHistory,
     getSlettede, gendanOrdre,
     addBooking, getBookings, updateBooking, deleteBooking,
-    getBlockedDates, getArrangementDates, isOrderingClosed, blockDate, unblockDate, isDateAvailable,
+    getBlockedDates, getArrangementDates, isOrderingClosed, ingenOnlineBestilling, ugedagUdenBestilling,
+    tapasRegler, tapasSlots, kanBestilleTapas, tapasFoersteDato, blockDate, unblockDate, isDateAvailable,
     getDayMark, setDayMark, getDayMsg, setDayMsg, DEFAULT_TAPAS_ITEMS,
     getClosedTypes, setTypeClosed, isTypeClosed, openTypesFor,
     getDayTimes, setDayTimes, harEgneTider, orderFromFor,

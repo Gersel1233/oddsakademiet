@@ -2250,3 +2250,13 @@ body.dv-open { overflow: hidden; }
 .dvchip--tabt { background: var(--red-soft); color: var(--red); font-weight: 700; }
 .row--noshow { border-left: 5px solid var(--red); }
 .row__danger-linje { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+
+/* Tapas-regler (10/11): ugedage som chips + tidsrum + "dage før" */
+.tapasdage { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
+.tapasdag { position: relative; cursor: pointer; }
+.tapasdag input { position: absolute; opacity: 0; inset: 0; cursor: pointer; }
+.tapasdag span { display: inline-flex; align-items: center; justify-content: center; min-width: 54px; height: 40px; padding: 0 12px; border-radius: 999px; font-weight: 700; font-size: 0.9rem; background: var(--cream); border: 1.6px solid rgba(28, 24, 20, 0.12); color: var(--ink-soft); }
+.tapasdag input:checked + span { background: var(--green); border-color: var(--green); color: #fff; }
+.tapasdag input:focus-visible + span { outline: 2px solid var(--ink); outline-offset: 2px; }
+.tapasfelter { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+@media (max-width: 760px) { .tapasfelter { grid-template-columns: 1fr; } }
