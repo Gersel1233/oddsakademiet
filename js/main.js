@@ -1957,7 +1957,7 @@
     vis.innerHTML = `
       <div class="nyark__ark" role="dialog" aria-modal="true" aria-labelledby="nyarkTitel">
         <button class="nyark__x" type="button" aria-label="Luk" data-ark-luk>✕</button>
-        ${n.image ? `<div class="nyark__foto" style="--plakat:url('${esc(n.image)}')"><img src="${esc(n.image)}" alt="${esc(n.title)}" /></div>` : ''}
+        ${n.image ? `<a class="nyark__foto" href="${esc(n.image)}" target="_blank" rel="noopener" style="--plakat:url('${esc(n.image)}')" aria-label="Se ${esc(n.title)} i fuld størrelse"><img src="${esc(n.image)}" alt="${esc(n.title)}" /><span class="nyark__zoom">Tryk for fuld størrelse</span></a>` : ''}
         <div class="nyark__tekst">
           ${n.createdAt ? `<p class="nyark__dato">${esc(S.formatDate(n.createdAt.slice(0, 10), false))}</p>` : ''}
           <h3 class="nyark__titel" id="nyarkTitel">${esc(n.title)}</h3>
@@ -1977,7 +1977,7 @@
     vis.addEventListener('click', (ev) => {
       const ord = ev.target.closest('[data-ark-order]');
       if (ord) { luk(); openNewsOrder(ord.dataset.arkOrder); return; }
-      if (ev.target === vis || ev.target.closest('[data-ark-luk]')) luk();
+      if (ev.target === vis || ev.target.closest('[data-ark-luk]')) { ev.preventDefault(); luk(); }
     });
     document.addEventListener('keydown', tast);
     document.documentElement.style.overflow = 'hidden';
