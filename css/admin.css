@@ -2260,3 +2260,8 @@ body.dv-open { overflow: hidden; }
 .tapasdag input:focus-visible + span { outline: 2px solid var(--ink); outline-offset: 2px; }
 .tapasfelter { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
 @media (max-width: 760px) { .tapasfelter { grid-template-columns: 1fr; } }
+
+/* "Skift billede" på et opslag, der allerede er på siden (18/11) */
+.newsed__skift { cursor: pointer; }
+.newsed__skift.is-busy { opacity: .55; pointer-events: none; }
+.newsed__thumb { object-fit: contain; background: var(--cream-2, #f3eee6); }

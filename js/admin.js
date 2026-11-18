@@ -2586,9 +2586,11 @@
      ============================================================ */
   let newsImageBlob = null; /* det komprimerede billede til det nye opslag */
 
-  /* telefonbilleder er ofte 3-8 MB og tit stående – vi beskærer midt-på til
-     et pænt VANDRET format (3:2) og pakker som JPEG. Så er billedet let,
-     ensartet og bliver aldrig skævt beskåret ved visning – på desktop som telefon. */
+  /* telefonbilleder er ofte 3-8 MB – vi gør dem små og pakker som JPEG.
+     ratio = et tal: beskær midt-på til det format (dagens ret, 4:3).
+     ratio = null: HELE billedet beholdes, kun mindre (nyheder, 18/11).
+     Nyhederne blev før skåret til 3:2 – så en juleplakat i højformat
+     mistede top og bund for altid, allerede da den blev lagt op. */
   function compressImage(file, maxW = 1400, ratio = 3 / 2, quality = 0.85) {
     return new Promise((resolve) => {
       const img = new Image();
@@ -2596,10 +2598,17 @@
       img.onload = () => {
         const srcRatio = img.width / img.height;
         let sw = img.width, sh = img.height, sx = 0, sy = 0;
-        if (srcRatio > ratio) { sw = Math.round(img.height * ratio); sx = Math.round((img.width - sw) / 2); }
-        else { sh = Math.round(img.width / ratio); sy = Math.round((img.height - sh) / 2); }
-        const w = Math.min(maxW, sw);
-        const h = Math.round(w / ratio);
+        let w, h;
+        if (ratio) {
+          if (srcRatio > ratio) { sw = Math.round(img.height * ratio); sx = Math.round((img.width - sw) / 2); }
+          else { sh = Math.round(img.width / ratio); sy = Math.round((img.height - sh) / 2); }
+          w = Math.min(maxW, sw);
+          h = Math.round(w / ratio);
+        } else {
+          const k = Math.min(1, maxW / Math.max(sw, sh));
+          w = Math.round(sw * k);
+          h = Math.round(sh * k);
+        }
         const c = document.createElement('canvas');
         c.width = w; c.height = h;
         const ctx = c.getContext('2d');
@@ -2657,6 +2666,7 @@
         </div>
         <div class="row__actions">
           <span class="${mrk.klasse}">${mrk.tekst}</span>
+          <label class="abtn abtn--ghost newsed__skift" title="Læg et nyt billede op – det vises helt, intet skæres væk">🖼️ ${n.image ? 'Skift billede' : 'Tilføj billede'}<input type="file" accept="image/*" data-news-img hidden /></label>
           <button class="abtn ${off ? 'abtn--green' : 'abtn--ghost'}" data-act="news-toggle" data-id="${n.id}">${off ? 'Vis igen' : 'Skjul'}</button>
           <button class="abtn abtn--danger abtn--icon" data-act="news-del" data-id="${n.id}" title="Slet nyheden">✕</button>
         </div>
@@ -2717,7 +2727,7 @@
       const file = e.target.files && e.target.files[0];
       const prev = $('#newsPreview');
       if (!file) { newsImageBlob = null; prev.hidden = true; return; }
-      newsImageBlob = await compressImage(file);
+      newsImageBlob = await compressImage(file, 1600, null);
       prev.innerHTML = `<img src="${URL.createObjectURL(newsImageBlob)}" alt="" /> <span>Billedet er klar (${Math.round(newsImageBlob.size / 1024)} kB) ✓</span>`;
       prev.hidden = false;
     });
@@ -2782,8 +2792,26 @@
       clearTimeout(newsTimers[rowEl.dataset.id]);
       newsTimers[rowEl.dataset.id] = setTimeout(() => saveNewsRow(rowEl), 900);
     };
-    $('#newsList').onchange = (e) => {
+    $('#newsList').onchange = async (e) => {
       const rowEl = e.target.closest && e.target.closest('.newsed');
+      /* nyt billede på et opslag, der allerede er på siden (18/11) */
+      if (rowEl && e.target.matches('[data-news-img]')) {
+        const file = e.target.files && e.target.files[0];
+        if (!file) return;
+        const lbl = e.target.closest('label');
+        if (lbl) lbl.classList.add('is-busy');
+        const blob = await compressImage(file, 1600, null);
+        const up = await S.uploadNewsImage(blob, 'nyhed.jpg');
+        if (!up.ok) {
+          if (lbl) lbl.classList.remove('is-busy');
+          toast('Billedet kunne ikke lægges op – tjek internettet og prøv igen.');
+          return;
+        }
+        S.updateNews(rowEl.dataset.id, { image: up.url });
+        toast('Nyt billede er på hjemmesiden ✓');
+        renderNyheder();
+        return;
+      }
       if (!rowEl || !e.target.matches('[data-nf]')) return;
       clearTimeout(newsTimers[rowEl.dataset.id]);
       const erDato = e.target.dataset.nf === 'from' || e.target.dataset.nf === 'to';

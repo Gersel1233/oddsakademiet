@@ -1905,12 +1905,13 @@
       </article>`;
     }).join('');
 
-    /* En plakat i højformat må ALDRIG skæres midt over. Er billedet
-       højere end bredt, viser vi det helt – med et blødt, sløret
-       bagtæppe af samme billede, så kortet stadig ser færdigt ud. */
+    /* En plakat må ALDRIG skæres midt over. Er billedet ikke tydeligt
+       vandret (højformat, kvadrat, 4:3 …), viser vi det helt – med et
+       blødt, sløret bagtæppe af samme billede, så kortet ser færdigt ud.
+       Kun et rigtigt vandret foto (3:2 og bredere) fylder kortet ud. */
     grid.querySelectorAll('.news__media > img').forEach((img) => {
       const tilpas = () => {
-        if (!img.naturalWidth || img.naturalHeight <= img.naturalWidth * 1.15) return;
+        if (!img.naturalWidth || img.naturalWidth / img.naturalHeight >= 1.45) return;
         const boks = img.parentElement;
         boks.classList.add('news__media--plakat');
         boks.style.setProperty('--plakat', `url("${img.currentSrc || img.src}")`);
@@ -1919,6 +1920,35 @@
       else img.addEventListener('load', tilpas, { once: true });
     });
   }
+
+  /* Tryk på en plakat: vis den i fuld størrelse (18/11). Esc, tryk
+     eller ✕ lukker. Kun plakater – et almindeligt foto fylder kortet. */
+  document.addEventListener('click', (e) => {
+    const img = e.target.closest && e.target.closest('.news__media--plakat > img');
+    if (!img) return;
+    const vis = document.createElement('div');
+    vis.className = 'plakatvis';
+    vis.setAttribute('role', 'dialog');
+    vis.setAttribute('aria-modal', 'true');
+    vis.setAttribute('aria-label', img.alt || 'Plakat');
+    vis.innerHTML = '<button class="plakatvis__luk" type="button" aria-label="Luk">✕</button>';
+    const stor = document.createElement('img');
+    stor.src = img.currentSrc || img.src;
+    stor.alt = img.alt || '';
+    vis.appendChild(stor);
+    const luk = () => {
+      vis.remove();
+      document.removeEventListener('keydown', tast);
+      document.documentElement.style.overflow = '';
+      img.focus && img.focus();
+    };
+    const tast = (ev) => { if (ev.key === 'Escape') luk(); };
+    vis.addEventListener('click', luk);
+    document.addEventListener('keydown', tast);
+    document.documentElement.style.overflow = 'hidden';
+    document.body.appendChild(vis);
+    vis.querySelector('button').focus();
+  });
 
   /* "Læs mere" på lange nyheder – folder teksten ud og ind */
   document.addEventListener('click', (e) => {
