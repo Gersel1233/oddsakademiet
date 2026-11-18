@@ -1889,16 +1889,17 @@
       } else if (n.cta) {
         action = '<a href="#bestil" class="btn btn--accent btn--small news__cta">Bestil her</a>';
       }
-      /* lange tekster foldes pænt sammen med "Læs mere", så kortene aldrig vælter */
-      const longText = (n.text || '').length > 220 || ((n.text || '').match(/\n/g) || []).length > 3;
+      /* kortet viser kun første afsnit som intro – hele teksten står i
+         arket, der åbnes med et tryk (18/11). Lang intro foldes til 3 linjer. */
+      const intro = String(n.text || '').split(/\n\s*\n/)[0].trim();
+      const longText = intro.length > 160;
       return `
-      <article class="news ${i === 0 ? 'news--big' : ''}">
+      <article class="news ${i === 0 ? 'news--big' : ''}" data-news-id="${esc(n.id)}" tabindex="0" aria-label="${esc(n.title)} – tryk for at se hele opslaget">
         ${n.image ? `<div class="news__media"><img src="${esc(n.image)}" alt="${esc(n.title)}" loading="lazy" /></div>` : ''}
         <div class="news__body">
           ${n.createdAt ? `<p class="news__date">${esc(S.formatDate(n.createdAt.slice(0, 10), false))}</p>` : ''}
           <h3 class="news__title">${esc(n.title)}</h3>
-          ${n.text ? `<p class="news__text ${longText ? 'news__text--clamp' : ''}">${esc(n.text)}</p>` : ''}
-          ${longText ? '<button class="news__more" type="button" data-news-more>Læs mere ↓</button>' : ''}
+          ${intro ? `<p class="news__text ${longText ? 'news__text--clamp' : ''}">${esc(intro)}</p>` : ''}
           ${n.orderable && n.orderBy && !past ? `<p class="news__deadline">🗓️ Bestil senest ${esc(S.formatDate(n.orderBy, false))}</p>` : ''}
           ${action}
         </div>
@@ -1921,34 +1922,68 @@
     });
   }
 
-  /* Tryk på en plakat: vis den i fuld størrelse (18/11). Esc, tryk
-     eller ✕ lukker. Kun plakater – et almindeligt foto fylder kortet. */
+  /* NYHEDSARKET (18/11). Mikkel: opslagene skal kunne klikkes, og hvert
+     skal vise sin plakat helt og en god tekst – lækkert på telefonen.
+     Et tryk på kortet (ikke på dets knapper) åbner et ark: hele billedet,
+     dato, overskrift, HELE teksten og knappen. Esc, ✕ eller et tryk
+     udenfor lukker. På telefonen glider det op nedefra. */
   document.addEventListener('click', (e) => {
-    const img = e.target.closest && e.target.closest('.news__media--plakat > img');
-    if (!img) return;
+    const kort = e.target.closest && e.target.closest('#newsGrid .news[data-news-id]');
+    if (!kort || e.target.closest('a, button')) return;
+    const n = S.getNews().find((x) => x.id === kort.dataset.newsId);
+    if (n) aabnNyhed(n, kort);
+  });
+  document.addEventListener('keydown', (e) => {
+    if (e.key !== 'Enter' && e.key !== ' ') return;
+    const kort = e.target.closest && e.target.closest('#newsGrid .news[data-news-id]');
+    if (!kort || e.target !== kort) return;
+    e.preventDefault();
+    const n = S.getNews().find((x) => x.id === kort.dataset.newsId);
+    if (n) aabnNyhed(n, kort);
+  });
+  function aabnNyhed(n, kort) {
+    const today = S.todayISO();
+    const past = n.orderable && n.orderBy && today > n.orderBy;
+    let action = '';
+    if (n.orderable) {
+      action = past
+        ? '<p class="nyark__luk-frist">Bestillingsfristen er udløbet</p>'
+        : `<button class="btn btn--accent nyark__cta" type="button" data-ark-order="${esc(n.id)}">Bestil${n.price ? ` · ${esc(n.price)} kr.` : ''}</button>`;
+    } else if (n.cta) {
+      action = '<a href="#bestil" class="btn btn--accent nyark__cta" data-ark-luk>Bestil her</a>';
+    }
     const vis = document.createElement('div');
-    vis.className = 'plakatvis';
-    vis.setAttribute('role', 'dialog');
-    vis.setAttribute('aria-modal', 'true');
-    vis.setAttribute('aria-label', img.alt || 'Plakat');
-    vis.innerHTML = '<button class="plakatvis__luk" type="button" aria-label="Luk">✕</button>';
-    const stor = document.createElement('img');
-    stor.src = img.currentSrc || img.src;
-    stor.alt = img.alt || '';
-    vis.appendChild(stor);
-    const luk = () => {
-      vis.remove();
+    vis.className = 'nyark';
+    vis.innerHTML = `
+      <div class="nyark__ark" role="dialog" aria-modal="true" aria-labelledby="nyarkTitel">
+        <button class="nyark__x" type="button" aria-label="Luk" data-ark-luk>✕</button>
+        ${n.image ? `<div class="nyark__foto" style="--plakat:url('${esc(n.image)}')"><img src="${esc(n.image)}" alt="${esc(n.title)}" /></div>` : ''}
+        <div class="nyark__tekst">
+          ${n.createdAt ? `<p class="nyark__dato">${esc(S.formatDate(n.createdAt.slice(0, 10), false))}</p>` : ''}
+          <h3 class="nyark__titel" id="nyarkTitel">${esc(n.title)}</h3>
+          ${n.text ? `<p class="nyark__brod">${esc(n.text)}</p>` : ''}
+          ${n.orderable && n.orderBy && !past ? `<p class="nyark__frist">🗓️ Bestil senest ${esc(S.formatDate(n.orderBy, false))}</p>` : ''}
+          ${action}
+        </div>
+      </div>`;
+    const tast = (ev) => { if (ev.key === 'Escape') luk(); };
+    function luk() {
+      vis.classList.add('nyark--ud');
       document.removeEventListener('keydown', tast);
       document.documentElement.style.overflow = '';
-      img.focus && img.focus();
-    };
-    const tast = (ev) => { if (ev.key === 'Escape') luk(); };
-    vis.addEventListener('click', luk);
+      setTimeout(() => vis.remove(), 200);
+      if (kort && kort.focus) kort.focus({ preventScroll: true });
+    }
+    vis.addEventListener('click', (ev) => {
+      const ord = ev.target.closest('[data-ark-order]');
+      if (ord) { luk(); openNewsOrder(ord.dataset.arkOrder); return; }
+      if (ev.target === vis || ev.target.closest('[data-ark-luk]')) luk();
+    });
     document.addEventListener('keydown', tast);
     document.documentElement.style.overflow = 'hidden';
     document.body.appendChild(vis);
-    vis.querySelector('button').focus();
-  });
+    vis.querySelector('.nyark__x').focus({ preventScroll: true });
+  }
 
   /* "Læs mere" på lange nyheder – folder teksten ud og ind */
   document.addEventListener('click', (e) => {
