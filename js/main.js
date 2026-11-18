@@ -1941,6 +1941,50 @@
     const n = S.getNews().find((x) => x.id === kort.dataset.newsId);
     if (n) aabnNyhed(n, kort);
   });
+  /* FULD STØRRELSE (18/11). Ikke et link i en ny fane – det blokerer
+     telefonernes app-browsere. Plakaten fylder skærmen; et tryk zoomer
+     ind dér, hvor man trykker (2,5×), og man trækker rundt med fingeren.
+     Tryk igen = tilbage. ✕ eller Esc lukker. */
+  function visFuld(src, titel) {
+    const f = document.createElement('div');
+    f.className = 'fuldvis';
+    f.setAttribute('role', 'dialog');
+    f.setAttribute('aria-modal', 'true');
+    f.setAttribute('aria-label', (titel || 'Plakat') + ' i fuld størrelse');
+    f.innerHTML = '<div class="fuldvis__rul"><img alt="" /></div>'
+      + '<button class="fuldvis__x" type="button" aria-label="Luk">✕</button>'
+      + '<p class="fuldvis__hint">Tryk for at zoome</p>';
+    const rul = f.querySelector('.fuldvis__rul');
+    const img = f.querySelector('img');
+    img.src = src;
+    img.alt = titel || '';
+    let zoom = false;
+    img.addEventListener('click', (ev) => {
+      const r = img.getBoundingClientRect();
+      const fx = (ev.clientX - r.left) / r.width;
+      const fy = (ev.clientY - r.top) / r.height;
+      zoom = !zoom;
+      f.classList.toggle('fuldvis--zoom', zoom);
+      f.querySelector('.fuldvis__hint').textContent = zoom ? 'Træk for at se rundt · tryk for at zoome ud' : 'Tryk for at zoome';
+      if (zoom) {
+        requestAnimationFrame(() => {
+          rul.scrollLeft = fx * img.offsetWidth - rul.clientWidth / 2;
+          rul.scrollTop = fy * img.offsetHeight - rul.clientHeight / 2;
+        });
+      }
+    });
+    const tast = (ev) => { if (ev.key === 'Escape') { ev.stopPropagation(); lukF(); } };
+    function lukF() {
+      f.remove();
+      document.removeEventListener('keydown', tast, true);
+    }
+    f.querySelector('.fuldvis__x').addEventListener('click', lukF);
+    rul.addEventListener('click', (ev) => { if (ev.target === rul && !zoom) lukF(); });
+    document.addEventListener('keydown', tast, true);
+    document.body.appendChild(f);
+    f.querySelector('.fuldvis__x').focus({ preventScroll: true });
+  }
+
   function aabnNyhed(n, kort) {
     const today = S.todayISO();
     const past = n.orderable && n.orderBy && today > n.orderBy;
@@ -1957,7 +2001,7 @@
     vis.innerHTML = `
       <div class="nyark__ark" role="dialog" aria-modal="true" aria-labelledby="nyarkTitel">
         <button class="nyark__x" type="button" aria-label="Luk" data-ark-luk>✕</button>
-        ${n.image ? `<a class="nyark__foto" href="${esc(n.image)}" target="_blank" rel="noopener" style="--plakat:url('${esc(n.image)}')" aria-label="Se ${esc(n.title)} i fuld størrelse"><img src="${esc(n.image)}" alt="${esc(n.title)}" /><span class="nyark__zoom">Tryk for fuld størrelse</span></a>` : ''}
+        ${n.image ? `<button class="nyark__foto" type="button" data-ark-zoom style="--plakat:url('${esc(n.image)}')" aria-label="Se ${esc(n.title)} i fuld størrelse"><img src="${esc(n.image)}" alt="${esc(n.title)}" /><span class="nyark__zoom">Tryk for fuld størrelse</span></button>` : ''}
         <div class="nyark__tekst">
           ${n.createdAt ? `<p class="nyark__dato">${esc(S.formatDate(n.createdAt.slice(0, 10), false))}</p>` : ''}
           <h3 class="nyark__titel" id="nyarkTitel">${esc(n.title)}</h3>
@@ -1966,7 +2010,7 @@
           ${action}
         </div>
       </div>`;
-    const tast = (ev) => { if (ev.key === 'Escape') luk(); };
+    const tast = (ev) => { if (ev.key === 'Escape' && !document.querySelector('.fuldvis')) luk(); };
     function luk() {
       vis.classList.add('nyark--ud');
       document.removeEventListener('keydown', tast);
@@ -1975,6 +2019,7 @@
       if (kort && kort.focus) kort.focus({ preventScroll: true });
     }
     vis.addEventListener('click', (ev) => {
+      if (ev.target.closest('[data-ark-zoom]') && n.image) { visFuld(n.image, n.title); return; }
       const ord = ev.target.closest('[data-ark-order]');
       if (ord) { luk(); openNewsOrder(ord.dataset.arkOrder); return; }
       if (ev.target === vis || ev.target.closest('[data-ark-luk]')) { ev.preventDefault(); luk(); }
