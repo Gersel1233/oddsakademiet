@@ -151,6 +151,7 @@ const SpiisStore = (() => {
       closedTypes: {},  /* dage hvor KUN den ene måde er lukket { 'YYYY-MM-DD': ['spise'] } */
       dayTimes: {},     /* egne bestillingstider på én dag { 'YYYY-MM-DD': { from:'17:30' } } */
       dayMsg: {},       /* besked til KUNDERNE på én dag { 'YYYY-MM-DD': 'Kun take-away i dag' } */
+      closedItems: {},  /* én slags lukket på én dag { 'YYYY-MM-DD': ['tapas'] } (25/11) */
       log: [],
     };
 
@@ -186,6 +187,7 @@ const SpiisStore = (() => {
       if (!parsed.dayMsg) parsed.dayMsg = {};
       if (!parsed.closedTypes) parsed.closedTypes = {};
       if (!parsed.dayTimes) parsed.dayTimes = {};
+      if (!parsed.closedItems) parsed.closedItems = {};
       return parsed;
     } catch {
       return null;
@@ -260,7 +262,7 @@ const SpiisStore = (() => {
     return res;
   }
 
-  const CONFIG_KEYS = ['settings', 'hours', 'dagensRet', 'menu', 'blockedDates', 'arrangementDates', 'orderClosedDates', 'news', 'closure', 'dayMarks', 'closedTypes', 'dayTimes', 'dayMsg'];
+  const CONFIG_KEYS = ['settings', 'hours', 'dagensRet', 'menu', 'blockedDates', 'arrangementDates', 'orderClosedDates', 'news', 'closure', 'dayMarks', 'closedTypes', 'dayTimes', 'dayMsg', 'closedItems'];
 
   function mergeConfig(remote) {
     if (!remote) return;
@@ -285,6 +287,7 @@ const SpiisStore = (() => {
       dayMsg: data.dayMsg || {},
       closedTypes: data.closedTypes || {},
       dayTimes: data.dayTimes || {},
+      closedItems: data.closedItems || {},
       news: data.news || [],
       closure: data.closure || { active: false, from: '', reopen: '', message: '' },
     };
@@ -1370,6 +1373,37 @@ const SpiisStore = (() => {
     save();
     pushConfig();
   }
+  /* ============================================================
+     LUK ÉN SLAGS PÅ ÉN DAG  (25/11)
+     Mikkel: "de kan ikke aflyse en dag agtig … lukke ned for f.eks
+     dagens ret og skrive en besked". Tapas kan lukkes for én dag her;
+     dagens ret aflyses ved at melde alle dagens retter udsolgt
+     (setDishesSoldout), så hjemmesiden viser det, den allerede kan.
+     ============================================================ */
+  const LUKBARE = ['tapas'];
+  const getClosedItems = (iso) => {
+    const l = (data.closedItems || {})[iso];
+    return Array.isArray(l) ? l.filter((k) => LUKBARE.includes(k)) : [];
+  };
+  const isItemClosed = (iso, k) => getClosedItems(iso).includes(k);
+  function setItemClosed(iso, k, lukket) {
+    if (!LUKBARE.includes(k)) return;
+    if (!data.closedItems) data.closedItems = {};
+    const nu = new Set(getClosedItems(iso));
+    if (lukket) nu.add(k); else nu.delete(k);
+    if (nu.size) data.closedItems[iso] = [...nu];
+    else delete data.closedItems[iso];
+    save();
+    pushConfig();
+  }
+  /* alle dagens retter udsolgt (aflys) – eller til salg igen */
+  function setDishesSoldout(iso, udsolgt) {
+    const l = getDagensRetList(iso);
+    if (!l.length) return false;
+    setDagensRetList(iso, l.map((d) => ({ ...d, soldout: !!udsolgt })));
+    return true;
+  }
+
   function blockDate(iso) {
     if (!data.blockedDates.includes(iso)) {
       data.blockedDates.push(iso);
@@ -1546,6 +1580,7 @@ const SpiisStore = (() => {
   function kanBestilleTapas(iso) {
     if (!iso || iso < tapasFoersteDato()) return false;
     if (!isOpenDay(iso) || kalenderLukket(iso)) return false;
+    if (isItemClosed(iso, 'tapas')) return false;
     const r = tapasRegler();
     const w = weekdayIndex(iso);
     if (r.dage ? !r.dage.includes(w) : ugedagUdenBestilling(w)) return false;
@@ -1820,6 +1855,7 @@ const SpiisStore = (() => {
     tapasRegler, tapasSlots, kanBestilleTapas, tapasFoersteDato, blockDate, unblockDate, isDateAvailable,
     getDayMark, setDayMark, getDayMsg, setDayMsg, DEFAULT_TAPAS_ITEMS,
     getClosedTypes, setTypeClosed, isTypeClosed, openTypesFor,
+    getClosedItems, isItemClosed, setItemClosed, setDishesSoldout,
     getDayTimes, setDayTimes, harEgneTider, orderFromFor,
     getClosure, setClosure, isClosureNow, isInClosure,
     timeslotsFor, orderSlots, orderToFor,

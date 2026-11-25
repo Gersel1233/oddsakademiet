@@ -1035,6 +1035,150 @@
       </div>`;
   }
 
+
+  /* ============================================================
+     STYR DAGEN  (25/11)
+     Mikkel: "de kan ikke aflyse en dag agtig … lukke ned for f.eks
+     dagens ret og skrive en besked … gør det langt bedre ift
+     administration". Alt det fandtes – men gemt inde i kalenderens
+     dagsvindue. Nu står det ØVERST på forsiden, for i dag, i morgen
+     og overmorgen: aflys dagen med en grund og en besked, aflys
+     dagens ret, luk tapas, luk take-away/spis her, sæt alt på pause.
+     Samme data som kalenderen – to steder at trykke, én sandhed.
+     ============================================================ */
+  let styrIso = null;
+  const AFLYS_GRUNDE = [
+    { e: '🤒', t: 'Sygdom', besked: 'Vi holder desværre lukket i dag på grund af sygdom. Vi glæder os til at se jer igen snart.' },
+    { e: '🎉', t: 'Privat arrangement', besked: 'Vi har privat arrangement i dag, så der er lukket for bestillinger.' },
+    { e: '🌧️', t: 'Vejret', besked: 'Vi holder lukket i dag på grund af vejret.' },
+    { e: '🔧', t: 'Teknik', besked: 'Vi har tekniske problemer i køkkenet og må desværre holde lukket i dag.' },
+    { e: '📌', t: 'Lukket', besked: 'Vi holder lukket i dag.' },
+  ];
+  const BESKED_FORSLAG = [
+    'Dagens ret er udsolgt – resten af kortet kan stadig bestilles.',
+    'I dag er der kun take-away.',
+    'Ingen tapas i dag – vi er tilbage i morgen.',
+    'Vi åbner lidt senere i dag.',
+  ];
+
+  function styrDagenHtml() {
+    const today = S.todayISO();
+    if (!styrIso || styrIso < today) styrIso = today;
+    const iso = styrIso;
+    const dagValg = [0, 1, 2].map((n) => {
+      const d = new Date(today + 'T12:00:00');
+      d.setDate(d.getDate() + n);
+      const di = d.toISOString().slice(0, 10);
+      const UGEDAG = ['Søndag', 'Mandag', 'Tirsdag', 'Onsdag', 'Torsdag', 'Fredag', 'Lørdag'];
+      const navn = n === 0 ? 'I dag' : n === 1 ? 'I morgen' : UGEDAG[d.getDay()];
+      return `<button type="button" class="styr__dag ${di === iso ? 'is-on' : ''}" data-act="styr-dag" data-iso="${di}">${esc(navn)}</button>`;
+    }).join('');
+
+    const aaben = S.isOpenDay(iso);
+    const ferie = S.isInClosure(iso);
+    const blokeret = S.getBlockedDates().includes(iso);
+    const lukketKal = S.isOrderingClosed(iso);
+    const mark = S.getDayMark(iso);
+    const paused = !!S.getSettings().ordersPaused && iso === today;
+
+    let status;
+    let cls = 'styr--aaben';
+    if (!aaben) { status = '🌙 Køkkenet holder lukket denne ugedag'; cls = 'styr--lukket'; }
+    else if (ferie) { status = '🌴 Ferielukket'; cls = 'styr--lukket'; }
+    else if (blokeret) { status = `🚫 Dagen er aflyst${mark && mark.t ? ` – ${esc(mark.e || '')} ${esc(mark.t)}` : ''}`; cls = 'styr--lukket'; }
+    else if (lukketKal) { status = '🚫 Lukket for madbestillinger (arrangement eller ingen online bestilling)'; cls = 'styr--lukket'; }
+    else if (paused) { status = '⏸ Bestillinger er sat på pause lige nu'; cls = 'styr--pause'; }
+    else status = '✅ Åben for bestillinger';
+
+    const kanStyre = aaben && !ferie;
+    let krop = '';
+    if (kanStyre && blokeret) {
+      krop = `<div class="styr__raekke"><button type="button" class="abtn abtn--green" data-act="kal-unblock" data-iso="${iso}">✅ Åbn dagen igen</button></div>`;
+    } else if (kanStyre) {
+      const lukkede = S.getClosedTypes(iso);
+      const retter = S.getDagensRetList(iso);
+      const alleUdsolgt = retter.length && retter.every((d) => d.soldout);
+      const tapasLukket = S.isItemClosed(iso, 'tapas');
+      const kort = (navn, lukket, act, ekstra = '') => `
+        <div class="styrkort ${lukket ? 'styrkort--lukket' : ''}">
+          <span class="styrkort__navn">${navn}</span>
+          <span class="styrkort__stand">${lukket ? '🚫 Lukket' : '✅ Åben'}</span>
+          <button type="button" class="abtn ${lukket ? 'abtn--green' : 'abtn--ghost'}" ${act} data-iso="${iso}">${lukket ? 'Åbn igen' : 'Luk'}</button>
+          ${ekstra}
+        </div>`;
+      krop = `
+        <div class="styr__kort">
+          ${kort('🥡 Take-away', lukkede.includes('togo'), 'data-act="type-toggle" data-type="togo"')}
+          ${kort('🍽️ Spis her', lukkede.includes('spise'), 'data-act="type-toggle" data-type="spise"')}
+          ${retter.length
+            ? kort(`🍲 Dagens ret <small>${esc(retter.map((d) => d.title).join(' · '))}</small>`, alleUdsolgt, 'data-act="styr-ret"')
+            : `<div class="styrkort styrkort--tom"><span class="styrkort__navn">🍲 Dagens ret</span><span class="styrkort__stand">Ingen sat</span><button type="button" class="abtn abtn--ghost" data-goto="dagensret">Sæt dagens ret →</button></div>`}
+          ${kort('🥢 Tapas', tapasLukket, 'data-act="styr-tapas"')}
+        </div>
+        ${iso === today ? `
+        <div class="styr__raekke">
+          <button type="button" class="abtn ${paused ? 'abtn--green' : 'abtn--ghost'}" data-act="styr-pause">${paused ? '▶️ Start bestillinger igen' : '⏸ Pause alle bestillinger lige nu'}</button>
+          <small>${paused ? 'Kunderne kan ikke bestille, før du starter igen.' : 'Til travle stunder – kunderne ser, at der er pause.'}</small>
+        </div>` : ''}
+        <details class="styr__aflys">
+          <summary class="abtn abtn--danger">🚫 Aflys hele dagen…</summary>
+          <div class="styr__aflysbody">
+            <p><strong>Hvorfor?</strong> Grunden står på spiis.dk ved dagen.</p>
+            <div class="styr__grunde">
+              ${AFLYS_GRUNDE.map((g, i) => `<label class="styr__grund"><input type="radio" name="styrGrund" value="${i}" ${i === 0 ? 'checked' : ''} data-besked="${esc(g.besked)}"> ${g.e} ${esc(g.t)}</label>`).join('')}
+            </div>
+            <label class="styr__felt">Besked til kunderne
+              <textarea class="inline-input" id="styrAflysBesked" rows="2" maxlength="200">${esc(AFLYS_GRUNDE[0].besked)}</textarea>
+            </label>
+            <button type="button" class="abtn abtn--danger" data-act="styr-aflys" data-iso="${iso}">🚫 Aflys ${iso === today ? 'i dag' : S.formatDate(iso, false).toLowerCase()}</button>
+            <small>Lukker for bestillinger og bookinger. Bestillinger, der allerede er kommet ind, skal I selv ringe til.</small>
+          </div>
+        </details>`;
+    }
+
+    const besked = S.getDayMsg(iso);
+    const n = (S.getOrders(iso) || []).length;
+    return `
+      <section class="styr ${cls}">
+        <div class="styr__top">
+          <h2 class="styr__titel">Styr dagen</h2>
+          <div class="styr__dage" role="group" aria-label="Vælg dag">${dagValg}</div>
+        </div>
+        <p class="styr__status">${status}${n ? ` <span class="styr__antal">· ${n} bestilling${n === 1 ? '' : 'er'}</span>` : ''}</p>
+        ${krop}
+        ${aaben && !ferie ? `
+        <div class="styr__besked">
+          <label for="styrBesked-${iso}"><strong>💬 Besked til kunderne</strong> <small>står på spiis.dk ved dagen</small></label>
+          <textarea class="inline-input" id="styrBesked-${iso}" rows="2" maxlength="200" data-styr-besked="${iso}" placeholder="Fx: Dagens ret er udsolgt – resten af kortet kan stadig bestilles.">${esc(besked)}</textarea>
+          <div class="styr__forslag">${BESKED_FORSLAG.map((t) => `<button type="button" class="styr__chip" data-act="styr-forslag" data-iso="${iso}" data-tekst="${esc(t)}">${esc(t)}</button>`).join('')}</div>
+          <span class="styr__gemt" data-styr-gemt="${iso}" aria-live="polite">${besked ? 'Står på spiis.dk ✓' : ''}</span>
+        </div>` : ''}
+        <button type="button" class="styr__mere" data-act="styr-mere" data-iso="${iso}">Flere indstillinger for dagen (tider, noter, program) →</button>
+      </section>`;
+  }
+
+  /* beskeden i "Styr dagen" gemmer sig selv, mens der skrives, og et
+     valg af grund under "Aflys hele dagen" skifter beskedens tekst */
+  const styrTimers = {};
+  document.addEventListener('input', (e) => {
+    const felt = e.target.closest && e.target.closest('[data-styr-besked]');
+    if (!felt) return;
+    const iso = felt.dataset.styrBesked;
+    const kvit = document.querySelector(`[data-styr-gemt="${iso}"]`);
+    if (kvit) kvit.textContent = 'Gemmer…';
+    clearTimeout(styrTimers[iso]);
+    styrTimers[iso] = setTimeout(() => {
+      S.setDayMsg(iso, felt.value);
+      if (kvit) kvit.textContent = felt.value.trim() ? 'Gemt ✓ – står nu på spiis.dk' : 'Beskeden er fjernet';
+    }, 800);
+  });
+  document.addEventListener('change', (e) => {
+    const r = e.target.closest && e.target.closest('input[name="styrGrund"]');
+    if (!r) return;
+    const felt = document.getElementById('styrAflysBesked');
+    if (felt) felt.value = r.dataset.besked || '';
+  });
+
   function renderOverblik() {
     const today = S.todayISO();
     const orders = S.getOrders(today);
@@ -1134,6 +1278,7 @@
       ${glemteHtml}`;
 
     $('#view-overblik').innerHTML = `
+      ${styrDagenHtml()}
       ${nyligtHtml}
       <div class="stats">
         <div class="stat stat--accent">
@@ -3795,6 +3940,55 @@
       return;
     }
 
+    /* ---------- STYR DAGEN (25/11) ---------- */
+    if (act === 'styr-dag') { styrIso = btn.dataset.iso; renderView(activeView); return; }
+    if (act === 'styr-mere') { openDayModal(btn.dataset.iso); return; }
+    if (act === 'styr-ret') {
+      const iso = btn.dataset.iso;
+      const l = S.getDagensRetList(iso);
+      const aflyser = !(l.length && l.every((d) => d.soldout));
+      S.setDishesSoldout(iso, aflyser);
+      toast(aflyser ? '🚫 Dagens ret er aflyst – den står som udsolgt på spiis.dk' : '✅ Dagens ret kan bestilles igen');
+      renderView(activeView);
+      return;
+    }
+    if (act === 'styr-tapas') {
+      const iso = btn.dataset.iso;
+      const lukker = !S.isItemClosed(iso, 'tapas');
+      S.setItemClosed(iso, 'tapas', lukker);
+      toast(lukker ? `🚫 Tapas er lukket ${S.formatDate(iso, false).toLowerCase()}` : '✅ Tapas kan bestilles igen');
+      renderView(activeView);
+      return;
+    }
+    if (act === 'styr-pause') {
+      const nu = !S.getSettings().ordersPaused;
+      S.updateSettings({ ordersPaused: nu });
+      toast(nu ? '⏸ Bestillinger er sat på pause' : '▶️ Bestillinger er åbne igen');
+      renderView(activeView);
+      return;
+    }
+    if (act === 'styr-forslag') {
+      const iso = btn.dataset.iso;
+      S.setDayMsg(iso, btn.dataset.tekst);
+      toast('Beskeden står nu på spiis.dk ✓');
+      renderView(activeView);
+      return;
+    }
+    if (act === 'styr-aflys') {
+      const iso = btn.dataset.iso;
+      const valgt = document.querySelector('input[name="styrGrund"]:checked');
+      const g = AFLYS_GRUNDE[Number(valgt ? valgt.value : 0)] || AFLYS_GRUNDE[0];
+      const tekst = (document.getElementById('styrAflysBesked') || {}).value || g.besked;
+      S.blockDate(iso);
+      S.setDayMark(iso, { e: g.e, t: g.t });
+      S.setDayMsg(iso, tekst);
+      const n = (S.getOrders(iso) || []).length;
+      toast(`🚫 ${S.formatDate(iso)} er aflyst${n ? ` – husk de ${n} bestilling${n === 1 ? '' : 'er'}, der allerede er kommet ind` : ''}`);
+      renderUge();
+      renderView(activeView);
+      return;
+    }
+
     /* luk/åbn take-away eller spis-her for én dag */
     if (act === 'type-toggle') {
       const { iso, type } = btn.dataset;
@@ -3836,9 +4030,12 @@
       return;
     }
     if (act === 'kal-unblock') {
+      /* beskeden fra "Aflys dagen" skal ikke blive stående, når dagen åbner */
+      if (AFLYS_GRUNDE.some((g) => g.besked === S.getDayMsg(btn.dataset.iso))) S.setDayMsg(btn.dataset.iso, '');
       S.unblockDate(btn.dataset.iso);
       renderUge();
       refreshDayModal();
+      renderView(activeView);
       toast(`${S.formatDate(btn.dataset.iso)} er åben igen ✅`);
       return;
     }
@@ -4004,6 +4201,8 @@
   function editingInProgress(viewSel) {
     if (document.querySelector('.dp-pop:not([hidden])')) return true;
     if (document.querySelector(`${viewSel} .bkedit:not([hidden])`)) return true;
+    /* "Aflys hele dagen…" er foldet ud – lad den stå, til der er valgt */
+    if (document.querySelector(`${viewSel} .styr__aflys[open]`)) return true;
     const fold = document.getElementById('newBookingFold');
     if (fold && fold.open) {
       const val = (id) => { const el = document.getElementById(id); return el && el.value.trim(); };
