@@ -712,12 +712,15 @@ const SpiisStore = (() => {
     const plan = [];
     let iso = fromIso;
     for (let i = 0; i < days; i++) {
+      /* "ingen dagens ret" (25/11): ingen ret går videre til hjemmesiden */
+      const ingen = harIngenRet(iso);
       plan.push({
         iso,
         weekday: WEEKDAYS[weekdayIndex(iso)],
-        dish: getDagensRet(iso),
-        dishes: getDagensRetList(iso),
+        dish: ingen ? null : getDagensRet(iso),
+        dishes: ingen ? [] : getDagensRetList(iso),
         open: isOpenDay(iso),
+        ingenRet: ingen,
       });
       iso = addDays(iso, 1);
     }
@@ -756,7 +759,7 @@ const SpiisStore = (() => {
   function getRemainingFor(iso, title) {
     const dish = asDishList(data.dagensRet[iso]).find((d) => d.title === title);
     if (!dish) return 0;
-    if (dish.soldout) return 0;
+    if (dish.soldout || harIngenRet(iso)) return 0;
     if (dish.stock == null || dish.stock === '') return null;
     const list = asDishList(data.dagensRet[iso]);
     /* én ret på dagen: brug dag-totalen (virker uden ny databasefunktion);
@@ -1380,7 +1383,7 @@ const SpiisStore = (() => {
      dagens ret aflyses ved at melde alle dagens retter udsolgt
      (setDishesSoldout), så hjemmesiden viser det, den allerede kan.
      ============================================================ */
-  const LUKBARE = ['tapas'];
+  const LUKBARE = ['tapas', 'dagensret'];
   const getClosedItems = (iso) => {
     const l = (data.closedItems || {})[iso];
     return Array.isArray(l) ? l.filter((k) => LUKBARE.includes(k)) : [];
@@ -1397,6 +1400,17 @@ const SpiisStore = (() => {
     pushConfig();
   }
   /* alle dagens retter udsolgt (aflys) – eller til salg igen */
+  /* INGEN DAGENS RET (25/11). Mikkel: "ingen dagens ret ser dårlig ud …
+     ingen misvisende ting – 'ingen dagens ret, stadig normalt sortiment'".
+     Dagen er markeret uden dagens ret: hjemmesiden viser ingen ret, ikke
+     "følger snart", ikke "udsolgt" og ikke morgendagens ret, men teksten
+     herunder, som kan rettes i admin. */
+  const INGEN_RET_STD = 'Hele menukortet kan bestilles som normalt.';
+  const ingenRetTekst = () => String((data.settings || {}).ingenRetTekst || '').trim() || INGEN_RET_STD;
+  const harIngenRet = (iso) => isItemClosed(iso, 'dagensret');
+  /* retterne, som HJEMMESIDEN skal vise og sælge den dag */
+  const getSiteDishes = (iso) => (harIngenRet(iso) ? [] : getDagensRetList(iso));
+
   function setDishesSoldout(iso, udsolgt) {
     const l = getDagensRetList(iso);
     if (!l.length) return false;
@@ -1856,6 +1870,7 @@ const SpiisStore = (() => {
     getDayMark, setDayMark, getDayMsg, setDayMsg, DEFAULT_TAPAS_ITEMS,
     getClosedTypes, setTypeClosed, isTypeClosed, openTypesFor,
     getClosedItems, isItemClosed, setItemClosed, setDishesSoldout,
+    harIngenRet, ingenRetTekst, getSiteDishes, INGEN_RET_STD,
     getDayTimes, setDayTimes, harEgneTider, orderFromFor,
     getClosure, setClosure, isClosureNow, isInClosure,
     timeslotsFor, orderSlots, orderToFor,

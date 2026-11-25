@@ -1055,7 +1055,6 @@
     { e: '📌', t: 'Lukket', besked: 'Vi holder lukket i dag.' },
   ];
   const BESKED_FORSLAG = [
-    'Dagens ret er udsolgt – resten af kortet kan stadig bestilles.',
     'I dag er der kun take-away.',
     'Ingen tapas i dag – vi er tilbage i morgen.',
     'Vi åbner lidt senere i dag.',
@@ -1097,7 +1096,7 @@
     } else if (kanStyre) {
       const lukkede = S.getClosedTypes(iso);
       const retter = S.getDagensRetList(iso);
-      const alleUdsolgt = retter.length && retter.every((d) => d.soldout);
+      const ingenRet = S.harIngenRet(iso);
       const tapasLukket = S.isItemClosed(iso, 'tapas');
       const kort = (navn, lukket, act, ekstra = '') => `
         <div class="styrkort ${lukket ? 'styrkort--lukket' : ''}">
@@ -1110,11 +1109,19 @@
         <div class="styr__kort">
           ${kort('🥡 Take-away', lukkede.includes('togo'), 'data-act="type-toggle" data-type="togo"')}
           ${kort('🍽️ Spis her', lukkede.includes('spise'), 'data-act="type-toggle" data-type="spise"')}
-          ${retter.length
-            ? kort(`🍲 Dagens ret <small>${esc(retter.map((d) => d.title).join(' · '))}</small>`, alleUdsolgt, 'data-act="styr-ret"')
-            : `<div class="styrkort styrkort--tom"><span class="styrkort__navn">🍲 Dagens ret</span><span class="styrkort__stand">Ingen sat</span><button type="button" class="abtn abtn--ghost" data-goto="dagensret">Sæt dagens ret →</button></div>`}
+          ${ingenRet
+            ? `<div class="styrkort styrkort--lukket"><span class="styrkort__navn">🍲 Dagens ret</span><span class="styrkort__stand">🚫 Ingen i dag</span><button type="button" class="abtn abtn--green" data-act="styr-ret" data-iso="${iso}">${retter.length ? 'Sælg den igen' : 'Fortryd'}</button></div>`
+            : retter.length
+              ? `<div class="styrkort"><span class="styrkort__navn">🍲 Dagens ret <small>${esc(retter.map((d) => d.title).join(' · '))}</small></span><span class="styrkort__stand">✅ Til salg</span><button type="button" class="abtn abtn--ghost" data-act="styr-ret" data-iso="${iso}">Ingen dagens ret</button></div>`
+              : `<div class="styrkort styrkort--tom"><span class="styrkort__navn">🍲 Dagens ret</span><span class="styrkort__stand">Ingen sat endnu</span><button type="button" class="abtn abtn--ghost" data-act="styr-ret" data-iso="${iso}">Ingen dagens ret</button><button type="button" class="abtn abtn--ghost" data-goto="dagensret">Sæt en ret →</button></div>`}
           ${kort('🥢 Tapas', tapasLukket, 'data-act="styr-tapas"')}
         </div>
+        ${ingenRet ? `
+        <div class="styr__ingenret">
+          <label for="styrIngenRet"><strong>Det står der på spiis.dk:</strong> <em>"Ingen dagens ret i dag"</em> og under:</label>
+          <input class="inline-input" id="styrIngenRet" maxlength="120" data-styr-ingenret placeholder="${esc(S.INGEN_RET_STD)}" value="${esc(S.ingenRetTekst() === S.INGEN_RET_STD ? '' : S.ingenRetTekst())}" />
+          <small>Tomt felt = "${esc(S.INGEN_RET_STD)}" · Teksten gælder alle dage uden dagens ret.</small>
+        </div>` : ''}
         ${iso === today ? `
         <div class="styr__raekke">
           <button type="button" class="abtn ${paused ? 'abtn--green' : 'abtn--ghost'}" data-act="styr-pause">${paused ? '▶️ Start bestillinger igen' : '⏸ Pause alle bestillinger lige nu'}</button>
@@ -1149,7 +1156,7 @@
         ${aaben && !ferie ? `
         <div class="styr__besked">
           <label for="styrBesked-${iso}"><strong>💬 Besked til kunderne</strong> <small>står på spiis.dk ved dagen</small></label>
-          <textarea class="inline-input" id="styrBesked-${iso}" rows="2" maxlength="200" data-styr-besked="${iso}" placeholder="Fx: Dagens ret er udsolgt – resten af kortet kan stadig bestilles.">${esc(besked)}</textarea>
+          <textarea class="inline-input" id="styrBesked-${iso}" rows="2" maxlength="200" data-styr-besked="${iso}" placeholder="Fx: I dag er der kun take-away.">${esc(besked)}</textarea>
           <div class="styr__forslag">${BESKED_FORSLAG.map((t) => `<button type="button" class="styr__chip" data-act="styr-forslag" data-iso="${iso}" data-tekst="${esc(t)}">${esc(t)}</button>`).join('')}</div>
           <span class="styr__gemt" data-styr-gemt="${iso}" aria-live="polite">${besked ? 'Står på spiis.dk ✓' : ''}</span>
         </div>` : ''}
@@ -1171,6 +1178,13 @@
       S.setDayMsg(iso, felt.value);
       if (kvit) kvit.textContent = felt.value.trim() ? 'Gemt ✓ – står nu på spiis.dk' : 'Beskeden er fjernet';
     }, 800);
+  });
+  let ingenRetTimer = null;
+  document.addEventListener('input', (e) => {
+    const f = e.target.closest && e.target.closest('[data-styr-ingenret]');
+    if (!f) return;
+    clearTimeout(ingenRetTimer);
+    ingenRetTimer = setTimeout(() => { S.updateSettings({ ingenRetTekst: f.value.trim() }); savedToast(); }, 800);
   });
   document.addEventListener('change', (e) => {
     const r = e.target.closest && e.target.closest('input[name="styrGrund"]');
@@ -3082,13 +3096,17 @@
         </div>
         <div class="planner">
           ${plan.map((day) => {
-            const dishes = (day.dishes && day.dishes.length) ? day.dishes : [{ title: '', desc: '', price: '', stock: '' }];
+            /* altid de RIGTIGE retter – også på en dag markeret "ingen dagens ret",
+               ellers ville et gem her slette dem (getPlan skjuler dem for siden) */
+            const rigtige = S.getDagensRetList(day.iso);
+            const dishes = rigtige.length ? rigtige : [{ title: '', desc: '', price: '', stock: '' }];
             const isToday = day.iso === S.todayISO();
             return `
             <div class="planday planday--multi ${day.open ? '' : 'planday--closed'} ${isToday ? 'planday--today' : ''}" data-iso="${day.iso}">
               <div class="planday__date">
                 <strong>${day.weekday}${isToday ? ' · i dag' : ''}</strong>
                 <small>${esc(S.formatDate(day.iso, false))}${day.open ? '' : ' · lukket'}</small>
+                ${day.ingenRet ? `<span class="tag tag--red" title="Retten står IKKE på spiis.dk denne dag">🚫 Ingen dagens ret</span><button type="button" class="abtn abtn--ghost" data-act="styr-ret" data-iso="${day.iso}">Sælg den igen</button>` : ''}
               </div>
               <div class="planday__dishes">
                 ${dishes.map((d) => pdDishRow(day, d)).join('')}
@@ -3945,10 +3963,9 @@
     if (act === 'styr-mere') { openDayModal(btn.dataset.iso); return; }
     if (act === 'styr-ret') {
       const iso = btn.dataset.iso;
-      const l = S.getDagensRetList(iso);
-      const aflyser = !(l.length && l.every((d) => d.soldout));
-      S.setDishesSoldout(iso, aflyser);
-      toast(aflyser ? '🚫 Dagens ret er aflyst – den står som udsolgt på spiis.dk' : '✅ Dagens ret kan bestilles igen');
+      const ingen = !S.harIngenRet(iso);
+      S.setItemClosed(iso, 'dagensret', ingen);
+      toast(ingen ? '🍲 Ingen dagens ret – spiis.dk siger, at menukortet kan bestilles som normalt' : '✅ Dagens ret er tilbage');
       renderView(activeView);
       return;
     }

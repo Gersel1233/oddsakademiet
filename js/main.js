@@ -266,14 +266,16 @@
     let iso = today;
     /* efter køkkenets lukketid er dagen slut – og dage med privat
        arrangement springes over, for dér kan man ikke bestille */
-    let dishes = (dayDone(today) || S.isOrderingClosed(today)) ? [] : S.getDagensRetList(iso);
+    let dishes = (dayDone(today) || S.isOrderingClosed(today)) ? [] : S.getSiteDishes(iso);
+    /* ingen dagens ret i dag (25/11): sig det pænt – vis IKKE morgendagens ret */
+    const ingenIDag = !dayDone(today) && !S.isOrderingClosed(today) && S.harIngenRet(today);
 
     /* hvis der ikke er en ret (eller dagen er slut), så vis den næste planlagte */
-    if (!dishes.length) {
+    if (!dishes.length && !ingenIDag) {
       for (let i = 1; i <= 14 && !dishes.length; i++) {
         iso = S.addDays(today, i);
         if (S.isOrderingClosed(iso)) continue;
-        dishes = S.getDagensRetList(iso);
+        dishes = S.getSiteDishes(iso);
       }
     }
     const dish = dishes[0] || null;
@@ -300,6 +302,19 @@
       }
     }
 
+    if (!dish && ingenIDag) {
+      label.textContent = 'I dag';
+      title.hidden = false;
+      desc.hidden = false;
+      if (retterEl) { retterEl.hidden = true; retterEl.innerHTML = ''; }
+      title.textContent = 'Ingen dagens ret i dag';
+      desc.textContent = S.ingenRetTekst();
+      price.textContent = '';
+      stockEl.textContent = '';
+      stockEl.className = stockEl.className.replace(/\bis-soldout\b/g, '').trim();
+      if (orderBtn) { orderBtn.textContent = 'Se menukortet'; orderBtn.setAttribute('href', '#bestil'); }
+      return;
+    }
     if (!dish) {
       label.textContent = 'Dagens ret';
       title.textContent = 'Vi opdaterer menuen lige nu';
@@ -435,10 +450,13 @@
           ${dagsBeskedHtml(day.iso)}
         </button>`;
       }
-      const dishes = day.dishes || [];
+      const dishes = S.harIngenRet(day.iso) ? [] : (day.dishes || []);
       /* én ret: som altid. Flere retter: en linje pr. ret med eget udsolgt/få-tilbage-mærke */
       let dishHtml;
-      if (!dishes.length) {
+      if (S.harIngenRet(day.iso)) {
+        dishHtml = `<span class="dayplan__dish dayplan__dish--ingen">Ingen dagens ret</span>
+          <span class="dayplan__desc">${esc(S.ingenRetTekst())}</span>`;
+      } else if (!dishes.length) {
         /* dage i en SENERE uge er ikke planlagt endnu – køkkenet lægger
            ugens menu op hen over weekenden. Sig det, i stedet for et
            uklart "følger snart", så folk ved hvornår de skal kigge igen. */
@@ -497,7 +515,7 @@
   function openDayInfo(iso) {
     dayInfoIso = iso;
     const åben = S.isOpenDay(iso) && !S.isOrderingClosed(iso);
-    const dishes = S.getDagensRetList(iso);
+    const dishes = S.getSiteDishes(iso);
     const timer = S.getHours()[S.weekdayIndex(iso)];
 
     $('#dayInfoKicker').textContent = iso === S.todayISO() ? 'I dag' : 'Dagens ret';
@@ -507,6 +525,8 @@
     if (!åben) {
       krop = `<p class="daycard__lukket">${esc(lukketTekst(iso))}</p>
         <p class="daycard__note">Vi tager ikke imod bestillinger denne dag – vælg en anden dag, så er vi klar. 💛</p>`;
+    } else if (S.harIngenRet(iso)) {
+      krop = `<p class="daycard__note"><strong>Ingen dagens ret denne dag.</strong> ${esc(S.ingenRetTekst())}</p>`;
     } else if (!dishes.length) {
       /* har dagen sin egen besked, siger DEN hvad der sker – så skal vi
          ikke samtidig love en ret der ikke kommer */
@@ -832,14 +852,16 @@
       renderBasketBar();
       return;
     }
-    const dishes = S.getDagensRetList(iso);
+    const dishes = S.getSiteDishes(iso);
     const dish = dishes[0] || null;
     const remaining = dish ? S.getRemainingFor(iso, dish.title) : null;
     let hint = dish
       ? (dishes.length > 1
           ? `Dagens retter: ${dishes.map((d) => d.title).join(' · ')}`
           : `Dagens ret: ${dish.title}${dish.price ? ` · ${kr(dish.price)}` : ''}`)
-      : 'Ingen dagens ret denne dag – vælg frit fra menukortet.';
+      : (S.harIngenRet(iso)
+        ? `Ingen dagens ret denne dag. ${S.ingenRetTekst()}`
+        : 'Ingen dagens ret denne dag – vælg frit fra menukortet.');
     if (dish && dishes.length === 1 && remaining !== null) hint += remaining > 0 ? ` · ${remaining} tilbage` : ' · udsolgt';
     orderDishHint.textContent = hint;
     orderDishHint.className = `field__hint ${dish && remaining !== null && remaining <= 5 ? (remaining <= 0 ? 'is-bad' : 'is-ok') : ''}`;
@@ -904,7 +926,7 @@
   /* kurv-opbyggeren: dagens ret øverst, menukortets kategorier under */
   function renderBuilder() {
     const iso = orderDate.value;
-    const dishes = iso ? S.getDagensRetList(iso) : [];
+    const dishes = iso ? S.getSiteDishes(iso) : [];
     const menu = S.getMenu();
     const wIdx = iso ? S.weekdayIndex(iso) : 0;
     const weekend = wIdx >= 5;

@@ -54,6 +54,15 @@
     var h = S.hoursFor(d.iso) || {};
     var retter = d.dishes || [];
     var baand = '<div class="idag-baand"><span class="idag-prik" aria-hidden="true"></span><b>I dag</b><span>' + esc(S.formatDate(d.iso)) + '</span></div>';
+    /* ingen dagens ret i dag (25/11): sig det pænt, og peg på menukortet */
+    if (!lukketFor(d.iso) && d.ingenRet) {
+      var tekst = S.ingenRetTekst ? S.ingenRetTekst() : 'Hele menukortet kan bestilles som normalt.';
+      return '<article class="idag-kort fri">' + baand + '<div class="idag-krop"><span class="kicker">Dagens ret</span>'
+        + '<h3>Ingen dagens ret i dag</h3><p class="idag-beskriv">' + esc(tekst) + '</p>'
+        + (h.open && h.close ? '<div class="idag-fakta"><span class="idag-tid">Åbent<br><b>' + esc(kl(h.open) + '–' + kl(h.close)) + '</b></span></div>' : '')
+        + '<a class="knap knap--orange idag-bestil" href="#menukort">Se menukortet <i aria-hidden="true">→</i></a>'
+        + '</div></article>';
+    }
     if (lukketFor(d.iso) || !retter.length) {
       var naeste = plan.slice(1).filter(function (x) { return !lukketFor(x.iso) && (x.dishes || []).length; })[0];
       return '<article class="idag-kort fri">' + baand + '<div class="idag-krop"><span class="kicker">Dagens ret</span>'
@@ -86,7 +95,8 @@
     var par = $('[data-dagens-par]');
     if (!par) return;
     var plan = plan7();
-    var ingen = !plan.some(function (d) { return !lukketFor(d.iso) && (d.dishes || []).length; });
+    var ingen = !plan.some(function (d) { return !lukketFor(d.iso) && (d.dishes || []).length; })
+      && !(plan[0].ingenRet && !lukketFor(plan[0].iso));
     par.classList.toggle('tom', ingen);
     var stor = $('[data-dagens-idag]');
     if (stor) { stor.hidden = ingen; stor.innerHTML = ingen ? '' : idagKort(plan[0], plan); }
@@ -118,7 +128,7 @@
       }
       var h = S.hoursFor ? S.hoursFor(d.iso) : null;
       var aaben = h && !h.closed && h.open;
-      var tekst = !aaben ? 'Lukket' : (lukketFor(d.iso) || d.ingenRet) ? 'Kom forbi ' + kl(h.open) + '–' + kl(h.close) : 'Følger snart';
+      var tekst = !aaben ? 'Lukket' : (!lukketFor(d.iso) && d.ingenRet) ? 'Ingen dagens ret · menukortet som normalt' : lukketFor(d.iso) ? 'Kom forbi ' + kl(h.open) + '–' + kl(h.close) : 'Følger snart';
       return '<li style="--n:' + i + '" class="' + (nr === 0 ? 'idag ' : nr === 1 ? 'imorgen ' : '') + (aaben ? 'aaben' : '') + '"><b>' + esc(d.weekday) + dato + '</b><span>' + esc(tekst) + '</span></li>';
     }).join('');
     if (!tavle.dataset.set) {
